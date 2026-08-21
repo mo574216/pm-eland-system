@@ -21,6 +21,7 @@ Repository foundation task FND-001 is complete:
 - Present: `backend/`, `frontend/`, `infrastructure/`, `README.md`, `.env.example`, `contracts/`, `ADR/`, and `ai_context/`.
 - FND-002 and FND-003 are complete: the backend and frontend foundations build and their automated checks pass.
 - FND-004 is complete: PostgreSQL connectivity, the async SQLAlchemy session model, Alembic, required extensions, and automated disposable test-database provisioning are implemented and verified against PostgreSQL 16.
+- FND-005 is complete: one health-gated Docker Compose command starts the frontend, backend, PostgreSQL, MinIO, and Redis; migrations and cross-service connectivity are verified.
 - Local-only state: `.vscode/` is untracked and is outside this roadmap unless explicitly added.
 
 The repository uses `ai_context/`. Canonical repository guidance now references that path; do not duplicate the specification set.
@@ -245,10 +246,10 @@ Each slice must preserve the API envelope, permission registry, workspace scope,
 
 ## 8. Immediate Next Actions
 
-1. Implement FND-005, then FND-006.
+1. Implement FND-006.
 2. Resolve DG-01 before writing authentication token/session behavior.
 
-The next implementation handoff should therefore be scoped to `FND-005` only and must not introduce business functionality.
+The next implementation handoff should therefore be scoped to `FND-006` only and must not introduce business functionality.
 
 ## 9. Roadmap Maintenance
 

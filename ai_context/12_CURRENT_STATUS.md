@@ -628,7 +628,7 @@ Mitigation:
 # 12. Current Milestone Status
 
 ```text
-M0 Repository/Foundation        IN PROGRESS (FND-001 through FND-004 COMPLETE)
+M0 Repository/Foundation        IN PROGRESS (FND-001 through FND-005 COMPLETE)
 M1 Identity/Workspace           NOT STARTED
 M2 Metadata/Entity Platform     NOT STARTED
 M3 Dynamic Forms                NOT STARTED
@@ -658,6 +658,7 @@ FND-001 Initialize Monorepo
 FND-002 Initialize Backend Application
 FND-003 Initialize Frontend Application
 FND-004 PostgreSQL and Alembic Setup
+FND-005 Local Docker Compose
 
 TASKS_IN_PROGRESS:
 None
@@ -670,12 +671,14 @@ NEW_DECISIONS:
 Use the specified React + TypeScript + Vite frontend architecture.
 Use async SQLAlchemy 2.x with psycopg 3, request/job-scoped sessions,
 service-owned transactions, and synchronous Alembic migrations.
+Use a health-gated local Compose topology with loopback-only host ports,
+externalized credentials, automatic migrations, and persistent named volumes.
 
 ADR_CREATED:
 ADR-0002 Async SQLAlchemy Session Model
 
 NEXT_TASK:
-FND-005 Local Docker Compose.
+FND-006 CI Baseline.
 ```
 
 ---

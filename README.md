@@ -225,7 +225,7 @@ COMPLETE
 Implementation:
 
 ```text
-IN PROGRESS - FND-001, FND-002, and FND-003 complete
+IN PROGRESS - FND-001 through FND-005 complete
 ```
 
 See:
@@ -239,9 +239,9 @@ ai_context/12_CURRENT_STATUS.md
 ## Repository Structure
 
 ```text
-backend/          FastAPI application (FND-002; pending)
+backend/          FastAPI application
 frontend/         React + TypeScript + Vite application
-infrastructure/   Containers and deployment assets (FND-005; pending)
+infrastructure/   Docker Compose local-development environment
 contracts/        OpenAPI, error-code, and permission contracts
 ADR/              Architecture Decision Records
 ai_context/       Normative specifications and current status
