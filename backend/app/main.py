@@ -2,6 +2,7 @@
 
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from functools import partial
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -11,18 +12,46 @@ from app.api.error_handlers import register_error_handlers
 from app.api.health import router as health_router
 from app.api.v1.router import api_router
 from app.core.config import Settings, get_settings
+from app.core.database import (
+    check_database_connection,
+    create_database_engine,
+    create_session_factory,
+)
 from app.core.logging import configure_logging
 from app.core.middleware import RequestContextMiddleware
+from app.core.readiness import DatabaseProbe
 
 
-def create_app(settings: Settings | None = None) -> FastAPI:
+def create_app(
+    settings: Settings | None = None,
+    *,
+    database_probe: DatabaseProbe | None = None,
+) -> FastAPI:
     """Build an application instance with explicit, testable dependencies."""
     resolved_settings = settings or get_settings()
 
     @asynccontextmanager
-    async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+    async def lifespan(lifespan_app: FastAPI) -> AsyncIterator[None]:
         configure_logging(resolved_settings.log_level)
-        yield
+        engine = None
+        if resolved_settings.database_url is not None:
+            engine = create_database_engine(
+                resolved_settings.database_url,
+                echo=resolved_settings.database_echo,
+                pool_size=resolved_settings.database_pool_size,
+                max_overflow=resolved_settings.database_max_overflow,
+                connect_timeout_seconds=resolved_settings.database_connect_timeout_seconds,
+            )
+            lifespan_app.state.database_engine = engine
+            lifespan_app.state.session_factory = create_session_factory(engine)
+            lifespan_app.state.database_probe = database_probe or partial(
+                check_database_connection, engine
+            )
+        try:
+            yield
+        finally:
+            if engine is not None:
+                await engine.dispose()
 
     application = FastAPI(
         title="Project Knowledge Platform API",
@@ -33,7 +62,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         lifespan=lifespan,
     )
     application.state.settings = resolved_settings
-    application.state.database_probe = None
+    application.state.database_engine = None
+    application.state.session_factory = None
+    application.state.database_probe = database_probe
 
     application.add_middleware(
         CORSMiddleware,

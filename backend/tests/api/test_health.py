@@ -73,7 +73,13 @@ def test_readiness_succeeds_when_database_is_not_configured(client: TestClient) 
 
 
 def test_readiness_fails_closed_without_database_probe() -> None:
-    application = create_app(Settings(database_url="postgresql://configured"))
+    async def database_is_unavailable() -> bool:
+        return False
+
+    application = create_app(
+        Settings(database_url="postgresql://configured"),
+        database_probe=database_is_unavailable,
+    )
     with TestClient(application) as client:
         response = client.get("/health/ready")
     assert response.status_code == 503
@@ -88,8 +94,9 @@ def test_readiness_uses_configured_database_probe() -> None:
     async def database_is_ready() -> bool:
         return True
 
-    application: FastAPI = create_app(Settings(database_url="postgresql://configured"))
-    application.state.database_probe = database_is_ready
+    application: FastAPI = create_app(
+        Settings(database_url="postgresql://configured"), database_probe=database_is_ready
+    )
     with TestClient(application) as client:
         response = client.get("/health/ready")
     assert response.status_code == 200

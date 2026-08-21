@@ -1,0 +1,3 @@
+Alembic migration environment for the platform PostgreSQL schema.
+
+All relational schema changes must be represented by revisions in `versions/`.

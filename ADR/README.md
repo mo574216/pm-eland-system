@@ -59,4 +59,6 @@ Supersedes / Superseded By
 
 ## Current ADRs
 
+- `ADR-0002-async-sqlalchemy-session-model.md` - ACCEPTED
+
 - `ADR-0001-metadata-driven-domain-model.md` — ACCEPTED
