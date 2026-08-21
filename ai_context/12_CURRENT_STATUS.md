@@ -661,11 +661,16 @@ FND-004 PostgreSQL and Alembic Setup
 FND-005 Local Docker Compose
 
 TASKS_IN_PROGRESS:
-None
+FND-006 CI Baseline (implementation and local validation complete;
+GitHub workflow activation and branch protection pending)
 
 BLOCKERS:
-None. Playwright's managed browser CDN is unavailable from the current
-location, so local frontend E2E verification uses installed stable Chrome.
+The new CI workflow must be committed and pushed before GitHub can execute it.
+The main branch currently has no protection rule; an administrator must require
+the `Required CI Gate` status check to enforce merge blocking.
+
+Playwright's managed browser CDN is unavailable from the current location, so
+local frontend E2E verification uses installed stable Chrome.
 
 NEW_DECISIONS:
 Use the specified React + TypeScript + Vite frontend architecture.
@@ -673,12 +678,14 @@ Use async SQLAlchemy 2.x with psycopg 3, request/job-scoped sessions,
 service-owned transactions, and synchronous Alembic migrations.
 Use a health-gated local Compose topology with loopback-only host ports,
 externalized credentials, automatic migrations, and persistent named volumes.
+Use separate least-privilege CI jobs with immutable action pins and one
+aggregate required status check.
 
 ADR_CREATED:
 ADR-0002 Async SQLAlchemy Session Model
 
 NEXT_TASK:
-FND-006 CI Baseline.
+Activate and verify FND-006 on GitHub, then begin AUTH-DB-001 Identity Schema.
 ```
 
 ---

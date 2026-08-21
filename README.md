@@ -225,7 +225,7 @@ COMPLETE
 Implementation:
 
 ```text
-IN PROGRESS - FND-001 through FND-005 complete
+IN PROGRESS - FND-001 through FND-005 complete; FND-006 ready for activation
 ```
 
 See:
@@ -246,6 +246,12 @@ contracts/        OpenAPI, error-code, and permission contracts
 ADR/              Architecture Decision Records
 ai_context/       Normative specifications and current status
 ```
+
+## Continuous Integration
+
+The GitHub Actions workflow at `.github/workflows/ci.yml` runs on pull requests and pushes to `main`. Its aggregate `Required CI Gate` fails unless backend and frontend quality checks, tests, migration-from-empty, secret scanning, application builds, and container-image builds all pass.
+
+After the workflow is committed and pushed, a repository administrator must configure the `main` branch ruleset to require `Required CI Gate` before merge.
 
 ## Frontend Quick Start
 
@@ -285,7 +291,7 @@ cd backend
 uv sync --all-groups
 uv run ruff format --check .
 uv run ruff check .
-uv run mypy app tests
+uv run mypy app scripts tests
 uv run pytest
 uv run uvicorn app.main:app --reload
 ```

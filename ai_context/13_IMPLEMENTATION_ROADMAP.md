@@ -22,6 +22,7 @@ Repository foundation task FND-001 is complete:
 - FND-002 and FND-003 are complete: the backend and frontend foundations build and their automated checks pass.
 - FND-004 is complete: PostgreSQL connectivity, the async SQLAlchemy session model, Alembic, required extensions, and automated disposable test-database provisioning are implemented and verified against PostgreSQL 16.
 - FND-005 is complete: one health-gated Docker Compose command starts the frontend, backend, PostgreSQL, MinIO, and Redis; migrations and cross-service connectivity are verified.
+- FND-006 implementation and local validation are complete. Activation remains pending: commit and push the workflow, confirm its first GitHub-hosted run, and require `Required CI Gate` in the `main` branch ruleset.
 - Local-only state: `.vscode/` is untracked and is outside this roadmap unless explicitly added.
 
 The repository uses `ai_context/`. Canonical repository guidance now references that path; do not duplicate the specification set.
@@ -246,10 +247,11 @@ Each slice must preserve the API envelope, permission registry, workspace scope,
 
 ## 8. Immediate Next Actions
 
-1. Implement FND-006.
-2. Resolve DG-01 before writing authentication token/session behavior.
+1. Activate FND-006 on GitHub and configure `Required CI Gate` as a required `main` branch status check.
+2. Begin AUTH-DB-001 with the generic identity schema defined by the database specification.
+3. Resolve DG-01 before implementing authentication token/session behavior.
 
-The next implementation handoff should therefore be scoped to `FND-006` only and must not introduce business functionality.
+The next implementation handoff should finish FND-006 activation before starting `AUTH-DB-001`. Authentication behavior remains blocked on DG-01.
 
 ## 9. Roadmap Maintenance
 
