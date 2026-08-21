@@ -1035,13 +1035,38 @@ Requirements include:
 
 ---
 
-# 49. Internationalization Readiness
+# 49. Persian-First Localization and RTL
 
-MVP MAY be English-only, but code SHOULD avoid hard-wiring text deep inside business logic.
+Persian/Farsi (`fa-IR`) is the mandatory primary user-facing language for the
+MVP. The document root SHALL use `lang="fa"` and `dir="rtl"`.
 
-UI text SHOULD be structured to allow later internationalization.
+All platform UI copy SHALL be obtained through an internationalization resource
+layer. Persian labels SHALL not be scattered as literals through components.
+Metadata-provided labels and user-authored values SHALL be rendered as data and
+SHALL not be passed through translation keys.
 
-RTL support MAY be added later if required.
+MUI SHALL be configured with:
+
+- theme direction `rtl`,
+- the `faIR` component locale,
+- an Emotion cache using the approved RTL Stylis plugin,
+- a Persian-capable application font,
+- global RTL direction so portal-based components inherit correctly.
+
+Navigation, dialogs, tables, forms, notifications, pagination, breadcrumbs,
+tooltips, menus, focus order, and next/previous icons SHALL be tested for RTL
+behavior. CSS and MUI styling SHALL prefer logical or direction-neutral
+properties such as `margin-inline-start`, `padding-inline-end`, `inset-inline`,
+and MUI spacing shorthands instead of physical left/right assumptions.
+
+Validation messages, loading states, empty states, buttons, aria labels, page
+titles, and user-facing safe API errors SHALL be Persian. English remains valid
+for code identifiers, routes, API fields, stable error codes, logs, and developer
+documentation.
+
+Dates and numbers SHALL be formatted through centralized localization helpers;
+components SHALL not choose a calendar or numeral policy independently. API ISO
+timestamps and JSON numeric values SHALL not be localized in transport.
 
 ---
 

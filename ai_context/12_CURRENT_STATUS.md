@@ -270,6 +270,9 @@ Zod
 Vitest
 React Testing Library
 Playwright
+i18next / react-i18next
+MUI Persian locale and RTL Emotion pipeline
+Vazirmatn font
 ```
 
 Infrastructure:
@@ -314,6 +317,8 @@ MERGE/REPLACE/SKIP
 phase locking
 basic dashboard
 audit
+Persian (`fa-IR`) user interface
+global RTL layout
 ```
 
 ---
@@ -558,6 +563,21 @@ as a production dependency without an AI ADR.
 
 ---
 
+# OD-015 — Persian Calendar and Numeral Display Policy
+
+Persian (`fa-IR`) localization and RTL are approved and mandatory. The remaining
+product decision is whether user-facing dates use the Persian (Jalali) or
+Gregorian calendar and whether displayed numbers use Persian or Latin digits.
+
+API timestamps remain ISO 8601 and numeric values remain JSON numbers regardless
+of this decision. Coding agents SHALL use centralized formatters and SHALL NOT
+choose a calendar or digit policy inside individual components.
+
+This decision does not block the current foundation or identity schema. It SHALL
+be resolved before date- or number-intensive end-user workflows are completed.
+
+---
+
 # 11. Architecture Risks to Monitor
 
 ## RISK-001 — Generic Model Becoming Too Loose
@@ -628,7 +648,7 @@ Mitigation:
 # 12. Current Milestone Status
 
 ```text
-M0 Repository/Foundation        IN PROGRESS (FND-001 through FND-005 COMPLETE)
+M0 Repository/Foundation        IN PROGRESS (FND-001 through FND-005 and FND-007 COMPLETE)
 M1 Identity/Workspace           NOT STARTED
 M2 Metadata/Entity Platform     NOT STARTED
 M3 Dynamic Forms                NOT STARTED
@@ -648,7 +668,7 @@ Latest implementation entry:
 
 ```text
 DATE:
-2026-08-21
+2026-08-22
 
 MILESTONE:
 M0 Repository and Engineering Foundation
@@ -659,18 +679,22 @@ FND-002 Initialize Backend Application
 FND-003 Initialize Frontend Application
 FND-004 PostgreSQL and Alembic Setup
 FND-005 Local Docker Compose
+FND-007 Persian-First RTL Foundation
 
 TASKS_IN_PROGRESS:
 FND-006 CI Baseline (implementation and local validation complete;
 GitHub workflow activation and branch protection pending)
 
 BLOCKERS:
-The new CI workflow must be committed and pushed before GitHub can execute it.
+The localization changes and expanded CI E2E job must be committed and pushed
+before GitHub can execute the updated workflow.
 The main branch currently has no protection rule; an administrator must require
 the `Required CI Gate` status check to enforce merge blocking.
 
-Playwright's managed browser CDN is unavailable from the current location, so
-local frontend E2E verification uses installed stable Chrome.
+The in-app browser was unavailable during FND-007 verification; the repository's
+Playwright suite passed in the matching official Chromium test container.
+
+OD-015 must be resolved before date- or number-intensive UI is completed.
 
 NEW_DECISIONS:
 Use the specified React + TypeScript + Vite frontend architecture.
@@ -680,12 +704,17 @@ Use a health-gated local Compose topology with loopback-only host ports,
 externalized credentials, automatic migrations, and persistent named volumes.
 Use separate least-privilege CI jobs with immutable action pins and one
 aggregate required status check.
+Use Persian (`fa-IR`) as the mandatory end-user language with a global RTL
+layout, an i18n resource boundary, and English developer-facing contracts.
+Normalize Persian search comparison values without altering canonical display text.
 
 ADR_CREATED:
 ADR-0002 Async SQLAlchemy Session Model
+ADR-0003 Persian-First Localization Boundary
 
 NEXT_TASK:
 Activate and verify FND-006 on GitHub, then begin AUTH-DB-001 Identity Schema.
+Resolve OD-015 before implementing date- or number-intensive frontend workflows.
 ```
 
 ---
@@ -701,6 +730,7 @@ FND-003 Initialize Frontend
 FND-004 PostgreSQL/Alembic
 FND-005 Docker Compose
 FND-006 CI Baseline
+FND-007 Persian-First RTL Foundation
 ```
 
 Then:

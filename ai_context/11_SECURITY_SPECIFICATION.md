@@ -457,6 +457,11 @@ Validation categories include:
 
 Malformed requests SHALL fail safely.
 
+Persian and other valid Unicode input SHALL receive the same server-side length,
+type, authorization, and domain validation as Latin input. Unicode normalization
+for search SHALL operate on a comparison/indexing value and SHALL not bypass
+validation or destructively rewrite the canonical user-authored value.
+
 ---
 
 # 19. SQL Injection Protection
@@ -482,6 +487,9 @@ Frontend SHALL escape untrusted text by default.
 Rich-text rendering SHALL be sanitized with a vetted sanitizer.
 
 Imported Excel values, comments, metadata labels, filenames, and entity names SHALL all be treated as untrusted content.
+
+Persian localization resources and RTL rendering do not relax output escaping,
+HTML sanitization, Content Security Policy, or URL validation requirements.
 
 ---
 
@@ -1161,6 +1169,10 @@ internal hostnames
 ```
 
 Detailed errors belong in protected logs.
+
+Localized Persian messages SHALL preserve this information boundary. Stable
+English error codes MAY be exposed as documented, but translation resources
+SHALL not contain secrets or internal diagnostics.
 
 ---
 

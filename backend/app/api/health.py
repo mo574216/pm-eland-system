@@ -7,6 +7,7 @@ from fastapi.responses import JSONResponse
 
 from app.api.envelopes import error_envelope, success_envelope
 from app.core.config import Settings
+from app.core.localization import public_error_message
 from app.core.readiness import DatabaseProbe
 from app.core.request_context import get_request_id
 
@@ -34,7 +35,7 @@ async def readiness(request: Request) -> dict[str, object] | JSONResponse:
             status_code=503,
             content=error_envelope(
                 code="DEPENDENCY_UNAVAILABLE",
-                message="A required service is unavailable.",
+                message=public_error_message("DEPENDENCY_UNAVAILABLE"),
                 details={"checks": {"database": "unavailable"}},
                 request_id=request_id,
             ),

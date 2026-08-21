@@ -648,6 +648,40 @@ Validate:
 
 ---
 
+# 19.1 Persian Localization and RTL Tests
+
+## TEST-I18N-001 — Document Locale and Direction
+
+Playwright SHALL verify that the document root declares `lang="fa"` and
+`dir="rtl"`, and component tests SHALL verify the MUI theme direction is RTL.
+
+## TEST-I18N-002 — Persian Core Workflows
+
+Core routes SHALL render Persian headings, form labels, buttons, validation
+messages, empty states, tooltips, aria labels, and notifications. Playwright
+SHALL fail when known untranslated English platform copy appears in the core MVP
+workflow. Technical identifiers and user-authored values are excluded from this
+copy assertion.
+
+## TEST-I18N-003 — RTL Component Usability
+
+Representative navigation, forms, tables, dialogs, menus, breadcrumbs,
+pagination, and directional controls SHALL remain visible, keyboard-usable, and
+correctly ordered in RTL.
+
+## TEST-I18N-004 — Persian Search Normalization
+
+Backend unit and integration tests SHALL cover Persian/Arabic Yeh and Kaf,
+zero-width non-joiner, diacritics/tatweel, whitespace, and Persian/Arabic numeral
+equivalence while proving canonical display text is not overwritten.
+
+## TEST-I18N-005 — Unicode Security
+
+Persian metadata and user values SHALL be tested as untrusted Unicode input under
+the normal XSS, validation, authorization, and workspace-isolation controls.
+
+---
+
 # 20. Document Tests
 
 # TEST-DOC-001 — First Upload

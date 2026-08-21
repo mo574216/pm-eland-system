@@ -85,7 +85,7 @@ def test_readiness_fails_closed_without_database_probe() -> None:
     assert response.status_code == 503
     assert response.json()["error"] == {
         "code": "DEPENDENCY_UNAVAILABLE",
-        "message": "A required service is unavailable.",
+        "message": "یکی از سرویس‌های موردنیاز موقتاً در دسترس نیست.",
         "details": {"checks": {"database": "unavailable"}},
     }
 

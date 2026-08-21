@@ -2,6 +2,8 @@
 
 from typing import Any
 
+from app.core.localization import public_error_message
+
 
 class ApplicationError(Exception):
     """Base class for errors safe to map to a stable public response."""
@@ -10,13 +12,13 @@ class ApplicationError(Exception):
         self,
         *,
         code: str,
-        public_message: str,
         status_code: int,
         details: dict[str, Any] | None = None,
     ) -> None:
-        super().__init__(public_message)
+        resolved_message = public_error_message(code)
+        super().__init__(resolved_message)
         self.code = code
-        self.public_message = public_message
+        self.public_message = resolved_message
         self.status_code = status_code
         self.details = details or {}
 
@@ -27,7 +29,6 @@ class DependencyUnavailableError(ApplicationError):
     def __init__(self, details: dict[str, Any] | None = None) -> None:
         super().__init__(
             code="DEPENDENCY_UNAVAILABLE",
-            public_message="A required service is unavailable.",
             status_code=503,
             details=details,
         )

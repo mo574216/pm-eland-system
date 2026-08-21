@@ -133,6 +133,21 @@ JSONB SHALL NOT be used to avoid modeling stable platform relationships.
 
 ---
 
+## DB-RULE-007 — Persian Unicode and Search Values
+
+PostgreSQL text, `varchar`, and JSONB fields containing user-authored or
+metadata-configured labels SHALL accept Persian Unicode and SHALL NOT apply
+ASCII-only constraints.
+
+Canonical display values SHALL be preserved as entered. Search normalization
+SHALL be performed separately so Arabic/Persian forms of Yeh (`ي`/`ی`) and Kaf
+(`ك`/`ک`), zero-width non-joiner variants, diacritics, whitespace, and
+Persian/Arabic numeral variants can match consistently. A normalized search
+column or index MAY be introduced only with an Alembic migration and measured
+query justification; it SHALL NOT replace the canonical display value.
+
+---
+
 # 3. PostgreSQL Extensions
 
 Recommended extensions:
@@ -514,6 +529,10 @@ Optional fuzzy search:
 CREATE INDEX idx_entity_objects_name_trgm
 ON entity_objects USING gin(name gin_trgm_ops);
 ```
+
+The value indexed for Persian search SHALL use the shared backend search
+normalization policy. Raw `lower(name)` or collation alone is not sufficient to
+make Arabic/Persian code-point variants equivalent.
 
 ---
 
@@ -1272,15 +1291,16 @@ JSONB configuration objects SHALL:
 - use explicit versionable structures,
 - avoid embedding secrets,
 - avoid embedding unbounded binary data.
+- preserve Persian Unicode in user-facing labels and option text.
 
 Example:
 
 ```json
 {
   "options": [
-    {"value": "LOW", "label": "Low"},
-    {"value": "MEDIUM", "label": "Medium"},
-    {"value": "HIGH", "label": "High"}
+    {"value": "LOW", "label": "کم"},
+    {"value": "MEDIUM", "label": "متوسط"},
+    {"value": "HIGH", "label": "زیاد"}
   ]
 }
 ```

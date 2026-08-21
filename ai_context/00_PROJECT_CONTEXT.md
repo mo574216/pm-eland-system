@@ -518,6 +518,27 @@ Docker Compose initially
 Kubernetes only when justified
 ```
 
+## 18.1 Language and Localization Direction
+
+The product is Persian-first. Persian/Farsi (`fa-IR`) SHALL be the primary
+user-facing language for the MVP, and the primary application layout direction
+SHALL be right-to-left (RTL).
+
+The localization boundary is:
+
+> **Developer-facing contracts are English; the entire end-user interface is Persian and RTL.**
+
+English SHALL remain the internal technical language for source-code identifiers,
+API field names, stable error codes, database identifiers, logs, and developer
+documentation. User-authored and metadata-configured values MAY contain Persian
+Unicode. User-facing labels, validation messages, notifications, empty states,
+and safe API error messages SHALL be Persian and SHALL come from localization or
+metadata resources rather than being scattered through business logic.
+
+The frontend SHALL retain an internationalization framework even while Persian
+is the only mandatory MVP locale. This preserves a clean translation boundary
+without weakening the Persian-first requirement.
+
 ---
 
 # 19. Development Philosophy

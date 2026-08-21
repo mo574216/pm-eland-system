@@ -2,11 +2,11 @@
 
 **Status:** Informational / Execution Guide  
 **Derived from:** `00_PROJECT_CONTEXT.md` through `12_CURRENT_STATUS.md`, `08_TASK_BACKLOG.md`, shared contracts, and accepted ADRs  
-**Baseline date:** 2026-08-21
+**Baseline date:** 2026-08-22
 
 ## 1. Outcome
 
-Deliver the MVP as a metadata-driven enterprise architecture and project knowledge platform. The implementation is complete only when the canonical end-to-end scenario passes: authentication, workspace isolation, configurable metadata, generic hierarchy, dynamic forms, immutable document versions, safe XLSX/CSV import, phase locking, dashboards, and immutable audit history.
+Deliver the MVP as a Persian-first, RTL, metadata-driven enterprise architecture and project knowledge platform. The implementation is complete only when the canonical end-to-end scenario passes: authentication, workspace isolation, configurable metadata, generic hierarchy, dynamic forms, immutable document versions, safe XLSX/CSV import, phase locking, dashboards, and immutable audit history.
 
 The architectural invariant for every milestone is:
 
@@ -23,6 +23,7 @@ Repository foundation task FND-001 is complete:
 - FND-004 is complete: PostgreSQL connectivity, the async SQLAlchemy session model, Alembic, required extensions, and automated disposable test-database provisioning are implemented and verified against PostgreSQL 16.
 - FND-005 is complete: one health-gated Docker Compose command starts the frontend, backend, PostgreSQL, MinIO, and Redis; migrations and cross-service connectivity are verified.
 - FND-006 implementation and local validation are complete. Activation remains pending: commit and push the workflow, confirm its first GitHub-hosted run, and require `Required CI Gate` in the `main` branch ruleset.
+- FND-007 is complete: the current shell is Persian/RTL, platform copy uses i18n resources, MUI and Emotion are RTL-configured, Vazirmatn is bundled, public API errors are localized centrally, and Persian search normalization is tested.
 - Local-only state: `.vscode/` is untracked and is outside this roadmap unless explicitly added.
 
 The repository uses `ai_context/`. Canonical repository guidance now references that path; do not duplicate the specification set.
@@ -36,6 +37,7 @@ The repository uses `ai_context/`. Canonical repository guidance now references 
 - Store MVP dynamic entity attributes in `entity_objects.attributes JSONB`; do not create a parallel normalized source of truth.
 - Use generic backend services and frontend renderers. Never add domain-specific models, tables, services, or pages.
 - Add tests with each task. A feature is not complete without negative authorization, validation, isolation, audit, and lock tests where relevant.
+- Keep developer-facing contracts in English and all end-user platform UI in Persian (`fa-IR`) and RTL.
 - Require an ADR for architecture changes and resolve security-sensitive open decisions before dependent implementation begins.
 
 ## 4. Decision Gates
@@ -49,6 +51,7 @@ The repository uses `ai_context/`. Canonical repository guidance now references 
 | DG-05 | DOC-BE-005 P1 | Select Office preview conversion stack (OD-008) | Document/deployment decision |
 | DG-06 | DOC-BE-006 | Select malware scanner integration (OD-009) | Security/deployment decision |
 | DG-07 | DR-001 | Approve production RPO/RTO (OD-013) | Operations decision and recovery plan |
+| DG-08 | Date/number-intensive frontend work | Choose Jalali/Gregorian calendar and Persian/Latin display digits (OD-015) | Localization policy update and centralized formatter tests |
 
 OD-002 is resolved for the MVP by the accepted architecture direction: JSONB is canonical. OD-003, OD-004, OD-007, OD-010, OD-011, OD-012, and OD-014 do not block foundation work and must not expand MVP scope.
 
@@ -65,6 +68,7 @@ Execution order:
 3. Complete DG-02 and FND-004: PostgreSQL connection, SQLAlchemy session model, Alembic, disposable test database.
 4. Complete FND-005: Docker Compose for frontend, backend, PostgreSQL, MinIO, and Redis.
 5. Complete FND-006: CI for lint, formatting, type checks, tests, migration-from-empty, secret scanning, and builds.
+6. Complete FND-007: Persian i18n resources, global RTL, localized MUI/font, safe API messages, search normalization, and RTL tests.
 
 Exit gate:
 
@@ -74,6 +78,7 @@ Exit gate:
 - Alembic upgrades an empty PostgreSQL database.
 - Docker Compose validates service connectivity.
 - CI blocks failures and contains no committed secrets.
+- Core routes render Persian copy and pass automated RTL browser checks.
 
 ### M1 - Identity, Workspace, and Security Foundation
 
@@ -242,7 +247,7 @@ Each slice must preserve the API envelope, permission registry, workspace scope,
 | API | Contract tests, standard envelopes, documented errors | OpenAPI validation and no undocumented public behavior |
 | Authorization | Permission and object-level negative tests | BOLA/IDOR and cross-workspace security review |
 | Data integrity | Transactions, optimistic concurrency, immutability tests | Import rollback/idempotency and document history verification |
-| Frontend | Strict TS, component/integration tests, accessible generic UI | Canonical and negative Playwright scenarios |
+| Frontend | Strict TS, component/integration tests, Persian copy and RTL checks | Canonical, negative, and localization Playwright scenarios |
 | Operations | Container health, logs, secret scanning | Observability, backup/restore, deployment pipeline |
 
 ## 8. Immediate Next Actions
@@ -250,6 +255,7 @@ Each slice must preserve the API envelope, permission registry, workspace scope,
 1. Activate FND-006 on GitHub and configure `Required CI Gate` as a required `main` branch status check.
 2. Begin AUTH-DB-001 with the generic identity schema defined by the database specification.
 3. Resolve DG-01 before implementing authentication token/session behavior.
+4. Resolve DG-08 before date- or number-intensive frontend workflows.
 
 The next implementation handoff should finish FND-006 activation before starting `AUTH-DB-001`. Authentication behavior remains blocked on DG-01.
 

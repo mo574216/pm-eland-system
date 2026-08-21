@@ -80,8 +80,8 @@ Error responses SHALL follow:
   "success": false,
   "data": null,
   "error": {
-    "code": "ENTITY_LOCKED",
-    "message": "The requested resource is locked.",
+    "code": "RESOURCE_LOCKED",
+    "message": "این مورد در مرحله قفل‌شده قرار دارد و قابل ویرایش نیست.",
     "details": {}
   },
   "meta": {
@@ -182,6 +182,23 @@ Response metadata:
 ```
 
 Cursor pagination MAY replace page-based pagination for endpoints where required by scale.
+
+---
+
+## API-RULE-008 — Localization Boundary
+
+Public API paths, field names, enum values, permission names, stable error codes,
+and OpenAPI operation identifiers SHALL remain English. String values MAY contain
+Persian Unicode.
+
+For the Persian-first MVP, safe user-facing `error.message` values SHALL be
+Persian (`fa-IR`) while `error.code` remains an English stable contract
+identifier. Clients SHALL branch on `code`, never on translated `message`.
+Backend logs and exception diagnostics SHALL remain English and SHALL not expose
+localized messages as their only diagnostic context.
+
+API timestamps SHALL remain ISO 8601 and numeric fields SHALL remain JSON numbers;
+presentation formatting belongs to the frontend localization layer.
 
 ---
 

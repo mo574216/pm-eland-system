@@ -429,6 +429,11 @@ Each exception SHALL map to:
 - safe public message,
 - optional details.
 
+Stable machine error codes and safe localized messages SHALL be separate concerns.
+The Persian-first MVP SHALL resolve public messages from a centralized `fa-IR`
+message catalog. Services SHALL not scatter Persian message literals through
+business logic, and logs SHALL retain English technical diagnostics.
+
 Internal stack traces SHALL not be returned to clients.
 
 ---
@@ -1149,6 +1154,12 @@ https://app.example.com
 
 All incoming API payloads SHALL be validated with Pydantic or equivalent typed validation.
 
+Persian Unicode is valid input for user-authored and metadata-configured text.
+Validation SHALL NOT impose ASCII-only rules on names, labels, descriptions,
+comments, or values. Stable technical keys MAY retain their documented identifier
+constraints. Unicode normalization is not a substitute for escaping, output
+encoding, authorization, or domain validation.
+
 Never trust:
 
 - entity IDs,
@@ -1349,6 +1360,12 @@ The backend SHALL distinguish:
 - tree retrieval,
 - document full-text search,
 - reporting aggregation.
+
+Persian searchable text SHALL pass through a shared normalization utility before
+comparison or indexing. The utility SHALL normalize Unicode compatibility forms,
+Arabic/Persian Yeh and Kaf variants, diacritics and tatweel, whitespace,
+zero-width non-joiner variants, and Persian/Arabic numerals. Canonical stored and
+returned display text SHALL remain unchanged.
 
 ---
 

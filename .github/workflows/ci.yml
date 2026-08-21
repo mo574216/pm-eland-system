@@ -111,6 +111,29 @@ jobs:
         working-directory: frontend
         run: npm test
 
+  frontend-e2e:
+    name: Frontend Persian RTL E2E
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install locked frontend dependencies
+        working-directory: frontend
+        run: npm ci
+      - name: Install Playwright Chrome
+        working-directory: frontend
+        run: npx playwright install --with-deps chrome
+      - name: Verify Persian and RTL workflows
+        working-directory: frontend
+        run: npm run test:e2e
+
   migration:
     name: PostgreSQL migration from empty
     runs-on: ubuntu-latest
@@ -185,6 +208,7 @@ jobs:
       - backend-tests
       - frontend-quality
       - frontend-tests
+      - frontend-e2e
       - migration
       - secret-scan
     steps:
@@ -227,6 +251,7 @@ jobs:
       - backend-tests
       - frontend-quality
       - frontend-tests
+      - frontend-e2e
       - migration
       - secret-scan
       - build
@@ -237,11 +262,12 @@ jobs:
           BACKEND_TESTS: ${{ needs.backend-tests.result }}
           FRONTEND_QUALITY: ${{ needs.frontend-quality.result }}
           FRONTEND_TESTS: ${{ needs.frontend-tests.result }}
+          FRONTEND_E2E: ${{ needs.frontend-e2e.result }}
           MIGRATION: ${{ needs.migration.result }}
           SECRET_SCAN: ${{ needs.secret-scan.result }}
           BUILD: ${{ needs.build.result }}
         run: |
-          for result in "$BACKEND_QUALITY" "$BACKEND_TESTS" "$FRONTEND_QUALITY" "$FRONTEND_TESTS" "$MIGRATION" "$SECRET_SCAN" "$BUILD"; do
+          for result in "$BACKEND_QUALITY" "$BACKEND_TESTS" "$FRONTEND_QUALITY" "$FRONTEND_TESTS" "$FRONTEND_E2E" "$MIGRATION" "$SECRET_SCAN" "$BUILD"; do
             if [ "$result" != "success" ]; then
               echo "A required CI stage did not pass: $result"
               exit 1

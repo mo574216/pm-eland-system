@@ -7,9 +7,9 @@ describe('LoginPage', () => {
   it('renders accessible credential fields with submission disabled', () => {
     renderWithProviders(<LoginPage />)
 
-    expect(screen.getByRole('heading', { name: 'Sign in' })).toBeInTheDocument()
-    expect(screen.getByLabelText(/Email/)).toHaveAttribute('type', 'email')
-    expect(screen.getByLabelText(/Password/)).toHaveAttribute('type', 'password')
-    expect(screen.getByRole('button', { name: 'Sign in' })).toBeDisabled()
+    expect(screen.getByRole('heading', { name: 'ورود' })).toBeInTheDocument()
+    expect(screen.getByLabelText(/ایمیل/)).toHaveAttribute('type', 'email')
+    expect(screen.getByLabelText(/گذرواژه/)).toHaveAttribute('type', 'password')
+    expect(screen.getByRole('button', { name: 'ورود' })).toBeDisabled()
   })
 })

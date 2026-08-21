@@ -7,7 +7,7 @@ describe('WorkspaceListPage', () => {
   it('shows the workspace heading and API placeholder', () => {
     renderWithProviders(<WorkspaceListPage />)
 
-    expect(screen.getByRole('heading', { name: 'Workspaces' })).toBeInTheDocument()
-    expect(screen.getByRole('alert')).toHaveTextContent('workspace API')
+    expect(screen.getByRole('heading', { name: 'فضاهای کاری' })).toBeInTheDocument()
+    expect(screen.getByRole('alert')).toHaveTextContent('سرویس فضاهای کاری')
   })
 })

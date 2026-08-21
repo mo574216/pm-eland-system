@@ -213,6 +213,34 @@ build
 
 ---
 
+# TASK FND-007 — Persian-First RTL Foundation
+
+**Priority:** P0
+**Owner:** Frontend Agent + Backend Agent + QA Agent
+**Dependencies:** FND-003
+
+## Deliverables
+
+- `fa-IR` internationalization resource boundary,
+- Persian application shell and placeholder routes,
+- document and MUI RTL configuration,
+- Persian-capable application font,
+- centralized Persian safe API error messages,
+- shared Persian search normalization utility,
+- localization and RTL component/E2E tests.
+
+## Acceptance Criteria
+
+- [ ] document root uses `lang="fa"` and `dir="rtl"`,
+- [ ] MUI theme, locale, and Emotion styles are configured for RTL,
+- [ ] current user-facing copy is Persian and obtained through localization resources,
+- [ ] API identifiers and error codes remain English while safe messages are Persian,
+- [ ] Persian search normalization variants are unit tested,
+- [ ] frontend lint, type check, tests, E2E, and build pass,
+- [ ] backend lint, type check, and tests pass.
+
+---
+
 # 5. M1 — Identity, Workspace, and Security Foundation
 
 # TASK AUTH-DB-001 — Identity Schema

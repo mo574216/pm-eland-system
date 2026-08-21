@@ -6,6 +6,8 @@ info:
     Core public REST contract for the platform. This file is intentionally a
     foundational implementation contract and SHALL be expanded alongside
     backend implementation without breaking existing documented semantics.
+    Developer-facing identifiers remain English; string values may be Persian,
+    and safe error messages use Persian (`fa-IR`) for the Persian-first MVP.
 servers:
   - url: /api/v1
 
@@ -571,9 +573,16 @@ components:
   schemas:
     ErrorObject:
       type: object
+      description: >
+        Stable English machine code with a safe Persian (`fa-IR`) user-facing
+        message. Clients branch on code and must not branch on translated text.
       properties:
-        code: {type: string}
-        message: {type: string}
+        code:
+          type: string
+          example: RESOURCE_LOCKED
+        message:
+          type: string
+          example: این مورد در مرحله قفل‌شده قرار دارد و قابل ویرایش نیست.
         details: {}
       required: [code, message]
 

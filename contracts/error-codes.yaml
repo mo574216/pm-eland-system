@@ -2,149 +2,150 @@ version: "1.0"
 namespace: "platform.error"
 description: >
   Stable public API error-code registry. Codes are contract identifiers and
-  must not be renamed without compatibility review.
+  must not be renamed without compatibility review. Default messages are safe
+  Persian (`fa-IR`) user-facing text; logs retain English technical diagnostics.
 
 errors:
   AUTH_INVALID_CREDENTIALS:
     http_status: 401
     category: authentication
     retryable: false
-    default_message: "Authentication failed."
+    default_message: "نام کاربری یا گذرواژه صحیح نیست."
 
   AUTH_TOKEN_EXPIRED:
     http_status: 401
     category: authentication
     retryable: true
-    default_message: "Authentication token has expired."
+    default_message: "نشست شما منقضی شده است. لطفاً دوباره وارد شوید."
 
   AUTH_REQUIRED:
     http_status: 401
     category: authentication
     retryable: false
-    default_message: "Authentication is required."
+    default_message: "برای انجام این عملیات باید وارد سامانه شوید."
 
   PERMISSION_DENIED:
     http_status: 403
     category: authorization
     retryable: false
-    default_message: "You do not have permission to perform this operation."
+    default_message: "شما اجازه انجام این عملیات را ندارید."
 
   WORKSPACE_ACCESS_DENIED:
     http_status: 403
     category: authorization
     retryable: false
-    default_message: "Workspace access is denied."
+    default_message: "شما به این فضای کاری دسترسی ندارید."
 
   RESOURCE_NOT_FOUND:
     http_status: 404
     category: resource
     retryable: false
-    default_message: "The requested resource was not found."
+    default_message: "مورد درخواستی یافت نشد."
 
   RESOURCE_CONFLICT:
     http_status: 409
     category: conflict
     retryable: false
-    default_message: "The requested operation conflicts with current resource state."
+    default_message: "این عملیات با وضعیت فعلی مورد درخواستی سازگار نیست."
 
   STALE_VERSION:
     http_status: 409
     category: concurrency
     retryable: true
-    default_message: "The resource has changed since it was loaded."
+    default_message: "این مورد پس از بارگذاری تغییر کرده است. صفحه را تازه‌سازی کنید."
 
   RESOURCE_LOCKED:
     http_status: 423
     category: workflow
     retryable: false
-    default_message: "The requested resource is locked."
+    default_message: "این مورد در مرحله قفل‌شده قرار دارد و قابل ویرایش نیست."
 
   VALIDATION_ERROR:
     http_status: 422
     category: validation
     retryable: false
-    default_message: "One or more fields are invalid."
+    default_message: "یک یا چند فیلد نامعتبر است."
 
   INVALID_METADATA:
     http_status: 422
     category: metadata
     retryable: false
-    default_message: "Metadata configuration is invalid."
+    default_message: "پیکربندی فراداده نامعتبر است."
 
   INVALID_RELATIONSHIP:
     http_status: 422
     category: relationship
     retryable: false
-    default_message: "The requested relationship is invalid."
+    default_message: "رابطه درخواستی نامعتبر است."
 
   HIERARCHY_CYCLE:
     http_status: 409
     category: hierarchy
     retryable: false
-    default_message: "The requested hierarchy change would create a cycle."
+    default_message: "این تغییر در ساختار سلسله‌مراتبی یک چرخه ایجاد می‌کند."
 
   FILE_TOO_LARGE:
     http_status: 413
     category: file
     retryable: false
-    default_message: "The uploaded file exceeds the allowed size."
+    default_message: "حجم فایل بارگذاری‌شده از حد مجاز بیشتر است."
 
   FILE_TYPE_NOT_ALLOWED:
     http_status: 415
     category: file
     retryable: false
-    default_message: "The uploaded file type is not allowed."
+    default_message: "نوع فایل بارگذاری‌شده مجاز نیست."
 
   FILE_SCAN_FAILED:
     http_status: 422
     category: file_security
     retryable: true
-    default_message: "File security scanning could not be completed."
+    default_message: "بررسی امنیتی فایل کامل نشد. لطفاً دوباره تلاش کنید."
 
   IMPORT_VALIDATION_FAILED:
     http_status: 422
     category: import
     retryable: false
-    default_message: "The import contains validation errors."
+    default_message: "داده‌های ورودی دارای خطاهای اعتبارسنجی است."
 
   IMPORT_CONFLICTS_UNRESOLVED:
     http_status: 409
     category: import
     retryable: false
-    default_message: "The import contains unresolved conflicts."
+    default_message: "داده‌های ورودی دارای تعارض‌های حل‌نشده است."
 
   IMPORT_ALREADY_COMMITTED:
     http_status: 409
     category: import
     retryable: false
-    default_message: "This import job has already been committed."
+    default_message: "این عملیات ورود داده قبلاً ثبت نهایی شده است."
 
   FORM_NOT_PUBLISHED:
     http_status: 409
     category: form
     retryable: false
-    default_message: "The requested form is not published."
+    default_message: "فرم درخواستی منتشر نشده است."
 
   FORM_VERSION_CONFLICT:
     http_status: 409
     category: form
     retryable: true
-    default_message: "The form version is no longer current."
+    default_message: "نسخه این فرم دیگر نسخه جاری نیست."
 
   RATE_LIMITED:
     http_status: 429
     category: rate_limit
     retryable: true
-    default_message: "Too many requests."
+    default_message: "تعداد درخواست‌ها بیش از حد مجاز است. لطفاً کمی بعد تلاش کنید."
 
   INTERNAL_ERROR:
     http_status: 500
     category: internal
     retryable: false
-    default_message: "An unexpected internal error occurred."
+    default_message: "خطای پیش‌بینی‌نشده‌ای رخ داد."
 
   DEPENDENCY_UNAVAILABLE:
     http_status: 503
     category: dependency
     retryable: true
-    default_message: "A required service is temporarily unavailable."
+    default_message: "یکی از سرویس‌های موردنیاز موقتاً در دسترس نیست."

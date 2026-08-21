@@ -7,6 +7,7 @@ from fastapi.responses import JSONResponse
 
 from app.api.envelopes import error_envelope
 from app.core.exceptions import ApplicationError
+from app.core.localization import public_error_message
 from app.core.request_context import get_request_id
 
 logger = logging.getLogger(__name__)
@@ -39,7 +40,7 @@ def register_error_handlers(application: FastAPI) -> None:
             status_code=500,
             content=error_envelope(
                 code="INTERNAL_ERROR",
-                message="An unexpected error occurred.",
+                message=public_error_message("INTERNAL_ERROR"),
                 request_id=request_id,
             ),
             headers={"X-Request-ID": request_id},

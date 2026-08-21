@@ -78,6 +78,7 @@ Accepted decisions include:
 ```text
 ADR-0001-metadata-driven-domain-model.md
 ADR-0002-async-sqlalchemy-session-model.md
+ADR-0003-persian-first-localization.md
 ```
 
 ---
@@ -106,7 +107,14 @@ TanStack Query
 Redux Toolkit
 React Hook Form
 Zod
+i18next / react-i18next
+Persian (`fa-IR`) localization and RTL
+Vazirmatn font
 ```
+
+End-user UI is Persian-first and RTL. Developer-facing source identifiers, API
+fields, stable error codes, database identifiers, logs, and documentation remain
+English.
 
 Infrastructure:
 
@@ -137,6 +145,7 @@ FND-003
 FND-004
 FND-005
 FND-006
+FND-007
 ```
 
 Then proceed through:
@@ -225,7 +234,7 @@ COMPLETE
 Implementation:
 
 ```text
-IN PROGRESS - FND-001 through FND-005 complete; FND-006 ready for activation
+IN PROGRESS - FND-001 through FND-005 and FND-007 complete; FND-006 activation pending
 ```
 
 See:

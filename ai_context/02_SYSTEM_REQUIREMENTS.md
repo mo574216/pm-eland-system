@@ -1313,6 +1313,72 @@ Normal application APIs SHALL NOT permit editing or deleting audit records.
 
 ---
 
+# 5.15 Persian Localization and RTL
+
+## I18N-FR-001 — Persian User Interface
+
+**Priority:** P0
+
+All end-user-facing UI text in the MVP SHALL be Persian/Farsi (`fa-IR`).
+Source-code identifiers, API field names, stable error codes, logs, and developer
+documentation SHALL remain English.
+
+---
+
+## I18N-FR-002 — RTL Layout
+
+**Priority:** P0
+
+The application document, theme, component styling, navigation, forms, tables,
+dialogs, menus, breadcrumbs, notifications, pagination, and directional icons
+SHALL render and behave correctly in right-to-left direction.
+
+---
+
+## I18N-FR-003 — Persian Metadata and Values
+
+**Priority:** P0
+
+Configurable labels, entity names, form labels, descriptions, comments, and other
+user-authored text SHALL accept, preserve, return, and display Persian Unicode.
+Stable technical keys SHALL remain subject to their documented English identifier
+rules where applicable.
+
+---
+
+## I18N-FR-004 — Localized Feedback
+
+**Priority:** P0
+
+User-facing validation errors, safe API error messages, notifications, tooltips,
+empty states, and confirmation dialogs SHALL be Persian. Stable machine-readable
+error `code` values SHALL remain English and SHALL be localized separately from
+their user-facing `message` values.
+
+---
+
+## I18N-FR-005 — Persian Search
+
+**Priority:** P0
+
+Search SHALL normalize equivalent Persian and Arabic character forms and SHALL
+handle zero-width non-joiner, diacritics, whitespace, and Persian/Arabic numeral
+variants consistently. Normalization SHALL be applied to matching/indexing input,
+not destructively to the user-authored display value.
+
+---
+
+## I18N-FR-006 — Date and Number Localization
+
+**Priority:** P0
+
+User-facing dates and numbers SHALL be formatted through a centralized `fa-IR`
+localization policy. API timestamps SHALL remain ISO 8601 and API numeric values
+SHALL remain JSON numbers. The calendar system and displayed digit policy require
+an explicit product decision before date- or number-intensive UI is completed.
+
+---
+
 # 6. Security Requirements
 
 ## SEC-FR-001 — Server-Side Authorization
@@ -1632,6 +1698,7 @@ PHASE-FR-001 through PHASE-FR-007
 RPT-FR-001 and RPT-FR-002
 AUD-FR-001, AUD-FR-002, AUD-FR-004
 all P0 security and architecture requirements
+I18N-FR-001 through I18N-FR-006
 ```
 
 ---
