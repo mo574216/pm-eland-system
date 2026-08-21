@@ -22,7 +22,7 @@ Repository foundation task FND-001 is complete:
 - FND-002 and FND-003 are complete: the backend and frontend foundations build and their automated checks pass.
 - FND-004 is complete: PostgreSQL connectivity, the async SQLAlchemy session model, Alembic, required extensions, and automated disposable test-database provisioning are implemented and verified against PostgreSQL 16.
 - FND-005 is complete: one health-gated Docker Compose command starts the frontend, backend, PostgreSQL, MinIO, and Redis; migrations and cross-service connectivity are verified.
-- FND-006 implementation and local validation are complete. Activation remains pending: commit and push the workflow, confirm its first GitHub-hosted run, and require `Required CI Gate` in the `main` branch ruleset.
+- FND-006 implementation is complete. Its first hosted run exposed a Linux mypy portability issue in a Windows-only test; the fix passes the exact Linux CI commands locally. Activation remains pending: publish the fix and expanded E2E workflow, obtain a green hosted run, and require `Required CI Gate` in the `main` branch ruleset.
 - FND-007 is complete: the current shell is Persian/RTL, platform copy uses i18n resources, MUI and Emotion are RTL-configured, Vazirmatn is bundled, public API errors are localized centrally, and Persian search normalization is tested.
 - Local-only state: `.vscode/` is untracked and is outside this roadmap unless explicitly added.
 

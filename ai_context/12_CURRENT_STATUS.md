@@ -683,13 +683,19 @@ FND-007 Persian-First RTL Foundation
 
 TASKS_IN_PROGRESS:
 FND-006 CI Baseline (implementation and local validation complete;
-GitHub workflow activation and branch protection pending)
+first hosted run failed on a Linux mypy portability issue; fix validated locally;
+updated hosted run and branch protection pending)
 
 BLOCKERS:
-The localization changes and expanded CI E2E job must be committed and pushed
-before GitHub can execute the updated workflow.
+The Linux CI portability fix must be committed and pushed before GitHub can
+execute the corrected workflow. The Persian/RTL E2E job is already active and
+passed on the hosted runner.
 The main branch currently has no protection rule; an administrator must require
 the `Required CI Gate` status check to enforce merge blocking.
+
+The first hosted FND-006 run failed because mypy resolved a Windows-only asyncio
+symbol while checking on Linux. The test now uses a runtime capability lookup;
+the exact Linux CI quality and test commands pass locally.
 
 The in-app browser was unavailable during FND-007 verification; the repository's
 Playwright suite passed in the matching official Chromium test container.
