@@ -28,19 +28,20 @@ without introducing domain-specific database tables or frontend pages.
 Read in this order:
 
 ```text
-00_PROJECT_CONTEXT.md
-01_ARCHITECTURE_RULES.md
-02_SYSTEM_REQUIREMENTS.md
-03_DATABASE_SPECIFICATION.md
-04_API_SPECIFICATION.md
-05_BACKEND_SPECIFICATION.md
-06_FRONTEND_SPECIFICATION.md
-07_AI_AGENT_ROLES.md
-08_TASK_BACKLOG.md
-09_TEST_SPECIFICATION.md
-10_DEPLOYMENT_GUIDE.md
-11_SECURITY_SPECIFICATION.md
-12_CURRENT_STATUS.md
+ai_context/00_PROJECT_CONTEXT.md
+ai_context/01_ARCHITECTURE_RULES.md
+ai_context/02_SYSTEM_REQUIREMENTS.md
+ai_context/03_DATABASE_SPECIFICATION.md
+ai_context/04_API_SPECIFICATION.md
+ai_context/05_BACKEND_SPECIFICATION.md
+ai_context/06_FRONTEND_SPECIFICATION.md
+ai_context/07_AI_AGENT_ROLES.md
+ai_context/08_TASK_BACKLOG.md
+ai_context/09_TEST_SPECIFICATION.md
+ai_context/10_DEPLOYMENT_GUIDE.md
+ai_context/11_SECURITY_SPECIFICATION.md
+ai_context/12_CURRENT_STATUS.md
+ai_context/13_IMPLEMENTATION_ROADMAP.md
 ```
 
 Then read:
@@ -123,7 +124,7 @@ background workers
 The implementation backlog is defined in:
 
 ```text
-08_TASK_BACKLOG.md
+ai_context/08_TASK_BACKLOG.md
 ```
 
 Start with:
@@ -160,10 +161,10 @@ SECURITY/QA
 Before coding, every AI agent SHALL read:
 
 ```text
-00_PROJECT_CONTEXT.md
-01_ARCHITECTURE_RULES.md
-07_AI_AGENT_ROLES.md
-12_CURRENT_STATUS.md
+ai_context/00_PROJECT_CONTEXT.md
+ai_context/01_ARCHITECTURE_RULES.md
+ai_context/07_AI_AGENT_ROLES.md
+ai_context/12_CURRENT_STATUS.md
 ```
 
 plus task-specific specifications.
@@ -223,11 +224,46 @@ COMPLETE
 Implementation:
 
 ```text
-NOT STARTED
+IN PROGRESS - FND-001 and FND-003 complete
 ```
 
 See:
 
 ```text
-12_CURRENT_STATUS.md
+ai_context/12_CURRENT_STATUS.md
 ```
+
+---
+
+## Repository Structure
+
+```text
+backend/          FastAPI application (FND-002; pending)
+frontend/         React + TypeScript + Vite application
+infrastructure/   Containers and deployment assets (FND-005; pending)
+contracts/        OpenAPI, error-code, and permission contracts
+ADR/              Architecture Decision Records
+ai_context/       Normative specifications and current status
+```
+
+## Frontend Quick Start
+
+Requirements:
+
+```text
+Node.js 24+
+npm 11+
+```
+
+From a clean clone:
+
+```bash
+cd frontend
+npm ci
+npm run typecheck
+npm test
+npm run build
+npm run dev
+```
+
+The development server is available at `http://localhost:5173`. Copy `.env.example` to `.env` only when local configuration overrides are needed; never commit the resulting file or real credentials.

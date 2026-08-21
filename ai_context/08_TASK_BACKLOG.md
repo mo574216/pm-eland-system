@@ -75,7 +75,7 @@ frontend/
 infrastructure/
 contracts/
 ADR/
-ai-context/
+ai_context/
 README.md
 ```
 

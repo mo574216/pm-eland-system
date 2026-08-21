@@ -16,13 +16,13 @@ The architectural invariant for every milestone is:
 
 Architecture and specifications are complete. Runtime implementation has not started.
 
-Repository inspection shows that FND-001 is partially satisfied:
+Repository foundation task FND-001 is complete:
 
-- Present: `README.md`, `contracts/`, `ADR/`, `ai_context/`.
-- Missing: `backend/`, `frontend/`, `infrastructure/`, root environment template, and buildable application scaffolding.
+- Present: `backend/`, `frontend/`, `infrastructure/`, `README.md`, `.env.example`, `contracts/`, `ADR/`, and `ai_context/`.
+- FND-003 is also complete: the frontend scaffold builds and its automated checks pass.
 - Local-only state: `.vscode/` is untracked and is outside this roadmap unless explicitly added.
 
-The repository uses `ai_context/`, although older documentation examples refer to `ai-context/` or `docs/`. Existing paths should be normalized by documentation updates during FND-001; do not duplicate the specification set.
+The repository uses `ai_context/`. Canonical repository guidance now references that path; do not duplicate the specification set.
 
 ## 3. Delivery Principles
 
@@ -244,13 +244,12 @@ Each slice must preserve the API envelope, permission registry, workspace scope,
 
 ## 8. Immediate Next Actions
 
-1. Complete FND-001 based on the real repository state.
+1. Implement FND-002, the FastAPI backend foundation.
 2. Record DG-02 if the database session model is not already unambiguously specified.
-3. Bootstrap FND-002 and FND-003 in parallel after directory/contracts are settled.
-4. Implement FND-004, then FND-005 and FND-006.
-5. Resolve DG-01 before writing authentication token/session behavior.
+3. Implement FND-004, then FND-005 and FND-006.
+4. Resolve DG-01 before writing authentication token/session behavior.
 
-The first implementation handoff should therefore be scoped to `FND-001` only and must not introduce business functionality.
+The next implementation handoff should therefore be scoped to `FND-002` only and must not introduce business functionality.
 
 ## 9. Roadmap Maintenance
 

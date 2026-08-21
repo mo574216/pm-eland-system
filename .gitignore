@@ -1,9 +1,26 @@
 .tools/
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
 frontend/node_modules/
 frontend/dist/
 frontend/coverage/
 frontend/playwright-report/
 frontend/test-results/
 frontend/*.tsbuildinfo
-frontend/.env.local
-frontend/.env.*.local
+
+# Python/backend generated files
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+
+# Operating system and editor files
+.DS_Store
+Thumbs.db

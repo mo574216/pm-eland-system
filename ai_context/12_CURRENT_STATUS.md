@@ -628,7 +628,7 @@ Mitigation:
 # 12. Current Milestone Status
 
 ```text
-M0 Repository/Foundation        IN PROGRESS (FND-003 COMPLETE)
+M0 Repository/Foundation        IN PROGRESS (FND-001, FND-003 COMPLETE)
 M1 Identity/Workspace           NOT STARTED
 M2 Metadata/Entity Platform     NOT STARTED
 M3 Dynamic Forms                NOT STARTED
@@ -654,10 +654,11 @@ MILESTONE:
 M0 Repository and Engineering Foundation
 
 TASKS_COMPLETED:
+FND-001 Initialize Monorepo
 FND-003 Initialize Frontend Application
 
 TASKS_IN_PROGRESS:
-FND-001 repository foundation remains partial
+None
 
 BLOCKERS:
 None for FND-003. Playwright's managed browser CDN is unavailable from the
@@ -670,7 +671,7 @@ ADR_CREATED:
 None
 
 NEXT_TASK:
-Complete FND-001, then FND-002 and FND-004.
+FND-002 Initialize Backend Application, then FND-004 PostgreSQL and Alembic Setup.
 ```
 
 ---
@@ -988,7 +989,7 @@ Agent workflow:        DEFINED
 Testing strategy:      DEFINED
 Deployment strategy:   DEFINED
 Security strategy:     DEFINED
-Implementation code:   IN PROGRESS (FND-003 COMPLETE)
+Implementation code:   IN PROGRESS (FND-001, FND-003 COMPLETE)
 Runtime AI features:   DEFERRED
 ```
 

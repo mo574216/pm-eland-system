@@ -8,10 +8,10 @@ The core architectural invariant is:
 
 Before making any change:
 
-1. Read `docs/00_PROJECT_CONTEXT.md`.
-2. Read `docs/01_ARCHITECTURE_AND_AGENT_RULES.md`.
-3. Read `docs/02_SYSTEM_REQUIREMENTS.md`.
-4. Read `docs/12_CURRENT_STATUS.md`.
+1. Read `ai_context/00_PROJECT_CONTEXT.md`.
+2. Read `ai_context/01_ARCHITECTURE_RULES.md`.
+3. Read `ai_context/02_SYSTEM_REQUIREMENTS.md`.
+4. Read `ai_context/12_CURRENT_STATUS.md`.
 5. Read all specification files relevant to the task.
 6. Read relevant ADRs under `ADR/`.
 7. Read shared contracts under `contracts/` when the task affects APIs, permissions, or errors.
