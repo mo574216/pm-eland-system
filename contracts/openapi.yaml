@@ -13,6 +13,7 @@ security:
   - bearerAuth: []
 
 tags:
+  - name: Health
   - name: Auth
   - name: Workspaces
   - name: Metadata
@@ -28,6 +29,53 @@ tags:
   - name: Jobs
 
 paths:
+  /health/live:
+    get:
+      tags: [Health]
+      security: []
+      servers:
+        - url: /
+      operationId: getLiveness
+      summary: Report process viability
+      responses:
+        '200':
+          description: Process is alive
+          headers:
+            X-Request-ID:
+              schema: {type: string, format: uuid}
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessEnvelope'
+
+  /health/ready:
+    get:
+      tags: [Health]
+      security: []
+      servers:
+        - url: /
+      operationId: getReadiness
+      summary: Report critical dependency readiness
+      responses:
+        '200':
+          description: Service is ready
+          headers:
+            X-Request-ID:
+              schema: {type: string, format: uuid}
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessEnvelope'
+        '503':
+          description: A critical dependency is unavailable
+          headers:
+            X-Request-ID:
+              schema: {type: string, format: uuid}
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+
   /auth/login:
     post:
       tags: [Auth]

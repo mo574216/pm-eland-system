@@ -19,7 +19,7 @@ Architecture and specifications are complete. Runtime implementation has not sta
 Repository foundation task FND-001 is complete:
 
 - Present: `backend/`, `frontend/`, `infrastructure/`, `README.md`, `.env.example`, `contracts/`, `ADR/`, and `ai_context/`.
-- FND-003 is also complete: the frontend scaffold builds and its automated checks pass.
+- FND-002 and FND-003 are also complete: the backend and frontend foundations build and their automated checks pass.
 - Local-only state: `.vscode/` is untracked and is outside this roadmap unless explicitly added.
 
 The repository uses `ai_context/`. Canonical repository guidance now references that path; do not duplicate the specification set.
@@ -244,12 +244,11 @@ Each slice must preserve the API envelope, permission registry, workspace scope,
 
 ## 8. Immediate Next Actions
 
-1. Implement FND-002, the FastAPI backend foundation.
-2. Record DG-02 if the database session model is not already unambiguously specified.
-3. Implement FND-004, then FND-005 and FND-006.
-4. Resolve DG-01 before writing authentication token/session behavior.
+1. Record DG-02 if the database session model is not already unambiguously specified.
+2. Implement FND-004, then FND-005 and FND-006.
+3. Resolve DG-01 before writing authentication token/session behavior.
 
-The next implementation handoff should therefore be scoped to `FND-002` only and must not introduce business functionality.
+The next implementation handoff should therefore be scoped to `FND-004` only and must not introduce business functionality.
 
 ## 9. Roadmap Maintenance
 

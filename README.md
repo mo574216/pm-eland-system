@@ -224,7 +224,7 @@ COMPLETE
 Implementation:
 
 ```text
-IN PROGRESS - FND-001 and FND-003 complete
+IN PROGRESS - FND-001, FND-002, and FND-003 complete
 ```
 
 See:
@@ -267,3 +267,26 @@ npm run dev
 ```
 
 The development server is available at `http://localhost:5173`. Copy `.env.example` to `.env` only when local configuration overrides are needed; never commit the resulting file or real credentials.
+
+## Backend Quick Start
+
+Requirements:
+
+```text
+Python 3.12+
+uv
+```
+
+From a clean clone:
+
+```bash
+cd backend
+uv sync --all-groups
+uv run ruff format --check .
+uv run ruff check .
+uv run mypy app tests
+uv run pytest
+uv run uvicorn app.main:app --reload
+```
+
+The backend is available at `http://localhost:8000`, with health endpoints at `/health/live` and `/health/ready` and interactive API documentation at `/docs` in development.

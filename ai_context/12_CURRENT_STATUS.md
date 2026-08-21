@@ -628,7 +628,7 @@ Mitigation:
 # 12. Current Milestone Status
 
 ```text
-M0 Repository/Foundation        IN PROGRESS (FND-001, FND-003 COMPLETE)
+M0 Repository/Foundation        IN PROGRESS (FND-001, FND-002, FND-003 COMPLETE)
 M1 Identity/Workspace           NOT STARTED
 M2 Metadata/Entity Platform     NOT STARTED
 M3 Dynamic Forms                NOT STARTED
@@ -655,14 +655,15 @@ M0 Repository and Engineering Foundation
 
 TASKS_COMPLETED:
 FND-001 Initialize Monorepo
+FND-002 Initialize Backend Application
 FND-003 Initialize Frontend Application
 
 TASKS_IN_PROGRESS:
 None
 
 BLOCKERS:
-None for FND-003. Playwright's managed browser CDN is unavailable from the
-current location, so local E2E verification uses installed stable Chrome.
+None. Playwright's managed browser CDN is unavailable from the current
+location, so local frontend E2E verification uses installed stable Chrome.
 
 NEW_DECISIONS:
 Use the specified React + TypeScript + Vite frontend architecture.
@@ -671,7 +672,7 @@ ADR_CREATED:
 None
 
 NEXT_TASK:
-FND-002 Initialize Backend Application, then FND-004 PostgreSQL and Alembic Setup.
+FND-004 PostgreSQL and Alembic Setup.
 ```
 
 ---
@@ -989,7 +990,7 @@ Agent workflow:        DEFINED
 Testing strategy:      DEFINED
 Deployment strategy:   DEFINED
 Security strategy:     DEFINED
-Implementation code:   IN PROGRESS (FND-001, FND-003 COMPLETE)
+Implementation code:   IN PROGRESS (FND-001, FND-002, FND-003 COMPLETE)
 Runtime AI features:   DEFERRED
 ```
 
