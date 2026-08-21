@@ -1,0 +1,679 @@
+openapi: 3.1.0
+info:
+  title: Metadata-Driven Enterprise Architecture Platform API
+  version: 1.0.0
+  description: >
+    Core public REST contract for the platform. This file is intentionally a
+    foundational implementation contract and SHALL be expanded alongside
+    backend implementation without breaking existing documented semantics.
+servers:
+  - url: /api/v1
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: Auth
+  - name: Workspaces
+  - name: Metadata
+  - name: Entities
+  - name: Relationships
+  - name: Forms
+  - name: Documents
+  - name: Imports
+  - name: Phases
+  - name: Reviews
+  - name: Dashboards
+  - name: Audit
+  - name: Jobs
+
+paths:
+  /auth/login:
+    post:
+      tags: [Auth]
+      security: []
+      operationId: login
+      summary: Authenticate user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessEnvelope'
+
+  /auth/me:
+    get:
+      tags: [Auth]
+      operationId: getCurrentUser
+      summary: Return authenticated user context
+      responses:
+        '200':
+          description: Current user context
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessEnvelope'
+
+  /workspaces:
+    get:
+      tags: [Workspaces]
+      operationId: listWorkspaces
+      summary: List accessible workspaces
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: Workspace list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessEnvelope'
+    post:
+      tags: [Workspaces]
+      operationId: createWorkspace
+      summary: Create workspace
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkspaceCreate'
+      responses:
+        '201':
+          description: Workspace created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessEnvelope'
+
+  /workspaces/{workspaceId}/entity-types:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+    get:
+      tags: [Metadata]
+      operationId: listEntityTypes
+      summary: List entity types
+      responses:
+        '200':
+          description: Entity type list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessEnvelope'
+    post:
+      tags: [Metadata]
+      operationId: createEntityType
+      summary: Create metadata-defined entity type
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EntityTypeCreate'
+      responses:
+        '201':
+          description: Entity type created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessEnvelope'
+
+  /entity-types/{entityTypeId}/attributes:
+    parameters:
+      - $ref: '#/components/parameters/EntityTypeId'
+    get:
+      tags: [Metadata]
+      operationId: listAttributes
+      summary: List entity type attributes
+      responses:
+        '200':
+          description: Attribute list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessEnvelope'
+    post:
+      tags: [Metadata]
+      operationId: createAttribute
+      summary: Create attribute definition
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AttributeCreate'
+      responses:
+        '201':
+          description: Attribute created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessEnvelope'
+
+  /workspaces/{workspaceId}/entities:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+    get:
+      tags: [Entities]
+      operationId: listEntities
+      summary: List/search entities
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+        - name: search
+          in: query
+          schema: {type: string}
+        - name: entity_type_id
+          in: query
+          schema: {type: string, format: uuid}
+        - name: parent_id
+          in: query
+          schema: {type: string, format: uuid}
+      responses:
+        '200':
+          description: Entity list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessEnvelope'
+    post:
+      tags: [Entities]
+      operationId: createEntity
+      summary: Create generic entity
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EntityCreate'
+      responses:
+        '201':
+          description: Entity created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessEnvelope'
+
+  /entities/{entityId}:
+    parameters:
+      - $ref: '#/components/parameters/EntityId'
+    get:
+      tags: [Entities]
+      operationId: getEntity
+      summary: Retrieve entity
+      responses:
+        '200':
+          description: Entity
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessEnvelope'
+    patch:
+      tags: [Entities]
+      operationId: updateEntity
+      summary: Update entity
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EntityUpdate'
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessEnvelope'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '423':
+          $ref: '#/components/responses/Locked'
+
+  /workspaces/{workspaceId}/entities/tree:
+    get:
+      tags: [Entities]
+      operationId: getEntityTree
+      summary: Retrieve hierarchy
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - name: root_id
+          in: query
+          schema: {type: string, format: uuid}
+        - name: depth
+          in: query
+          schema: {type: integer, minimum: 1}
+      responses:
+        '200':
+          description: Hierarchy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessEnvelope'
+
+  /workspaces/{workspaceId}/relationships:
+    post:
+      tags: [Relationships]
+      operationId: createRelationship
+      summary: Create entity relationship
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RelationshipCreate'
+      responses:
+        '201':
+          description: Relationship created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessEnvelope'
+
+  /workspaces/{workspaceId}/forms:
+    post:
+      tags: [Forms]
+      operationId: createForm
+      summary: Create draft form definition
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FormCreate'
+      responses:
+        '201':
+          description: Form created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessEnvelope'
+
+  /forms/{formId}/render:
+    get:
+      tags: [Forms]
+      operationId: renderForm
+      summary: Return normalized form render contract
+      parameters:
+        - $ref: '#/components/parameters/FormId'
+        - name: entity_id
+          in: query
+          schema: {type: string, format: uuid}
+      responses:
+        '200':
+          description: Render contract
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessEnvelope'
+
+  /entities/{entityId}/documents:
+    post:
+      tags: [Documents]
+      operationId: uploadDocument
+      summary: Create logical document with first version
+      parameters:
+        - $ref: '#/components/parameters/EntityId'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file, title]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                title:
+                  type: string
+                description:
+                  type: string
+                document_type:
+                  type: string
+      responses:
+        '202':
+          description: Upload accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessEnvelope'
+
+  /workspaces/{workspaceId}/imports:
+    post:
+      tags: [Imports]
+      operationId: createImportJob
+      summary: Upload import file and create job
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                import_profile_id:
+                  type: string
+                  format: uuid
+      responses:
+        '202':
+          description: Import accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessEnvelope'
+
+  /imports/{importJobId}/dry-run:
+    post:
+      tags: [Imports]
+      operationId: dryRunImport
+      summary: Validate and preview import without canonical mutation
+      parameters:
+        - $ref: '#/components/parameters/ImportJobId'
+      responses:
+        '200':
+          description: Dry-run result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessEnvelope'
+
+  /imports/{importJobId}/commit:
+    post:
+      tags: [Imports]
+      operationId: commitImport
+      summary: Commit reviewed import transactionally
+      parameters:
+        - $ref: '#/components/parameters/ImportJobId'
+        - name: Idempotency-Key
+          in: header
+          required: false
+          schema: {type: string}
+      responses:
+        '202':
+          description: Commit accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessEnvelope'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /phases/{phaseId}/lock:
+    post:
+      tags: [Phases]
+      operationId: lockPhase
+      summary: Lock phase
+      parameters:
+        - $ref: '#/components/parameters/PhaseId'
+      responses:
+        '200':
+          description: Locked
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessEnvelope'
+
+  /phases/{phaseId}/unlock:
+    post:
+      tags: [Phases]
+      operationId: unlockPhase
+      summary: Unlock phase
+      parameters:
+        - $ref: '#/components/parameters/PhaseId'
+      responses:
+        '200':
+          description: Unlocked
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessEnvelope'
+
+  /jobs/{jobId}:
+    get:
+      tags: [Jobs]
+      operationId: getJob
+      summary: Get background job state
+      parameters:
+        - $ref: '#/components/parameters/JobId'
+      responses:
+        '200':
+          description: Job state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessEnvelope'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    WorkspaceId:
+      name: workspaceId
+      in: path
+      required: true
+      schema: {type: string, format: uuid}
+    EntityTypeId:
+      name: entityTypeId
+      in: path
+      required: true
+      schema: {type: string, format: uuid}
+    EntityId:
+      name: entityId
+      in: path
+      required: true
+      schema: {type: string, format: uuid}
+    FormId:
+      name: formId
+      in: path
+      required: true
+      schema: {type: string, format: uuid}
+    ImportJobId:
+      name: importJobId
+      in: path
+      required: true
+      schema: {type: string, format: uuid}
+    PhaseId:
+      name: phaseId
+      in: path
+      required: true
+      schema: {type: string, format: uuid}
+    JobId:
+      name: jobId
+      in: path
+      required: true
+      schema: {type: string, format: uuid}
+    Page:
+      name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    PageSize:
+      name: page_size
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+        default: 50
+
+  schemas:
+    ErrorObject:
+      type: object
+      properties:
+        code: {type: string}
+        message: {type: string}
+        details: {}
+      required: [code, message]
+
+    SuccessEnvelope:
+      type: object
+      required: [success, data, error, meta]
+      properties:
+        success:
+          type: boolean
+          const: true
+        data: {}
+        error:
+          type: 'null'
+        meta:
+          type: object
+          additionalProperties: true
+
+    ErrorEnvelope:
+      type: object
+      required: [success, data, error, meta]
+      properties:
+        success:
+          type: boolean
+          const: false
+        data:
+          type: 'null'
+        error:
+          $ref: '#/components/schemas/ErrorObject'
+        meta:
+          type: object
+          additionalProperties: true
+
+    LoginRequest:
+      type: object
+      required: [username, password]
+      properties:
+        username: {type: string, minLength: 1}
+        password: {type: string, minLength: 1}
+
+    WorkspaceCreate:
+      type: object
+      required: [name, slug]
+      properties:
+        name: {type: string, minLength: 1, maxLength: 255}
+        slug: {type: string, minLength: 1, maxLength: 160}
+        description: {type: string}
+
+    EntityTypeCreate:
+      type: object
+      required: [key, name]
+      properties:
+        key: {type: string, minLength: 1, maxLength: 120}
+        name: {type: string, minLength: 1, maxLength: 180}
+        plural_name: {type: string, maxLength: 180}
+        description: {type: string}
+        configuration:
+          type: object
+          additionalProperties: true
+
+    AttributeCreate:
+      type: object
+      required: [key, label, data_type]
+      properties:
+        key: {type: string}
+        label: {type: string}
+        data_type:
+          type: string
+          enum:
+            - TEXT
+            - RICH_TEXT
+            - INTEGER
+            - DECIMAL
+            - BOOLEAN
+            - DATE
+            - DATETIME
+            - ENUM
+            - MULTI_ENUM
+            - USER_REFERENCE
+            - ENTITY_REFERENCE
+            - FILE_REFERENCE
+            - JSON
+            - TABLE
+        is_required: {type: boolean, default: false}
+        is_read_only: {type: boolean, default: false}
+        validation_config:
+          type: object
+          additionalProperties: true
+        display_config:
+          type: object
+          additionalProperties: true
+        inheritance_config:
+          type: object
+          additionalProperties: true
+
+    EntityCreate:
+      type: object
+      required: [entity_type_id, name]
+      properties:
+        entity_type_id: {type: string, format: uuid}
+        parent_id: {type: [string, 'null'], format: uuid}
+        name: {type: string, minLength: 1, maxLength: 255}
+        description: {type: string}
+        attributes:
+          type: object
+          additionalProperties: true
+
+    EntityUpdate:
+      type: object
+      properties:
+        name: {type: string, minLength: 1, maxLength: 255}
+        description: {type: string}
+        attributes:
+          type: object
+          additionalProperties: true
+        version:
+          type: integer
+          minimum: 1
+
+    RelationshipCreate:
+      type: object
+      required: [relationship_type_id, source_entity_id, target_entity_id]
+      properties:
+        relationship_type_id: {type: string, format: uuid}
+        source_entity_id: {type: string, format: uuid}
+        target_entity_id: {type: string, format: uuid}
+        attributes:
+          type: object
+          additionalProperties: true
+
+    FormCreate:
+      type: object
+      required: [key, name]
+      properties:
+        key: {type: string}
+        name: {type: string}
+        entity_type_id: {type: [string, 'null'], format: uuid}
+        description: {type: string}
+
+  responses:
+    Conflict:
+      description: Conflict
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    Locked:
+      description: Resource locked
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'

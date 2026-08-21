@@ -1,0 +1,150 @@
+version: "1.0"
+namespace: "platform.error"
+description: >
+  Stable public API error-code registry. Codes are contract identifiers and
+  must not be renamed without compatibility review.
+
+errors:
+  AUTH_INVALID_CREDENTIALS:
+    http_status: 401
+    category: authentication
+    retryable: false
+    default_message: "Authentication failed."
+
+  AUTH_TOKEN_EXPIRED:
+    http_status: 401
+    category: authentication
+    retryable: true
+    default_message: "Authentication token has expired."
+
+  AUTH_REQUIRED:
+    http_status: 401
+    category: authentication
+    retryable: false
+    default_message: "Authentication is required."
+
+  PERMISSION_DENIED:
+    http_status: 403
+    category: authorization
+    retryable: false
+    default_message: "You do not have permission to perform this operation."
+
+  WORKSPACE_ACCESS_DENIED:
+    http_status: 403
+    category: authorization
+    retryable: false
+    default_message: "Workspace access is denied."
+
+  RESOURCE_NOT_FOUND:
+    http_status: 404
+    category: resource
+    retryable: false
+    default_message: "The requested resource was not found."
+
+  RESOURCE_CONFLICT:
+    http_status: 409
+    category: conflict
+    retryable: false
+    default_message: "The requested operation conflicts with current resource state."
+
+  STALE_VERSION:
+    http_status: 409
+    category: concurrency
+    retryable: true
+    default_message: "The resource has changed since it was loaded."
+
+  RESOURCE_LOCKED:
+    http_status: 423
+    category: workflow
+    retryable: false
+    default_message: "The requested resource is locked."
+
+  VALIDATION_ERROR:
+    http_status: 422
+    category: validation
+    retryable: false
+    default_message: "One or more fields are invalid."
+
+  INVALID_METADATA:
+    http_status: 422
+    category: metadata
+    retryable: false
+    default_message: "Metadata configuration is invalid."
+
+  INVALID_RELATIONSHIP:
+    http_status: 422
+    category: relationship
+    retryable: false
+    default_message: "The requested relationship is invalid."
+
+  HIERARCHY_CYCLE:
+    http_status: 409
+    category: hierarchy
+    retryable: false
+    default_message: "The requested hierarchy change would create a cycle."
+
+  FILE_TOO_LARGE:
+    http_status: 413
+    category: file
+    retryable: false
+    default_message: "The uploaded file exceeds the allowed size."
+
+  FILE_TYPE_NOT_ALLOWED:
+    http_status: 415
+    category: file
+    retryable: false
+    default_message: "The uploaded file type is not allowed."
+
+  FILE_SCAN_FAILED:
+    http_status: 422
+    category: file_security
+    retryable: true
+    default_message: "File security scanning could not be completed."
+
+  IMPORT_VALIDATION_FAILED:
+    http_status: 422
+    category: import
+    retryable: false
+    default_message: "The import contains validation errors."
+
+  IMPORT_CONFLICTS_UNRESOLVED:
+    http_status: 409
+    category: import
+    retryable: false
+    default_message: "The import contains unresolved conflicts."
+
+  IMPORT_ALREADY_COMMITTED:
+    http_status: 409
+    category: import
+    retryable: false
+    default_message: "This import job has already been committed."
+
+  FORM_NOT_PUBLISHED:
+    http_status: 409
+    category: form
+    retryable: false
+    default_message: "The requested form is not published."
+
+  FORM_VERSION_CONFLICT:
+    http_status: 409
+    category: form
+    retryable: true
+    default_message: "The form version is no longer current."
+
+  RATE_LIMITED:
+    http_status: 429
+    category: rate_limit
+    retryable: true
+    default_message: "Too many requests."
+
+  INTERNAL_ERROR:
+    http_status: 500
+    category: internal
+    retryable: false
+    default_message: "An unexpected internal error occurred."
+
+  DEPENDENCY_UNAVAILABLE:
+    http_status: 503
+    category: dependency
+    retryable: true
+    default_message: "A required service is temporarily unavailable."

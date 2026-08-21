@@ -1,0 +1,184 @@
+version: "1.0"
+description: >
+  Canonical permission registry. Backend authorization is authoritative.
+  Frontend permission guards are usability controls only.
+
+permissions:
+  - code: WORKSPACE_CREATE
+    resource: workspace
+    action: create
+    description: Create a workspace.
+
+  - code: WORKSPACE_READ
+    resource: workspace
+    action: read
+    description: Read accessible workspace information.
+
+  - code: WORKSPACE_MANAGE
+    resource: workspace
+    action: manage
+    description: Modify workspace configuration and membership.
+
+  - code: ENTITY_CREATE
+    resource: entity
+    action: create
+    description: Create generic entities.
+
+  - code: ENTITY_READ
+    resource: entity
+    action: read
+    description: Read accessible entities.
+
+  - code: ENTITY_UPDATE
+    resource: entity
+    action: update
+    description: Update mutable generic entities.
+
+  - code: ENTITY_ARCHIVE
+    resource: entity
+    action: archive
+    description: Archive or soft-delete entities.
+
+  - code: RELATIONSHIP_MANAGE
+    resource: relationship
+    action: manage
+    description: Create and remove entity relationships.
+
+  - code: METADATA_MANAGE
+    resource: metadata
+    action: manage
+    description: Manage entity types, attributes, and related metadata.
+
+  - code: FORM_DESIGN
+    resource: form
+    action: design
+    description: Create, configure, version, and publish forms.
+
+  - code: FORM_SUBMIT
+    resource: form_instance
+    action: submit
+    description: Create/update/submit form instances.
+
+  - code: DOCUMENT_UPLOAD
+    resource: document
+    action: upload
+    description: Upload logical documents and new versions.
+
+  - code: DOCUMENT_READ
+    resource: document
+    action: read
+    description: Read/download/preview authorized documents.
+
+  - code: DOCUMENT_ARCHIVE
+    resource: document
+    action: archive
+    description: Archive logical documents.
+
+  - code: IMPORT_EXECUTE
+    resource: import
+    action: execute
+    description: Upload, dry-run, resolve, and commit imports.
+
+  - code: PHASE_MANAGE
+    resource: phase
+    action: manage
+    description: Create/update phases and deliverables.
+
+  - code: PHASE_LOCK
+    resource: phase
+    action: lock
+    description: Lock a phase.
+
+  - code: PHASE_UNLOCK
+    resource: phase
+    action: unlock
+    description: Unlock a phase.
+
+  - code: REVIEW_MANAGE
+    resource: review
+    action: manage
+    description: Add review comments, resolve comments, and request revisions.
+
+  - code: DASHBOARD_READ
+    resource: dashboard
+    action: read
+    description: View dashboards.
+
+  - code: DASHBOARD_MANAGE
+    resource: dashboard
+    action: manage
+    description: Create and configure dashboards.
+
+  - code: AUDIT_READ
+    resource: audit
+    action: read
+    description: View authorized audit history.
+
+roles:
+  SYSTEM_ADMIN:
+    description: Full platform administration.
+    grants:
+      - WORKSPACE_CREATE
+      - WORKSPACE_READ
+      - WORKSPACE_MANAGE
+      - ENTITY_CREATE
+      - ENTITY_READ
+      - ENTITY_UPDATE
+      - ENTITY_ARCHIVE
+      - RELATIONSHIP_MANAGE
+      - METADATA_MANAGE
+      - FORM_DESIGN
+      - FORM_SUBMIT
+      - DOCUMENT_UPLOAD
+      - DOCUMENT_READ
+      - DOCUMENT_ARCHIVE
+      - IMPORT_EXECUTE
+      - PHASE_MANAGE
+      - PHASE_LOCK
+      - PHASE_UNLOCK
+      - REVIEW_MANAGE
+      - DASHBOARD_READ
+      - DASHBOARD_MANAGE
+      - AUDIT_READ
+
+  PROJECT_MANAGER:
+    description: Workspace/project management and review.
+    grants:
+      - WORKSPACE_READ
+      - ENTITY_CREATE
+      - ENTITY_READ
+      - ENTITY_UPDATE
+      - RELATIONSHIP_MANAGE
+      - FORM_SUBMIT
+      - DOCUMENT_UPLOAD
+      - DOCUMENT_READ
+      - IMPORT_EXECUTE
+      - PHASE_MANAGE
+      - PHASE_LOCK
+      - PHASE_UNLOCK
+      - REVIEW_MANAGE
+      - DASHBOARD_READ
+      - DASHBOARD_MANAGE
+      - AUDIT_READ
+
+  ANALYST:
+    description: Structured data and document contribution.
+    grants:
+      - WORKSPACE_READ
+      - ENTITY_CREATE
+      - ENTITY_READ
+      - ENTITY_UPDATE
+      - RELATIONSHIP_MANAGE
+      - FORM_SUBMIT
+      - DOCUMENT_UPLOAD
+      - DOCUMENT_READ
+      - IMPORT_EXECUTE
+      - DASHBOARD_READ
+
+  VIEWER:
+    description: Read-only access.
+    grants:
+      - WORKSPACE_READ
+      - ENTITY_READ
+      - DOCUMENT_READ
+      - DASHBOARD_READ
