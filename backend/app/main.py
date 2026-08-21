@@ -1,5 +1,7 @@
 """FastAPI application factory and default ASGI application."""
 
+import asyncio
+import sys
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from functools import partial
@@ -20,6 +22,10 @@ from app.core.database import (
 from app.core.logging import configure_logging
 from app.core.middleware import RequestContextMiddleware
 from app.core.readiness import DatabaseProbe
+
+if sys.platform == "win32":
+    # Psycopg async connections require a selector-based loop on Windows.
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 
 def create_app(

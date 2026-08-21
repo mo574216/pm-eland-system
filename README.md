@@ -73,10 +73,11 @@ Architecture Decision Records live in:
 ADR/
 ```
 
-The first accepted decision is:
+Accepted decisions include:
 
 ```text
 ADR-0001-metadata-driven-domain-model.md
+ADR-0002-async-sqlalchemy-session-model.md
 ```
 
 ---

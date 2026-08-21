@@ -14,12 +14,13 @@ The architectural invariant for every milestone is:
 
 ## 2. Current Baseline
 
-Architecture and specifications are complete. Runtime implementation has not started.
+Architecture and specifications are complete. Runtime foundation implementation is in progress.
 
 Repository foundation task FND-001 is complete:
 
 - Present: `backend/`, `frontend/`, `infrastructure/`, `README.md`, `.env.example`, `contracts/`, `ADR/`, and `ai_context/`.
-- FND-002 and FND-003 are also complete: the backend and frontend foundations build and their automated checks pass.
+- FND-002 and FND-003 are complete: the backend and frontend foundations build and their automated checks pass.
+- FND-004 is complete: PostgreSQL connectivity, the async SQLAlchemy session model, Alembic, required extensions, and automated disposable test-database provisioning are implemented and verified against PostgreSQL 16.
 - Local-only state: `.vscode/` is untracked and is outside this roadmap unless explicitly added.
 
 The repository uses `ai_context/`. Canonical repository guidance now references that path; do not duplicate the specification set.
@@ -40,7 +41,7 @@ The repository uses `ai_context/`. Canonical repository guidance now references 
 | Gate | Required before | Decision | Expected artifact |
 |---|---|---|---|
 | DG-01 | AUTH-BE-001 | Choose bearer/refresh-token or secure HTTP-only cookie strategy (OD-001) | Authentication ADR and aligned OpenAPI/security contract |
-| DG-02 | FND-004 | Confirm async SQLAlchemy session/driver and transaction model | ADR if not already fixed by normative specification |
+| DG-02 | FND-004 | Resolved by ADR-0002: async SQLAlchemy with psycopg 3, scoped sessions, and service-owned transactions | `ADR/ADR-0002-async-sqlalchemy-session-model.md` |
 | DG-03 | FORM-BE-003 | Define deterministic JSON schema for visibility, required-if, inheritance, and read-only rules (OD-005) | Contract/spec update; no `eval` or arbitrary code |
 | DG-04 | FORM-DB-001 | Confirm nested JSON storage for repeating rows (OD-006 recommendation) | ADR only if deviating from `form_instances.values_json` |
 | DG-05 | DOC-BE-005 P1 | Select Office preview conversion stack (OD-008) | Document/deployment decision |
@@ -244,11 +245,10 @@ Each slice must preserve the API envelope, permission registry, workspace scope,
 
 ## 8. Immediate Next Actions
 
-1. Record DG-02 if the database session model is not already unambiguously specified.
-2. Implement FND-004, then FND-005 and FND-006.
-3. Resolve DG-01 before writing authentication token/session behavior.
+1. Implement FND-005, then FND-006.
+2. Resolve DG-01 before writing authentication token/session behavior.
 
-The next implementation handoff should therefore be scoped to `FND-004` only and must not introduce business functionality.
+The next implementation handoff should therefore be scoped to `FND-005` only and must not introduce business functionality.
 
 ## 9. Roadmap Maintenance
 
