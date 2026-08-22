@@ -426,6 +426,11 @@ SHALL fail when the target role grants any permission the acting user does not
 currently possess. The canonical initial grant assigns `IDENTITY_MANAGE` only to
 `SYSTEM_ADMIN`.
 
+Workspace access SHALL require an active membership even when a caller has a global
+workspace permission. Workspace-role assignment SHALL fail when the selected role grants
+any permission outside the actor's effective global and current-workspace permissions.
+Workspace creation, update, and membership mutations SHALL be audited transactionally.
+
 ---
 
 # 17. Mass Assignment Protection

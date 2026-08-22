@@ -1,15 +1,20 @@
 # ruff: noqa: S105, S106
 """Authentication endpoint contract tests."""
 
+from typing import cast
 from uuid import uuid4
 
+import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies.authentication import get_auth_service, get_current_identity
+from app.core.database import get_database_session
 from app.core.exceptions import InvalidCredentialsError
 from app.models.identity import User
 from app.services.auth import AuthenticatedIdentity, IssuedTokens
+from app.services.workspace import WorkspaceService
 
 
 class SuccessfulAuthService:
@@ -91,11 +96,20 @@ def test_refresh_requires_allowed_origin(application: FastAPI, client: TestClien
 
 
 def test_current_user_resolves_server_side_context(
-    application: FastAPI, client: TestClient
+    application: FastAPI, client: TestClient, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     service = SuccessfulAuthService()
     identity = AuthenticatedIdentity(service.user, ("ANALYST",), ("ENTITY_READ",))
     application.dependency_overrides[get_current_identity] = lambda: identity
+
+    async def database_override() -> AsyncSession:
+        return cast(AsyncSession, object())
+
+    async def list_workspaces(_: WorkspaceService, **__: object) -> tuple[tuple[object, ...], int]:
+        return (), 0
+
+    application.dependency_overrides[get_database_session] = database_override
+    monkeypatch.setattr(WorkspaceService, "list_workspaces", list_workspaces)
 
     response = client.get("/api/v1/auth/me")
 

@@ -508,6 +508,10 @@ WORKSPACE_CREATE
 201 Created
 ```
 
+Workspace creation, creator membership, and `WORKSPACE_CREATED` audit insertion SHALL
+commit in one transaction. The creator becomes an active member; no global role alone
+grants access to unrelated workspaces.
+
 ---
 
 # 7.2 GET /workspaces
@@ -526,6 +530,9 @@ search
 ### Authorization
 
 Returns only workspaces accessible to the caller.
+
+The collection SHALL be bounded and membership-scoped. A global `WORKSPACE_READ`
+permission does not bypass active workspace membership.
 
 ---
 
@@ -558,11 +565,20 @@ Update mutable workspace fields.
 - `STALE_VERSION`
 - `WORKSPACE_ACCESS_DENIED`
 
+Successful updates increment `version` atomically and create a `WORKSPACE_UPDATED`
+audit record in the same transaction.
+
 ---
 
 # 7.5 GET /workspaces/{workspace_id}/members
 
 List workspace members.
+
+### Permission
+
+```text
+WORKSPACE_MANAGE
+```
 
 ---
 
@@ -585,13 +601,18 @@ WORKSPACE_MANAGE
 }
 ```
 
+The acting user SHALL possess every effective permission granted by the selected
+workspace role. Membership creation and `WORKSPACE_MEMBER_ADDED` audit insertion SHALL
+commit in one transaction.
+
 ---
 
 # 7.7 DELETE /workspaces/{workspace_id}/members/{user_id}
 
 Remove workspace membership.
 
-Audited mutation.
+Requires `WORKSPACE_MANAGE`. Membership removal and `WORKSPACE_MEMBER_REMOVED` audit
+insertion SHALL commit in one transaction.
 
 ---
 

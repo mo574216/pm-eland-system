@@ -26,6 +26,11 @@ class TokenResponse(BaseModel):
     user: UserSummary
 
 
+class CurrentUserWorkspace(BaseModel):
+    id: UUID
+    name: str
+
+
 class CurrentUserResponse(UserSummary):
     permissions: tuple[str, ...]
-    workspaces: tuple[object, ...] = ()
+    workspaces: tuple[CurrentUserWorkspace, ...] = ()

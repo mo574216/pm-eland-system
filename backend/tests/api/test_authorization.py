@@ -82,3 +82,23 @@ def test_role_assignment_endpoint_rejects_direct_unauthorized_request(
 
     assert response.status_code == 403
     assert response.json()["error"]["code"] == "PERMISSION_DENIED"
+
+
+def test_workspace_creation_rejects_missing_global_permission(
+    application: FastAPI, client: TestClient
+) -> None:
+    async def database_override() -> AsyncSession:
+        return cast(AsyncSession, object())
+
+    application.dependency_overrides[get_current_identity] = lambda: identity(
+        PermissionCode.WORKSPACE_READ
+    )
+    application.dependency_overrides[get_database_session] = database_override
+
+    response = client.post(
+        "/api/v1/workspaces",
+        json={"name": "Workspace A", "slug": "workspace-a"},
+    )
+
+    assert response.status_code == 403
+    assert response.json()["error"]["code"] == "PERMISSION_DENIED"
