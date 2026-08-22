@@ -832,6 +832,30 @@ include=attributes,relationships,documents,forms
 
 Server MAY restrict costly include combinations.
 
+The MVP response includes the entity type summary (`id`, stable `key`, and display
+`name`) alongside `entity_type_id`. Access requires active workspace membership and
+effective `ENTITY_READ`.
+
+---
+
+# 9.2.1 GET /workspaces/{workspace_id}/entities
+
+Return a bounded workspace-scoped entity collection. Supported query parameters are:
+
+```text
+page
+page_size (maximum 200)
+search
+status
+entity_type_id
+parent_id
+```
+
+Search preserves canonical names and compares a separately normalized expression so
+the specified Arabic/Persian Yeh, Kaf, joining-mark, diacritic, whitespace, and numeral
+variants match consistently. Both item and count queries require active membership;
+effective `ENTITY_READ` is enforced by the service.
+
 ---
 
 # 9.3 PATCH /entities/{entity_id}

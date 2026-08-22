@@ -1,5 +1,6 @@
 """Stable platform persistence models."""
 
+from app.models.entity import EntityObject
 from app.models.identity import (
     AuditLog,
     AuthSession,
@@ -16,6 +17,7 @@ __all__ = [
     "AttributeDefinition",
     "AuditLog",
     "AuthSession",
+    "EntityObject",
     "EntityType",
     "Permission",
     "Role",

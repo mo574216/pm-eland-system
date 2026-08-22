@@ -192,6 +192,9 @@ jobs:
       - name: Verify generic metadata schema
         working-directory: backend
         run: uv run --frozen python -m scripts.verify_metadata_schema
+      - name: Verify generic entity schema
+        working-directory: backend
+        run: uv run --frozen python -m scripts.verify_entity_schema
 
   secret-scan:
     name: Secret scan

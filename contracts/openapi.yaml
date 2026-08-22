@@ -525,7 +525,10 @@ paths:
         - $ref: '#/components/parameters/PageSize'
         - name: search
           in: query
-          schema: {type: string}
+          schema: {type: string, minLength: 1, maxLength: 255}
+        - name: status
+          in: query
+          schema: {type: string, enum: [ACTIVE, ARCHIVED]}
         - name: entity_type_id
           in: query
           schema: {type: string, format: uuid}
@@ -539,6 +542,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SuccessEnvelope'
+        '403':
+          $ref: '#/components/responses/Forbidden'
     post:
       tags: [Entities]
       operationId: createEntity
@@ -556,6 +561,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SuccessEnvelope'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
 
   /entities/{entityId}:
     parameters:
@@ -571,6 +582,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SuccessEnvelope'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
     patch:
       tags: [Entities]
       operationId: updateEntity
@@ -1077,11 +1092,12 @@ components:
     EntityCreate:
       type: object
       required: [entity_type_id, name]
+      additionalProperties: false
       properties:
         entity_type_id: {type: string, format: uuid}
         parent_id: {type: [string, 'null'], format: uuid}
         name: {type: string, minLength: 1, maxLength: 255}
-        description: {type: string}
+        description: {type: [string, 'null']}
         attributes:
           type: object
           additionalProperties: true
