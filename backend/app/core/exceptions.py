@@ -54,6 +54,21 @@ class PermissionDeniedError(ApplicationError):
         super().__init__(code="PERMISSION_DENIED", status_code=403)
 
 
+class WorkspaceAccessDeniedError(ApplicationError):
+    def __init__(self) -> None:
+        super().__init__(code="WORKSPACE_ACCESS_DENIED", status_code=403)
+
+
 class ResourceNotFoundError(ApplicationError):
     def __init__(self) -> None:
         super().__init__(code="RESOURCE_NOT_FOUND", status_code=404)
+
+
+class ResourceConflictError(ApplicationError):
+    def __init__(self) -> None:
+        super().__init__(code="RESOURCE_CONFLICT", status_code=409)
+
+
+class StaleVersionError(ApplicationError):
+    def __init__(self) -> None:
+        super().__init__(code="STALE_VERSION", status_code=409)

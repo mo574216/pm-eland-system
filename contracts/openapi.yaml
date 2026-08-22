@@ -188,6 +188,14 @@ paths:
       parameters:
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/PageSize'
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [DRAFT, ACTIVE, ARCHIVED]
+        - name: search
+          in: query
+          schema: {type: string, minLength: 1, maxLength: 255}
       responses:
         '200':
           description: Workspace list
@@ -212,6 +220,101 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SuccessEnvelope'
+
+  /workspaces/{workspaceId}:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+    get:
+      tags: [Workspaces]
+      operationId: getWorkspace
+      summary: Retrieve an accessible workspace
+      responses:
+        '200':
+          description: Workspace details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessEnvelope'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    patch:
+      tags: [Workspaces]
+      operationId: updateWorkspace
+      summary: Update mutable workspace fields with optimistic concurrency
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkspaceUpdate'
+      responses:
+        '200':
+          description: Workspace updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessEnvelope'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /workspaces/{workspaceId}/members:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+    get:
+      tags: [Workspaces]
+      operationId: listWorkspaceMembers
+      summary: List members of an accessible workspace
+      responses:
+        '200':
+          description: Workspace member list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessEnvelope'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    post:
+      tags: [Workspaces]
+      operationId: addWorkspaceMember
+      summary: Add a user with a workspace-level role
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkspaceMemberCreate'
+      responses:
+        '201':
+          description: Workspace member added
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessEnvelope'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /workspaces/{workspaceId}/members/{userId}:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - name: userId
+        in: path
+        required: true
+        schema: {type: string, format: uuid}
+    delete:
+      tags: [Workspaces]
+      operationId: removeWorkspaceMember
+      summary: Remove a user from a workspace
+      responses:
+        '204':
+          description: Workspace member removed
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
 
   /workspaces/{workspaceId}/entity-types:
     parameters:
@@ -708,10 +811,31 @@ components:
     WorkspaceCreate:
       type: object
       required: [name, slug]
+      additionalProperties: false
       properties:
         name: {type: string, minLength: 1, maxLength: 255}
         slug: {type: string, minLength: 1, maxLength: 160}
         description: {type: string}
+
+    WorkspaceUpdate:
+      type: object
+      required: [version]
+      additionalProperties: false
+      anyOf:
+        - required: [name]
+        - required: [description]
+      properties:
+        name: {type: string, minLength: 1, maxLength: 255}
+        description: {type: [string, 'null']}
+        version: {type: integer, minimum: 1}
+
+    WorkspaceMemberCreate:
+      type: object
+      required: [user_id, role_id]
+      additionalProperties: false
+      properties:
+        user_id: {type: string, format: uuid}
+        role_id: {type: string, format: uuid}
 
     EntityTypeCreate:
       type: object
@@ -805,6 +929,12 @@ components:
         description: {type: string}
 
   responses:
+    NotFound:
+      description: Resource not found or not visible
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
     Forbidden:
       description: Effective permission is missing
       content:

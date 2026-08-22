@@ -252,11 +252,11 @@ Each slice must preserve the API envelope, permission registry, workspace scope,
 
 ## 8. Immediate Next Actions
 
-1. Begin AUTH-FE-001 against the stable authentication API contracts.
-2. Begin WS-DB-001 with the generic workspace schema defined by the database specification.
+1. Begin META-DB-001 with the generic metadata schema.
+2. Continue TEST-WS-001 with each new workspace-scoped resource.
 3. Resolve DG-08 before date- or number-intensive frontend workflows.
 
-The next implementation handoff should begin `AUTH-FE-001`; `WS-DB-001` is also unblocked by the completed identity foundation.
+The next implementation handoff should begin `META-DB-001`; the M1 identity, authentication, and workspace slice is complete.
 
 ## 9. Roadmap Maintenance
 
