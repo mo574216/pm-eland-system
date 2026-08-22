@@ -32,3 +32,28 @@ class DependencyUnavailableError(ApplicationError):
             status_code=503,
             details=details,
         )
+
+
+class InvalidCredentialsError(ApplicationError):
+    def __init__(self) -> None:
+        super().__init__(code="AUTH_INVALID_CREDENTIALS", status_code=401)
+
+
+class AuthenticationRequiredError(ApplicationError):
+    def __init__(self) -> None:
+        super().__init__(code="AUTH_REQUIRED", status_code=401)
+
+
+class AuthenticationExpiredError(ApplicationError):
+    def __init__(self) -> None:
+        super().__init__(code="AUTH_TOKEN_EXPIRED", status_code=401)
+
+
+class PermissionDeniedError(ApplicationError):
+    def __init__(self) -> None:
+        super().__init__(code="PERMISSION_DENIED", status_code=403)
+
+
+class ResourceNotFoundError(ApplicationError):
+    def __init__(self) -> None:
+        super().__init__(code="RESOURCE_NOT_FOUND", status_code=404)

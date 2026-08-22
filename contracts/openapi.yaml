@@ -98,6 +98,35 @@ paths:
               schema:
                 $ref: '#/components/schemas/SuccessEnvelope'
 
+  /auth/refresh:
+    post:
+      tags: [Auth]
+      security: []
+      operationId: refreshSession
+      summary: Rotate refresh session and issue an access token
+      responses:
+        '200':
+          description: Session refreshed; a rotated HttpOnly refresh cookie is set
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessEnvelope'
+        '401':
+          description: Refresh session missing, invalid, expired, or reused
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+
+  /auth/logout:
+    post:
+      tags: [Auth]
+      operationId: logout
+      summary: Revoke the current refresh-session family
+      responses:
+        '204':
+          description: Session revoked and refresh cookie cleared
+
   /auth/me:
     get:
       tags: [Auth]
@@ -110,6 +139,46 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SuccessEnvelope'
+
+  /users/{userId}/roles:
+    post:
+      tags: [Identity]
+      operationId: assignUserRole
+      summary: Assign a global role to a user
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoleAssignmentRequest'
+      responses:
+        '200':
+          description: Role assignment state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessEnvelope'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /users/{userId}/roles/{roleCode}:
+    delete:
+      tags: [Identity]
+      operationId: removeUserRole
+      summary: Remove a global role from a user
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+        - name: roleCode
+          in: path
+          required: true
+          schema: {type: string, pattern: '^[A-Z][A-Z0-9_]*$'}
+      responses:
+        '204':
+          description: Role removed or already absent
+        '403':
+          $ref: '#/components/responses/Forbidden'
 
   /workspaces:
     get:
@@ -519,6 +588,11 @@ components:
       bearerFormat: JWT
 
   parameters:
+    UserId:
+      name: userId
+      in: path
+      required: true
+      schema: {type: string, format: uuid}
     WorkspaceId:
       name: workspaceId
       in: path
@@ -622,6 +696,15 @@ components:
         username: {type: string, minLength: 1}
         password: {type: string, minLength: 1}
 
+    RoleAssignmentRequest:
+      type: object
+      required: [role_code]
+      additionalProperties: false
+      properties:
+        role_code:
+          type: string
+          pattern: '^[A-Z][A-Z0-9_]*$'
+
     WorkspaceCreate:
       type: object
       required: [name, slug]
@@ -722,6 +805,12 @@ components:
         description: {type: string}
 
   responses:
+    Forbidden:
+      description: Effective permission is missing
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
     Conflict:
       description: Conflict
       content:

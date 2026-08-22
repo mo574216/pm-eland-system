@@ -248,6 +248,10 @@ Two supported approaches:
 - refresh mechanism protected,
 - token not permanently stored in insecure browser storage.
 
+ADR-0004 selects this option. Access tokens are held in frontend memory and opaque,
+rotating refresh tokens are held in Secure HttpOnly SameSite cookies with server-side
+hashed session state and reuse-family revocation.
+
 ## Option B — Secure HTTP-Only Cookies
 
 If cookies are used:
@@ -416,6 +420,11 @@ Users SHALL NOT be able to:
 - unlock phases without explicit permission.
 
 Role/permission changes SHALL be audited.
+
+Global role assignment and removal SHALL require `IDENTITY_MANAGE`. Assignment
+SHALL fail when the target role grants any permission the acting user does not
+currently possess. The canonical initial grant assigns `IDENTITY_MANAGE` only to
+`SYSTEM_ADMIN`.
 
 ---
 

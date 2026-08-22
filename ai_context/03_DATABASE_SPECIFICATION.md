@@ -302,6 +302,34 @@ CREATE TABLE role_permissions (
 
 ---
 
+# 5.6 auth_sessions
+
+`auth_sessions` stores revocable refresh-session state approved by ADR-0004.
+Raw refresh tokens SHALL NOT be persisted; `token_hash` is the SHA-256 digest of a
+cryptographically random opaque token.
+
+```sql
+CREATE TABLE auth_sessions (
+    id uuid PRIMARY KEY,
+    user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    token_hash varchar(64) NOT NULL UNIQUE,
+    token_family_id uuid NOT NULL,
+    expires_at timestamptz NOT NULL,
+    absolute_expires_at timestamptz NOT NULL,
+    last_used_at timestamptz,
+    revoked_at timestamptz,
+    replaced_by_id uuid REFERENCES auth_sessions(id) ON DELETE SET NULL,
+    created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX idx_auth_sessions_family ON auth_sessions(token_family_id);
+CREATE INDEX idx_auth_sessions_expires ON auth_sessions(expires_at);
+```
+
+Refresh rotation and family revocation SHALL be transactional.
+
+---
+
 # 6. Workspace Tables
 
 # 6.1 workspaces

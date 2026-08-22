@@ -59,6 +59,7 @@ Supersedes / Superseded By
 
 ## Current ADRs
 
+- `ADR-0004-bearer-access-and-rotating-refresh-sessions.md` - ACCEPTED
 - `ADR-0003-persian-first-localization.md` — ACCEPTED
 - `ADR-0002-async-sqlalchemy-session-model.md` - ACCEPTED
 

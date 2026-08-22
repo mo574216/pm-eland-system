@@ -4,6 +4,11 @@ description: >
   Frontend permission guards are usability controls only.
 
 permissions:
+  - code: IDENTITY_MANAGE
+    resource: identity
+    action: manage
+    description: Assign and remove global user roles.
+
   - code: WORKSPACE_CREATE
     resource: workspace
     action: create
@@ -118,6 +123,7 @@ roles:
   SYSTEM_ADMIN:
     description: Full platform administration.
     grants:
+      - IDENTITY_MANAGE
       - WORKSPACE_CREATE
       - WORKSPACE_READ
       - WORKSPACE_MANAGE

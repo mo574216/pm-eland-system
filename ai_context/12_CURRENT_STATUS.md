@@ -350,17 +350,16 @@ mobile-native application
 
 The following decisions remain open and SHALL NOT be silently invented by coding agents.
 
-# OD-001 — Authentication Session Strategy
+# OD-001 — Authentication Session Strategy — RESOLVED
 
-Need final choice between:
+ADR-0004 selects:
 
 ```text
-short-lived bearer token + secure refresh
-or
-secure HTTP-only cookie session/token model
+short-lived bearer token + rotating opaque refresh token in a Secure HttpOnly
+SameSite cookie with hashed server-side session state
 ```
 
-Security specification defines acceptable constraints, but final implementation choice should be recorded in ADR.
+The access token is held only in frontend memory. Refresh reuse revokes the token family.
 
 ---
 
@@ -649,7 +648,7 @@ Mitigation:
 
 ```text
 M0 Repository/Foundation        IN PROGRESS (FND-001 through FND-005 and FND-007 COMPLETE)
-M1 Identity/Workspace           IN PROGRESS (AUTH-DB-001 COMPLETE)
+M1 Identity/Workspace           IN PROGRESS (AUTH-DB-001, AUTH-BE-001, AUTH-BE-002 COMPLETE)
 M2 Metadata/Entity Platform     NOT STARTED
 M3 Dynamic Forms                NOT STARTED
 M4 Documents/Import             NOT STARTED
@@ -681,6 +680,8 @@ FND-004 PostgreSQL and Alembic Setup
 FND-005 Local Docker Compose
 FND-007 Persian-First RTL Foundation
 AUTH-DB-001 Identity Schema
+AUTH-BE-001 Authentication Service
+AUTH-BE-002 Authorization Service
 
 TASKS_IN_PROGRESS:
 FND-006 CI Baseline (implementation and local validation complete;
@@ -714,14 +715,19 @@ aggregate required status check.
 Use Persian (`fa-IR`) as the mandatory end-user language with a global RTL
 layout, an i18n resource boundary, and English developer-facing contracts.
 Normalize Persian search comparison values without altering canonical display text.
+Use short-lived in-memory JWT bearer access tokens with rotating opaque refresh
+tokens held in Secure HttpOnly SameSite cookies and stored server-side only as hashes.
+Use `IDENTITY_MANAGE` for global role administration, prevent actors from granting
+permissions they do not possess, and audit role mutations transactionally.
 
 ADR_CREATED:
 ADR-0002 Async SQLAlchemy Session Model
 ADR-0003 Persian-First Localization Boundary
+ADR-0004 Bearer Access Tokens and Rotating Refresh Sessions
 
 NEXT_TASK:
-Activate and verify FND-006 on GitHub, then record the authentication session
-strategy ADR required before AUTH-BE-001 Authentication Service.
+Begin AUTH-FE-001 Login and Auth Context, while separately activating and verifying
+FND-006 on GitHub.
 Resolve OD-015 before implementing date- or number-intensive frontend workflows.
 ```
 

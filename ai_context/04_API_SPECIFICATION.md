@@ -387,7 +387,28 @@ Public.
 
 ---
 
-# 6.2 POST /auth/logout
+# 6.2 POST /auth/refresh
+
+Rotate the HttpOnly refresh cookie and return a new short-lived access token.
+
+### Authentication
+
+Valid refresh cookie and allowed request origin required. Bearer authentication is not
+required because the access token may have expired.
+
+### Success
+
+Same response shape as login. The old refresh token is invalidated and a replacement
+refresh cookie is set.
+
+### Errors
+
+- `AUTH_REQUIRED`
+- `AUTH_TOKEN_EXPIRED`
+
+---
+
+# 6.3 POST /auth/logout
 
 Terminate current session where server-side revocation applies.
 
@@ -403,7 +424,7 @@ Required.
 
 ---
 
-# 6.3 GET /auth/me
+# 6.4 GET /auth/me
 
 Return authenticated user context.
 
@@ -433,6 +454,29 @@ Return authenticated user context.
   "meta": {}
 }
 ```
+
+---
+
+# 6.5 POST /users/{user_id}/roles
+
+Assign a global role using an explicit `role_code` request field.
+
+### Permission
+
+```text
+IDENTITY_MANAGE
+```
+
+The actor SHALL possess every effective permission granted by the target role.
+Successful material changes SHALL create an append-only `ROLE_ASSIGNED` audit record
+in the same transaction.
+
+---
+
+# 6.6 DELETE /users/{user_id}/roles/{role_code}
+
+Remove a global role. Requires `IDENTITY_MANAGE` and creates an append-only
+`ROLE_REMOVED` audit record in the same transaction when state changes.
 
 ---
 

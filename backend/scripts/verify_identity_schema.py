@@ -38,7 +38,15 @@ def verify_identity_schema(database_url: str) -> None:
             inspector = sa.inspect(connection)
             _require(
                 set(inspector.get_table_names()).issuperset(
-                    {"users", "roles", "permissions", "user_roles", "role_permissions"}
+                    {
+                        "users",
+                        "roles",
+                        "permissions",
+                        "user_roles",
+                        "role_permissions",
+                        "auth_sessions",
+                        "audit_logs",
+                    }
                 ),
                 "Identity tables do not match AUTH-DB-001.",
             )
@@ -73,7 +81,10 @@ def verify_identity_schema(database_url: str) -> None:
                 connection.execute(sa.text("SELECT code FROM permissions")).scalars()
             )
             expected_roles = {role["code"] for role in revision.ROLE_SEEDS}
-            expected_permissions = {permission[1] for permission in revision.PERMISSION_SEEDS}
+            expected_permissions = {
+                *(permission[1] for permission in revision.PERMISSION_SEEDS),
+                "IDENTITY_MANAGE",
+            }
             _require(role_codes == expected_roles, "Canonical role seeds do not match.")
             _require(
                 permission_codes == expected_permissions,
@@ -94,6 +105,7 @@ def verify_identity_schema(database_url: str) -> None:
                 role_code: set(grant_codes)
                 for role_code, grant_codes in revision.ROLE_GRANTS.items()
             }
+            expected_grants["SYSTEM_ADMIN"].add("IDENTITY_MANAGE")
             _require(actual_grants == expected_grants, "Canonical role grants do not match.")
     finally:
         engine.dispose()
