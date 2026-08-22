@@ -18,7 +18,7 @@ from app.models.entity import EntityObject
 from app.models.identity import AuditLog, User
 from app.models.metadata import AttributeDefinition, EntityType
 from app.models.workspace import Workspace
-from app.repositories.entity import EntityRecord, EntityRepository
+from app.repositories.entity import EntityRecord, EntityRepository, EntityTreeRecord
 from app.repositories.metadata import MetadataRepository
 from app.repositories.workspace import WorkspaceRepository
 from app.services.auth import AuthenticatedIdentity
@@ -87,6 +87,7 @@ class FakeEntityRepository:
         self.search: str | None = None
         self.updated: EntityObject | None = None
         self.fail_mutation = False
+        self.tree_records: tuple[EntityTreeRecord, ...] = ()
 
     def add_entity(self, entity: EntityObject) -> None:
         self.entities.append(entity)
@@ -138,6 +139,9 @@ class FakeEntityRepository:
             else ()
         )
         return items, len(items)
+
+    async def entity_tree(self, *_: object, **__: object) -> tuple[EntityTreeRecord, ...]:
+        return self.tree_records
 
 
 def entity_type(workspace_id: UUID) -> EntityType:
@@ -413,3 +417,55 @@ async def test_stale_update_is_rejected_without_an_audit() -> None:
         )
 
     assert repository.audit_logs == []
+
+
+@pytest.mark.asyncio
+async def test_hierarchy_requires_read_permission_and_returns_cte_records() -> None:
+    actor = identity(PermissionCode.ENTITY_READ)
+    workspace = Workspace(id=uuid4(), name="A", slug="a", owner_id=actor.user.id)
+    entity_type_value = entity_type(workspace.id)
+    service, _, repository = build_service(
+        actor, workspace, FakeMetadataRepository(entity_type_value, ())
+    )
+    root_id = uuid4()
+    repository.tree_records = (
+        EntityTreeRecord(
+            id=root_id,
+            workspace_id=workspace.id,
+            entity_type_id=entity_type_value.id,
+            parent_id=None,
+            name="Root",
+            status="ACTIVE",
+            depth=0,
+            path=(root_id,),
+            has_children=True,
+            entity_type_key=entity_type_value.key,
+            entity_type_name=entity_type_value.name,
+            entity_type_icon_key=None,
+        ),
+    )
+
+    records = await service.get_entity_tree(
+        workspace.id,
+        root_id=root_id,
+        max_depth=1,
+        include_type=True,
+    )
+
+    assert records == repository.tree_records
+
+
+@pytest.mark.asyncio
+async def test_missing_hierarchy_root_is_not_disclosed() -> None:
+    actor = identity(PermissionCode.ENTITY_READ)
+    workspace = Workspace(id=uuid4(), name="A", slug="a", owner_id=actor.user.id)
+    entity_type_value = entity_type(workspace.id)
+    service, _, _ = build_service(actor, workspace, FakeMetadataRepository(entity_type_value, ()))
+
+    with pytest.raises(ResourceNotFoundError):
+        await service.get_entity_tree(
+            workspace.id,
+            root_id=uuid4(),
+            max_depth=None,
+            include_type=False,
+        )

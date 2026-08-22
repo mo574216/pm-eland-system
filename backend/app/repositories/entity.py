@@ -4,8 +4,10 @@ from dataclasses import dataclass
 from typing import cast
 from uuid import UUID
 
-from sqlalchemy import func, select, update
+from sqlalchemy import String, and_, any_, exists, func, literal, select, update
+from sqlalchemy.dialects.postgresql import array
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import aliased
 from sqlalchemy.sql.elements import ColumnElement
 
 from app.models.entity import EntityObject
@@ -18,6 +20,22 @@ from app.models.workspace import WorkspaceMembership
 class EntityRecord:
     entity: EntityObject
     entity_type: EntityType
+
+
+@dataclass(frozen=True)
+class EntityTreeRecord:
+    id: UUID
+    workspace_id: UUID
+    entity_type_id: UUID
+    parent_id: UUID | None
+    name: str
+    status: str
+    depth: int
+    path: tuple[UUID, ...]
+    has_children: bool
+    entity_type_key: str | None
+    entity_type_name: str | None
+    entity_type_icon_key: str | None
 
 
 class EntityRepository:
@@ -153,6 +171,129 @@ class EntityRepository:
         items = tuple(EntityRecord(entity, entity_type) for entity, entity_type in rows)
         total = int((await self.session.scalar(count_statement.where(*filters))) or 0)
         return items, total
+
+    async def entity_tree(
+        self,
+        workspace_id: UUID,
+        user_id: UUID,
+        *,
+        root_id: UUID | None,
+        max_depth: int | None,
+        include_type: bool,
+    ) -> tuple[EntityTreeRecord, ...]:
+        anchor_filters = [
+            EntityObject.workspace_id == workspace_id,
+            EntityObject.deleted_at.is_(None),
+            EntityObject.status != "DELETED",
+            WorkspaceMembership.user_id == user_id,
+            WorkspaceMembership.status == "ACTIVE",
+        ]
+        anchor_filters.append(
+            EntityObject.id == root_id if root_id is not None else EntityObject.parent_id.is_(None)
+        )
+        anchor = (
+            select(
+                EntityObject.id.label("id"),
+                EntityObject.workspace_id.label("workspace_id"),
+                EntityObject.entity_type_id.label("entity_type_id"),
+                EntityObject.parent_id.label("parent_id"),
+                EntityObject.name.label("name"),
+                EntityObject.status.label("status"),
+                literal(0).label("depth"),
+                array([EntityObject.id]).label("path"),
+            )
+            .join(
+                WorkspaceMembership,
+                WorkspaceMembership.workspace_id == EntityObject.workspace_id,
+            )
+            .where(*anchor_filters)
+        )
+        tree = anchor.cte("entity_tree", recursive=True)
+        child = aliased(EntityObject, name="child")
+        descendants = select(
+            child.id,
+            child.workspace_id,
+            child.entity_type_id,
+            child.parent_id,
+            child.name,
+            child.status,
+            (tree.c.depth + 1).label("depth"),
+            (tree.c.path + array([child.id])).label("path"),
+        ).join(tree, child.parent_id == tree.c.id)
+        descendants = descendants.where(
+            child.workspace_id == workspace_id,
+            child.workspace_id == tree.c.workspace_id,
+            child.deleted_at.is_(None),
+            child.status != "DELETED",
+            ~(child.id == any_(tree.c.path)),
+        )
+        if max_depth is not None:
+            descendants = descendants.where(tree.c.depth < max_depth)
+        tree = tree.union_all(descendants)
+
+        possible_child = aliased(EntityObject, name="possible_child")
+        has_children = exists(
+            select(possible_child.id).where(
+                possible_child.parent_id == tree.c.id,
+                possible_child.workspace_id == workspace_id,
+                possible_child.deleted_at.is_(None),
+                possible_child.status != "DELETED",
+            )
+        ).label("has_children")
+        columns = [
+            tree.c.id,
+            tree.c.workspace_id,
+            tree.c.entity_type_id,
+            tree.c.parent_id,
+            tree.c.name,
+            tree.c.status,
+            tree.c.depth,
+            tree.c.path,
+            has_children,
+        ]
+        if include_type:
+            columns.extend(
+                [
+                    EntityType.key.label("entity_type_key"),
+                    EntityType.name.label("entity_type_name"),
+                    EntityType.icon_key.label("entity_type_icon_key"),
+                ]
+            )
+            statement = select(*columns).outerjoin(
+                EntityType,
+                and_(
+                    EntityType.id == tree.c.entity_type_id,
+                    EntityType.workspace_id == workspace_id,
+                    EntityType.deleted_at.is_(None),
+                ),
+            )
+        else:
+            columns.extend(
+                [
+                    literal(None).cast(String).label("entity_type_key"),
+                    literal(None).cast(String).label("entity_type_name"),
+                    literal(None).cast(String).label("entity_type_icon_key"),
+                ]
+            )
+            statement = select(*columns)
+        rows = (await self.session.execute(statement.order_by(tree.c.path))).mappings().all()
+        return tuple(
+            EntityTreeRecord(
+                id=row["id"],
+                workspace_id=row["workspace_id"],
+                entity_type_id=row["entity_type_id"],
+                parent_id=row["parent_id"],
+                name=row["name"],
+                status=row["status"],
+                depth=int(row["depth"]),
+                path=tuple(row["path"]),
+                has_children=bool(row["has_children"]),
+                entity_type_key=row["entity_type_key"],
+                entity_type_name=row["entity_type_name"],
+                entity_type_icon_key=row["entity_type_icon_key"],
+            )
+            for row in rows
+        )
 
     async def update_entity(
         self, entity_id: UUID, expected_version: int, values: dict[str, object]

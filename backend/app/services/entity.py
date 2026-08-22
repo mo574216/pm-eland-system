@@ -15,7 +15,7 @@ from app.core.permissions import PermissionCode
 from app.core.persian_text import normalize_persian_search_text
 from app.models.entity import EntityObject
 from app.models.identity import AuditLog
-from app.repositories.entity import EntityRecord, EntityRepository
+from app.repositories.entity import EntityRecord, EntityRepository, EntityTreeRecord
 from app.repositories.metadata import MetadataRepository
 from app.repositories.workspace import WorkspaceRepository
 from app.services.auth import AuthenticatedIdentity
@@ -171,6 +171,26 @@ class EntityService:
             parent_id=parent_id,
             search=normalize_persian_search_text(search) if search else None,
         )
+
+    async def get_entity_tree(
+        self,
+        workspace_id: UUID,
+        *,
+        root_id: UUID | None,
+        max_depth: int | None,
+        include_type: bool,
+    ) -> tuple[EntityTreeRecord, ...]:
+        await self._require_permission(workspace_id, PermissionCode.ENTITY_READ)
+        records = await self.repository.entity_tree(
+            workspace_id,
+            self.actor.user.id,
+            root_id=root_id,
+            max_depth=max_depth,
+            include_type=include_type,
+        )
+        if root_id is not None and not records:
+            raise ResourceNotFoundError
+        return records
 
     @staticmethod
     def _entity_state(entity: EntityObject) -> dict[str, object]:

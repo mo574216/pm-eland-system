@@ -949,6 +949,15 @@ include_type
 
 The server SHALL use database-level hierarchy traversal.
 
+The response is a flat, path-ordered node collection so clients can render the
+hierarchy without backend-specific nesting assumptions. Each node includes `depth`,
+its complete `path`, and `has_children`. When `root_id` is omitted, traversal starts
+at every non-deleted root in the workspace; when supplied, depth zero is that root.
+`depth` is relative to the selected root(s), and `include_type=false` omits the
+optional entity-type summary while retaining `entity_type_id`. Access requires an
+active workspace membership and effective `ENTITY_READ`; a root outside the scoped
+workspace is returned as `RESOURCE_NOT_FOUND`.
+
 ---
 
 # 9.7 PATCH /entities/{entity_id}/parent

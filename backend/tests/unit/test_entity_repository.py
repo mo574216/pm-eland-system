@@ -38,6 +38,9 @@ class EmptyRows:
     def one_or_none(self) -> None:
         return None
 
+    def mappings(self) -> "EmptyRows":
+        return self
+
 
 @pytest.mark.asyncio
 async def test_entity_lookup_always_includes_workspace_and_deleted_scope() -> None:
@@ -90,3 +93,29 @@ async def test_entity_collection_items_and_count_are_membership_scoped() -> None
         assert "workspace_memberships.user_id" in sql
         assert "workspace_memberships.status" in sql
         assert "regexp_replace" in sql
+
+
+@pytest.mark.asyncio
+async def test_hierarchy_uses_one_workspace_scoped_recursive_cte() -> None:
+    session = CapturingSession()
+    repository = EntityRepository(cast(AsyncSession, session))
+
+    await repository.entity_tree(
+        uuid4(),
+        uuid4(),
+        root_id=uuid4(),
+        max_depth=3,
+        include_type=True,
+    )
+
+    assert len(session.statements) == 1
+    sql = str(session.statements[0])
+    assert "WITH RECURSIVE entity_tree" in sql
+    assert "UNION ALL" in sql
+    assert "JOIN workspace_memberships" in sql
+    assert "entity_objects.workspace_id" in sql
+    assert "child.workspace_id" in sql
+    assert "entity_objects.deleted_at IS NULL" in sql
+    assert "child.deleted_at IS NULL" in sql
+    assert "possible_child" in sql
+    assert "ORDER BY entity_tree.path" in sql

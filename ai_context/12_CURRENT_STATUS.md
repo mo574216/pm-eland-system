@@ -804,6 +804,40 @@ NEXT_TASK:
 HIER-BE-001 Hierarchy Retrieval, followed by HIER-BE-002 and entity frontend tasks.
 ```
 
+Hierarchy retrieval implementation entry:
+
+```text
+DATE:
+2026-08-23
+
+MILESTONE:
+M2 Metadata and Generic Entity Platform
+
+TASKS_COMPLETED:
+HIER-BE-001 Hierarchy Retrieval
+
+TASKS_IN_PROGRESS:
+None
+
+TEST_RESULTS:
+Backend formatting, lint, strict mypy, and 106 tests pass. The recursive CTE was
+also exercised through the live API against PostgreSQL using a root and child; it
+returned one path-ordered result set with depths 0/1, has_children=true on the root,
+and the requested metadata type summary.
+
+SECURITY:
+Hierarchy traversal requires active workspace membership and effective ENTITY_READ.
+The CTE anchor and recursive member both enforce workspace scope, deleted rows are
+excluded, and a cross-workspace or invisible root is reported as not found.
+
+DATABASE_CHANGES:
+None. The accepted entity_objects.parent_id adjacency model and existing partial
+parent index are used directly.
+
+NEXT_TASK:
+HIER-BE-002 Reparent and Cycle Prevention.
+```
+
 ---
 
 # 13. Recommended Immediate Implementation Sequence

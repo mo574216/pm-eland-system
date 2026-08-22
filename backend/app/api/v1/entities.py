@@ -15,6 +15,9 @@ from app.schemas.entity import (
     EntityCreate,
     EntityListResponse,
     EntityResponse,
+    EntityTreeNode,
+    EntityTreeResponse,
+    EntityTreeTypeSummary,
     EntityTypeSummary,
     EntityUpdate,
 )
@@ -113,6 +116,49 @@ async def list_entities(
         page_size=page_size,
         total=total,
     )
+    return success_envelope(response.model_dump(mode="json"))
+
+
+@router.get("/workspaces/{workspace_id}/entities/tree")
+async def get_entity_tree(
+    workspace_id: UUID,
+    actor: Annotated[AuthenticatedIdentity, Depends(get_current_identity)],
+    session: Annotated[AsyncSession, Depends(get_database_session)],
+    root_id: UUID | None = None,
+    depth: Annotated[int | None, Query(ge=1)] = None,
+    include_type: bool = True,
+) -> dict[str, object]:
+    records = await EntityService(session, actor).get_entity_tree(
+        workspace_id,
+        root_id=root_id,
+        max_depth=depth,
+        include_type=include_type,
+    )
+    nodes = tuple(
+        EntityTreeNode(
+            id=record.id,
+            workspace_id=record.workspace_id,
+            entity_type_id=record.entity_type_id,
+            entity_type=(
+                EntityTreeTypeSummary(
+                    id=record.entity_type_id,
+                    key=record.entity_type_key,
+                    name=record.entity_type_name,
+                    icon_key=record.entity_type_icon_key,
+                )
+                if record.entity_type_key is not None and record.entity_type_name is not None
+                else None
+            ),
+            parent_id=record.parent_id,
+            name=record.name,
+            status=record.status,
+            depth=record.depth,
+            path=record.path,
+            has_children=record.has_children,
+        )
+        for record in records
+    )
+    response = EntityTreeResponse(items=nodes, root_id=root_id, depth=depth)
     return success_envelope(response.model_dump(mode="json"))
 
 

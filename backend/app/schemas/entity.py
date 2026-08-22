@@ -64,3 +64,29 @@ class EntityListResponse(BaseModel):
     page: int
     page_size: int
     total: int
+
+
+class EntityTreeTypeSummary(BaseModel):
+    id: UUID
+    key: str
+    name: str
+    icon_key: str | None = None
+
+
+class EntityTreeNode(BaseModel):
+    id: UUID
+    workspace_id: UUID
+    entity_type_id: UUID
+    entity_type: EntityTreeTypeSummary | None
+    parent_id: UUID | None
+    name: str
+    status: str
+    depth: int = Field(ge=0)
+    path: tuple[UUID, ...]
+    has_children: bool
+
+
+class EntityTreeResponse(BaseModel):
+    items: tuple[EntityTreeNode, ...]
+    root_id: UUID | None
+    depth: int | None
