@@ -678,27 +678,16 @@ FND-002 Initialize Backend Application
 FND-003 Initialize Frontend Application
 FND-004 PostgreSQL and Alembic Setup
 FND-005 Local Docker Compose
+FND-006 CI Baseline
 FND-007 Persian-First RTL Foundation
 AUTH-DB-001 Identity Schema
 AUTH-BE-001 Authentication Service
 AUTH-BE-002 Authorization Service
 
 TASKS_IN_PROGRESS:
-FND-006 CI Baseline (implementation and local validation complete;
-first hosted run failed on a Linux mypy portability issue; fix branch hosted CI
-is green; draft PR merge and branch protection pending)
+None
 
 BLOCKERS:
-Draft PR #1 contains the Linux CI portability fix and its hosted workflow is
-green. The PR must be approved and merged before the fix reaches `main`.
-The Persian/RTL E2E job is active and passes on the hosted runner.
-The main branch currently has no protection rule; an administrator must require
-the `Required CI Gate` status check to enforce merge blocking.
-
-The first hosted FND-006 run failed because mypy resolved a Windows-only asyncio
-symbol while checking on Linux. The test now uses a runtime capability lookup;
-the exact Linux CI quality and test commands pass locally and on the PR branch.
-
 The in-app browser was unavailable during FND-007 verification; the repository's
 Playwright suite passed in the matching official Chromium test container.
 
@@ -726,8 +715,7 @@ ADR-0003 Persian-First Localization Boundary
 ADR-0004 Bearer Access Tokens and Rotating Refresh Sessions
 
 NEXT_TASK:
-Begin AUTH-FE-001 Login and Auth Context, while separately activating and verifying
-FND-006 on GitHub.
+Begin AUTH-FE-001 Login and Auth Context.
 Resolve OD-015 before implementing date- or number-intensive frontend workflows.
 ```
 

@@ -22,7 +22,7 @@ Repository foundation task FND-001 is complete:
 - FND-002 and FND-003 are complete: the backend and frontend foundations build and their automated checks pass.
 - FND-004 is complete: PostgreSQL connectivity, the async SQLAlchemy session model, Alembic, required extensions, and automated disposable test-database provisioning are implemented and verified against PostgreSQL 16.
 - FND-005 is complete: one health-gated Docker Compose command starts the frontend, backend, PostgreSQL, MinIO, and Redis; migrations and cross-service connectivity are verified.
-- FND-006 implementation is complete. Its first hosted run exposed a Linux mypy portability issue in a Windows-only test; draft PR #1 fixes it and its hosted workflow is green, including Persian/RTL E2E and `Required CI Gate`. Activation remains pending: approve and merge PR #1, then require `Required CI Gate` in the `main` branch ruleset.
+- FND-006 is complete: its Linux portability fix is merged, hosted CI is green, and the active `main` branch ruleset requires `Required CI Gate`.
 - FND-007 is complete: the current shell is Persian/RTL, platform copy uses i18n resources, MUI and Emotion are RTL-configured, Vazirmatn is bundled, public API errors are localized centrally, and Persian search normalization is tested.
 - Local-only state: `.vscode/` is untracked and is outside this roadmap unless explicitly added.
 
@@ -44,7 +44,7 @@ The repository uses `ai_context/`. Canonical repository guidance now references 
 
 | Gate | Required before | Decision | Expected artifact |
 |---|---|---|---|
-| DG-01 | AUTH-BE-001 | Choose bearer/refresh-token or secure HTTP-only cookie strategy (OD-001) | Authentication ADR and aligned OpenAPI/security contract |
+| DG-01 | AUTH-BE-001 | Resolved by ADR-0004: short-lived bearer access tokens with rotating opaque refresh sessions | `ADR/ADR-0004-bearer-access-tokens-and-rotating-refresh-sessions.md` and aligned contracts |
 | DG-02 | FND-004 | Resolved by ADR-0002: async SQLAlchemy with psycopg 3, scoped sessions, and service-owned transactions | `ADR/ADR-0002-async-sqlalchemy-session-model.md` |
 | DG-03 | FORM-BE-003 | Define deterministic JSON schema for visibility, required-if, inheritance, and read-only rules (OD-005) | Contract/spec update; no `eval` or arbitrary code |
 | DG-04 | FORM-DB-001 | Confirm nested JSON storage for repeating rows (OD-006 recommendation) | ADR only if deviating from `form_instances.values_json` |
@@ -87,7 +87,7 @@ Exit gate:
 Execution order:
 
 1. AUTH-DB-001 and WS-DB-001 database foundations.
-2. Resolve DG-01, then implement AUTH-BE-001 and AUTH-BE-002.
+2. Complete AUTH-BE-001 and AUTH-BE-002 using the authentication model accepted in ADR-0004.
 3. Implement WS-BE-001 with centralized authorization and audited membership changes.
 4. Implement AUTH-FE-001 and WS-FE-001 against stable API contracts.
 5. Complete TEST-AUTH-001 and TEST-WS-001 continuously, not at milestone end.
@@ -252,12 +252,11 @@ Each slice must preserve the API envelope, permission registry, workspace scope,
 
 ## 8. Immediate Next Actions
 
-1. Activate FND-006 on GitHub and configure `Required CI Gate` as a required `main` branch status check.
-2. Begin AUTH-DB-001 with the generic identity schema defined by the database specification.
-3. Resolve DG-01 before implementing authentication token/session behavior.
-4. Resolve DG-08 before date- or number-intensive frontend workflows.
+1. Begin AUTH-FE-001 against the stable authentication API contracts.
+2. Begin WS-DB-001 with the generic workspace schema defined by the database specification.
+3. Resolve DG-08 before date- or number-intensive frontend workflows.
 
-The next implementation handoff should finish FND-006 activation before starting `AUTH-DB-001`. Authentication behavior remains blocked on DG-01.
+The next implementation handoff should begin `AUTH-FE-001`; `WS-DB-001` is also unblocked by the completed identity foundation.
 
 ## 9. Roadmap Maintenance
 

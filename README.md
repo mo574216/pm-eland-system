@@ -234,7 +234,7 @@ COMPLETE
 Implementation:
 
 ```text
-IN PROGRESS - FND-001 through FND-005 and FND-007 complete; FND-006 activation pending
+IN PROGRESS - FND-001 through FND-007 complete; M1 identity and security work underway
 ```
 
 See:
@@ -260,7 +260,7 @@ ai_context/       Normative specifications and current status
 
 The GitHub Actions workflow at `.github/workflows/ci.yml` runs on pull requests and pushes to `main`. Its aggregate `Required CI Gate` fails unless backend and frontend quality checks, tests, migration-from-empty, secret scanning, application builds, and container-image builds all pass.
 
-After the workflow is committed and pushed, a repository administrator must configure the `main` branch ruleset to require `Required CI Gate` before merge.
+The active `main` branch ruleset requires `Required CI Gate` before merge.
 
 ## Frontend Quick Start
 
