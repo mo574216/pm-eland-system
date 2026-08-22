@@ -1,5 +1,6 @@
 """Reusable authentication dependencies."""
 
+from collections.abc import AsyncIterator
 from typing import Annotated
 
 from fastapi import Depends, Request
@@ -15,9 +16,15 @@ from app.services.auth import AuthenticatedIdentity, AuthService
 bearer = HTTPBearer(auto_error=False)
 
 
+async def get_auth_database_session(request: Request) -> AsyncIterator[AsyncSession]:
+    """Keep identity reads isolated from endpoint mutation transactions."""
+    async for session in get_database_session(request):
+        yield session
+
+
 def get_auth_service(
     request: Request,
-    session: Annotated[AsyncSession, Depends(get_database_session)],
+    session: Annotated[AsyncSession, Depends(get_auth_database_session)],
 ) -> AuthService:
     return AuthService(session, request.app.state.settings)
 

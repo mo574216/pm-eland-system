@@ -3,7 +3,7 @@
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class EntityCreate(BaseModel):
@@ -14,6 +14,21 @@ class EntityCreate(BaseModel):
     name: str = Field(min_length=1, max_length=255)
     description: str | None = None
     attributes: dict[str, object] = Field(default_factory=dict)
+
+
+class EntityUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    name: str | None = Field(default=None, min_length=1, max_length=255)
+    description: str | None = None
+    attributes: dict[str, object] | None = None
+    version: int = Field(ge=1)
+
+    @model_validator(mode="after")
+    def require_mutation(self) -> "EntityUpdate":
+        if not {"name", "description", "attributes"}.intersection(self.model_fields_set):
+            raise ValueError("At least one mutable entity field is required.")
+        return self
 
 
 class EntityTypeSummary(BaseModel):

@@ -7,7 +7,12 @@ from uuid import UUID, uuid4
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.exceptions import InvalidMetadataError, PermissionDeniedError, ResourceNotFoundError
+from app.core.exceptions import (
+    InvalidMetadataError,
+    PermissionDeniedError,
+    ResourceNotFoundError,
+    StaleVersionError,
+)
 from app.core.permissions import PermissionCode
 from app.models.entity import EntityObject
 from app.models.identity import AuditLog, User
@@ -80,6 +85,8 @@ class FakeEntityRepository:
         self.entities: list[EntityObject] = []
         self.audit_logs: list[AuditLog] = []
         self.search: str | None = None
+        self.updated: EntityObject | None = None
+        self.fail_mutation = False
 
     def add_entity(self, entity: EntityObject) -> None:
         self.entities.append(entity)
@@ -100,6 +107,26 @@ class FakeEntityRepository:
         if self.parent is None:
             return None
         return EntityRecord(self.parent, entity_type(self.parent.workspace_id))
+
+    async def update_entity(
+        self, _: UUID, __: int, values: dict[str, object]
+    ) -> EntityObject | None:
+        if self.fail_mutation:
+            return None
+        target = self.updated if self.updated is not None else self.parent
+        if target is not None:
+            for key, value in values.items():
+                setattr(target, key, value)
+            target.version += 1
+        return target
+
+    async def archive_entity(self, _: UUID, __: int, updated_by: UUID) -> EntityObject | None:
+        target = self.updated if self.updated is not None else self.parent
+        if target is not None:
+            target.status = "ARCHIVED"
+            target.updated_by = updated_by
+            target.version += 1
+        return target
 
     async def list_entities(
         self, *_: object, **values: object
@@ -298,3 +325,91 @@ async def test_read_requires_permission_and_normalizes_persian_search() -> None:
     assert tuple(item.entity for item in items) == (repository.parent,)
     assert total == 1
     assert repository.search == "\u0641\u0631\u0627\u06cc\u0646\u062f"
+
+
+@pytest.mark.asyncio
+async def test_update_merges_valid_attributes_and_audits_before_after() -> None:
+    actor = identity(PermissionCode.ENTITY_UPDATE)
+    workspace = Workspace(id=uuid4(), name="A", slug="a", owner_id=actor.user.id)
+    entity_type_value = entity_type(workspace.id)
+    service, _, repository = build_service(
+        actor,
+        workspace,
+        FakeMetadataRepository(entity_type_value, (definition(entity_type_value.id),)),
+    )
+    repository.parent = EntityObject(
+        id=uuid4(),
+        workspace_id=workspace.id,
+        entity_type_id=entity_type_value.id,
+        name="Old",
+        status="ACTIVE",
+        attributes={"risk": "low", "preserved": 1},
+        version=3,
+    )
+
+    updated = await service.update_entity(
+        repository.parent.id,
+        expected_version=3,
+        values={"name": "New", "attributes": {"risk": "high"}},
+        audit=audit_context(),
+    )
+
+    assert updated.entity.name == "New"
+    assert updated.entity.attributes == {"risk": "high", "preserved": 1}
+    assert repository.audit_logs[-1].action == "ENTITY_UPDATED"
+    assert repository.audit_logs[-1].before_state is not None
+    assert repository.audit_logs[-1].after_state is not None
+
+
+@pytest.mark.asyncio
+async def test_archive_requires_permission_and_is_audited() -> None:
+    actor = identity(PermissionCode.ENTITY_ARCHIVE)
+    workspace = Workspace(id=uuid4(), name="A", slug="a", owner_id=actor.user.id)
+    entity_type_value = entity_type(workspace.id)
+    service, _, repository = build_service(
+        actor, workspace, FakeMetadataRepository(entity_type_value, ())
+    )
+    repository.parent = EntityObject(
+        id=uuid4(),
+        workspace_id=workspace.id,
+        entity_type_id=entity_type_value.id,
+        name="Archive me",
+        status="ACTIVE",
+        attributes={},
+        version=2,
+    )
+
+    await service.archive_entity(repository.parent.id, expected_version=2, audit=audit_context())
+
+    assert repository.parent.status == "ARCHIVED"
+    assert repository.audit_logs[-1].action == "ENTITY_ARCHIVED"
+
+
+@pytest.mark.asyncio
+async def test_stale_update_is_rejected_without_an_audit() -> None:
+    actor = identity(PermissionCode.ENTITY_UPDATE)
+    workspace = Workspace(id=uuid4(), name="A", slug="a", owner_id=actor.user.id)
+    entity_type_value = entity_type(workspace.id)
+    service, _, repository = build_service(
+        actor, workspace, FakeMetadataRepository(entity_type_value, ())
+    )
+    repository.parent = EntityObject(
+        id=uuid4(),
+        workspace_id=workspace.id,
+        entity_type_id=entity_type_value.id,
+        name="Current",
+        status="ACTIVE",
+        attributes={},
+        version=4,
+    )
+    repository.fail_mutation = True
+
+    with pytest.raises(StaleVersionError):
+        await service.update_entity(
+            repository.parent.id,
+            expected_version=3,
+            values={"name": "Stale"},
+            audit=audit_context(),
+        )
+
+    assert repository.audit_logs == []

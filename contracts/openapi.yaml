@@ -603,10 +603,34 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SuccessEnvelope'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
         '409':
           $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationError'
         '423':
           $ref: '#/components/responses/Locked'
+    delete:
+      tags: [Entities]
+      operationId: archiveEntity
+      summary: Logically archive an entity
+      parameters:
+        - name: version
+          in: query
+          required: true
+          schema: {type: integer, minimum: 1}
+      responses:
+        '204':
+          description: Entity archived
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
 
   /workspaces/{workspaceId}/entities/tree:
     get:
@@ -1104,9 +1128,15 @@ components:
 
     EntityUpdate:
       type: object
+      required: [version]
+      additionalProperties: false
+      anyOf:
+        - required: [name]
+        - required: [description]
+        - required: [attributes]
       properties:
         name: {type: string, minLength: 1, maxLength: 255}
-        description: {type: string}
+        description: {type: [string, 'null']}
         attributes:
           type: object
           additionalProperties: true

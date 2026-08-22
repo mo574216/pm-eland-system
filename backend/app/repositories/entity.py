@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import cast
 from uuid import UUID
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql.elements import ColumnElement
 
@@ -153,3 +153,32 @@ class EntityRepository:
         items = tuple(EntityRecord(entity, entity_type) for entity, entity_type in rows)
         total = int((await self.session.scalar(count_statement.where(*filters))) or 0)
         return items, total
+
+    async def update_entity(
+        self, entity_id: UUID, expected_version: int, values: dict[str, object]
+    ) -> EntityObject | None:
+        statement = (
+            update(EntityObject)
+            .where(
+                EntityObject.id == entity_id,
+                EntityObject.version == expected_version,
+                EntityObject.deleted_at.is_(None),
+                EntityObject.status == "ACTIVE",
+            )
+            .values(
+                **values,
+                version=EntityObject.version + 1,
+                updated_at=func.now(),
+            )
+            .returning(EntityObject)
+        )
+        return cast(EntityObject | None, await self.session.scalar(statement))
+
+    async def archive_entity(
+        self, entity_id: UUID, expected_version: int, updated_by: UUID
+    ) -> EntityObject | None:
+        return await self.update_entity(
+            entity_id,
+            expected_version,
+            {"status": "ARCHIVED", "archived_at": func.now(), "updated_by": updated_by},
+        )

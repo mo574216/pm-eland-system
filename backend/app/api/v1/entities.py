@@ -16,6 +16,7 @@ from app.schemas.entity import (
     EntityListResponse,
     EntityResponse,
     EntityTypeSummary,
+    EntityUpdate,
 )
 from app.services.auth import AuthenticatedIdentity
 from app.services.authorization import AuditContext
@@ -113,3 +114,35 @@ async def list_entities(
         total=total,
     )
     return success_envelope(response.model_dump(mode="json"))
+
+
+@router.patch("/entities/{entity_id}")
+async def update_entity(
+    entity_id: UUID,
+    payload: EntityUpdate,
+    request: Request,
+    actor: Annotated[AuthenticatedIdentity, Depends(get_current_identity)],
+    session: Annotated[AsyncSession, Depends(get_database_session)],
+) -> dict[str, object]:
+    record = await EntityService(session, actor).update_entity(
+        entity_id,
+        expected_version=payload.version,
+        values=payload.model_dump(exclude={"version"}, exclude_unset=True),
+        audit=_audit_context(request),
+    )
+    return success_envelope(_entity_response(record).model_dump(mode="json"))
+
+
+@router.delete("/entities/{entity_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def archive_entity(
+    entity_id: UUID,
+    request: Request,
+    actor: Annotated[AuthenticatedIdentity, Depends(get_current_identity)],
+    session: Annotated[AsyncSession, Depends(get_database_session)],
+    version: Annotated[int, Query(ge=1)],
+) -> None:
+    await EntityService(session, actor).archive_entity(
+        entity_id,
+        expected_version=version,
+        audit=_audit_context(request),
+    )

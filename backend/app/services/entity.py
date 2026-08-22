@@ -8,6 +8,7 @@ from app.core.exceptions import (
     InvalidMetadataError,
     PermissionDeniedError,
     ResourceNotFoundError,
+    StaleVersionError,
     WorkspaceAccessDeniedError,
 )
 from app.core.permissions import PermissionCode
@@ -170,3 +171,120 @@ class EntityService:
             parent_id=parent_id,
             search=normalize_persian_search_text(search) if search else None,
         )
+
+    @staticmethod
+    def _entity_state(entity: EntityObject) -> dict[str, object]:
+        return {
+            "entity_type_id": str(entity.entity_type_id),
+            "parent_id": str(entity.parent_id) if entity.parent_id else None,
+            "name": entity.name,
+            "description": entity.description,
+            "status": entity.status,
+            "attributes": entity.attributes,
+            "version": entity.version,
+        }
+
+    def _mutation_audit(
+        self,
+        entity: EntityObject,
+        action: str,
+        before_state: dict[str, object],
+        after_state: dict[str, object],
+        audit: AuditContext,
+    ) -> AuditLog:
+        return AuditLog(
+            id=uuid4(),
+            request_id=audit.request_id,
+            workspace_id=entity.workspace_id,
+            user_id=self.actor.user.id,
+            action=action,
+            resource_type="entity_object",
+            resource_id=entity.id,
+            before_state=before_state,
+            after_state=after_state,
+            client_ip=audit.client_ip,
+            user_agent=audit.user_agent,
+        )
+
+    async def update_entity(
+        self,
+        entity_id: UUID,
+        *,
+        expected_version: int,
+        values: dict[str, object],
+        audit: AuditContext,
+    ) -> EntityRecord:
+        async with self.session.begin():
+            record = await self.repository.accessible_entity_record(entity_id, self.actor.user.id)
+            if record is None or record.entity.status != "ACTIVE":
+                raise ResourceNotFoundError
+            entity = record.entity
+            await self._require_permission(entity.workspace_id, PermissionCode.ENTITY_UPDATE)
+            before_state = self._entity_state(entity)
+            update_values = dict(values)
+            changed_attributes = update_values.get("attributes")
+            if changed_attributes is not None:
+                if not isinstance(changed_attributes, dict):
+                    raise InvalidMetadataError
+                definitions = await self.metadata_repository.list_attributes(entity.entity_type_id)
+                validation = await self.validator.validate_attributes(
+                    record.entity_type,
+                    definitions,
+                    changed_attributes,
+                    ValidationMode.UPDATE,
+                )
+                if not validation.is_valid:
+                    raise InvalidMetadataError(
+                        {
+                            "fields": [
+                                {"field": error.field, "code": error.code}
+                                for error in validation.errors
+                            ]
+                        }
+                    )
+                update_values["attributes"] = {
+                    **entity.attributes,
+                    **validation.values,
+                }
+            update_values["updated_by"] = self.actor.user.id
+            updated = await self.repository.update_entity(
+                entity_id, expected_version, update_values
+            )
+            if updated is None:
+                raise StaleVersionError
+            self.repository.add_audit_log(
+                self._mutation_audit(
+                    updated,
+                    "ENTITY_UPDATED",
+                    before_state,
+                    self._entity_state(updated),
+                    audit,
+                )
+            )
+        return EntityRecord(updated, record.entity_type)
+
+    async def archive_entity(
+        self, entity_id: UUID, *, expected_version: int, audit: AuditContext
+    ) -> None:
+        async with self.session.begin():
+            record = await self.repository.accessible_entity_record(entity_id, self.actor.user.id)
+            if record is None or record.entity.status != "ACTIVE":
+                raise ResourceNotFoundError
+            await self._require_permission(
+                record.entity.workspace_id, PermissionCode.ENTITY_ARCHIVE
+            )
+            before_state = self._entity_state(record.entity)
+            archived = await self.repository.archive_entity(
+                entity_id, expected_version, self.actor.user.id
+            )
+            if archived is None:
+                raise StaleVersionError
+            self.repository.add_audit_log(
+                self._mutation_audit(
+                    archived,
+                    "ENTITY_ARCHIVED",
+                    before_state,
+                    self._entity_state(archived),
+                    audit,
+                )
+            )

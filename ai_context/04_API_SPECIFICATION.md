@@ -880,13 +880,20 @@ Update entity.
 - `STALE_VERSION`
 - `VALIDATION_ERROR`
 
+The MVP treats `attributes` as a partial dynamic-field update: validated supplied
+keys are merged with existing attributes, while unknown and read-only keys are
+rejected. `name`, `description`, and attributes are updated with the current
+`version`; successful mutation increments the version and atomically audits before
+and after state. Reparenting is handled by the hierarchy API rather than this patch.
+
 ---
 
-# 9.4 DELETE /entities/{entity_id}
+# 9.4 DELETE /entities/{entity_id}?version={version}
 
-Default semantic:
-
-soft delete/archive where configured.
+Logically archive an active entity. The operation requires active membership,
+effective `ENTITY_ARCHIVE`, and the current version. It sets status to `ARCHIVED`,
+preserves the row and dynamic values, increments the version, and writes an audit
+record in the same transaction.
 
 ### Permission
 
