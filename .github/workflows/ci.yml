@@ -183,6 +183,9 @@ jobs:
           extensions = {row[0] for row in connection.execute(\"SELECT extname FROM pg_extension WHERE extname IN ('citext', 'pgcrypto')\")};
           connection.close();
           assert extensions == {'citext', 'pgcrypto'}, extensions"
+      - name: Verify identity schema and idempotent seeds
+        working-directory: backend
+        run: uv run --frozen python -m scripts.verify_identity_schema
 
   secret-scan:
     name: Secret scan

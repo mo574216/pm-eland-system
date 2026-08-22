@@ -649,7 +649,7 @@ Mitigation:
 
 ```text
 M0 Repository/Foundation        IN PROGRESS (FND-001 through FND-005 and FND-007 COMPLETE)
-M1 Identity/Workspace           NOT STARTED
+M1 Identity/Workspace           IN PROGRESS (AUTH-DB-001 COMPLETE)
 M2 Metadata/Entity Platform     NOT STARTED
 M3 Dynamic Forms                NOT STARTED
 M4 Documents/Import             NOT STARTED
@@ -680,6 +680,7 @@ FND-003 Initialize Frontend Application
 FND-004 PostgreSQL and Alembic Setup
 FND-005 Local Docker Compose
 FND-007 Persian-First RTL Foundation
+AUTH-DB-001 Identity Schema
 
 TASKS_IN_PROGRESS:
 FND-006 CI Baseline (implementation and local validation complete;
@@ -713,7 +714,8 @@ ADR-0002 Async SQLAlchemy Session Model
 ADR-0003 Persian-First Localization Boundary
 
 NEXT_TASK:
-Activate and verify FND-006 on GitHub, then begin AUTH-DB-001 Identity Schema.
+Activate and verify FND-006 on GitHub, then record the authentication session
+strategy ADR required before AUTH-BE-001 Authentication Service.
 Resolve OD-015 before implementing date- or number-intensive frontend workflows.
 ```
 
