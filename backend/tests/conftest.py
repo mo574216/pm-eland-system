@@ -13,7 +13,13 @@ from app.main import create_app
 @pytest.fixture
 def application() -> FastAPI:
     """Return an isolated app without configured external dependencies."""
-    return create_app(Settings(database_url=None))
+    return create_app(
+        Settings(
+            database_url=None,
+            auth_cookie_secure=True,
+            auth_cookie_name="__Host-pm_refresh",
+        )
+    )
 
 
 @pytest.fixture

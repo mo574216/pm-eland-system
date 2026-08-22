@@ -762,6 +762,48 @@ NEXT_TASK:
 ENT-DB-001 Generic Entity Schema, followed by ENT-BE-001 through ENT-BE-003.
 ```
 
+Generic entity platform implementation entry:
+
+```text
+DATE:
+2026-08-23
+
+MILESTONE:
+M2 Metadata and Generic Entity Platform
+
+TASKS_COMPLETED:
+ENT-DB-001 Generic Entity Schema
+ENT-BE-001 Create Entity
+ENT-BE-002 Read/List/Search Entities
+ENT-BE-003 Update/Archive Entity
+
+TASKS_IN_PROGRESS:
+None
+
+TEST_RESULTS:
+Backend formatting, lint, strict mypy, 103 tests, OpenAPI YAML validation, and
+Compose configuration validation pass. Alembic revisions 0001 through 0007 were
+applied successfully to live PostgreSQL. Frontend strict TypeScript, zero-warning
+ESLint, 18 tests, and the production build pass. Live readiness, login, workspace
+creation, and authenticated workspace listing were verified locally.
+
+SECURITY:
+Entity reads and mutations require active workspace access plus effective canonical
+permissions. Dynamic values are server-validated against metadata; mutations use
+optimistic concurrency and transactional before/after audit records. Authentication
+identity reads use an isolated request session so authorization cannot contaminate
+service-owned mutation transactions. Local administrator bootstrap is explicitly
+development-only, requires supplied strong credentials, is idempotent, and never
+overwrites an existing password.
+
+LIMITATIONS:
+Phase/resource locking cannot be enforced until the phase schema and lock-policy
+tasks are implemented. The generic entity frontend tasks remain outstanding.
+
+NEXT_TASK:
+HIER-BE-001 Hierarchy Retrieval, followed by HIER-BE-002 and entity frontend tasks.
+```
+
 ---
 
 # 13. Recommended Immediate Implementation Sequence
