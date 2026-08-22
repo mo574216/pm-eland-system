@@ -5,6 +5,7 @@ from uuid import UUID, uuid4
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import (
+    HierarchyCycleError,
     InvalidMetadataError,
     PermissionDeniedError,
     ResourceNotFoundError,
@@ -191,6 +192,51 @@ class EntityService:
         if root_id is not None and not records:
             raise ResourceNotFoundError
         return records
+
+    async def reparent_entity(
+        self,
+        entity_id: UUID,
+        *,
+        parent_id: UUID | None,
+        expected_version: int,
+        audit: AuditContext,
+    ) -> EntityRecord:
+        async with self.session.begin():
+            record = await self.repository.accessible_entity_record(entity_id, self.actor.user.id)
+            if record is None or record.entity.status != "ACTIVE":
+                raise ResourceNotFoundError
+            entity = record.entity
+            await self._require_permission(entity.workspace_id, PermissionCode.ENTITY_UPDATE)
+            await self.repository.acquire_hierarchy_lock(entity.workspace_id)
+            if parent_id == entity.id:
+                raise HierarchyCycleError
+            if parent_id is not None:
+                parent = await self.repository.entity_in_workspace(parent_id, entity.workspace_id)
+                if parent is None or parent.status != "ACTIVE":
+                    raise ResourceNotFoundError
+                if await self.repository.would_create_cycle(
+                    entity.id, parent_id, entity.workspace_id
+                ):
+                    raise HierarchyCycleError
+            before_state = self._entity_state(entity)
+            updated = await self.repository.update_parent(
+                entity.id,
+                expected_version,
+                parent_id,
+                self.actor.user.id,
+            )
+            if updated is None:
+                raise StaleVersionError
+            self.repository.add_audit_log(
+                self._mutation_audit(
+                    updated,
+                    "ENTITY_REPARENTED",
+                    before_state,
+                    self._entity_state(updated),
+                    audit,
+                )
+            )
+        return EntityRecord(updated, record.entity_type)
 
     @staticmethod
     def _entity_state(entity: EntityObject) -> dict[str, object]:

@@ -31,6 +31,13 @@ class EntityUpdate(BaseModel):
         return self
 
 
+class EntityParentUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    parent_id: UUID | None
+    version: int = Field(ge=1)
+
+
 class EntityTypeSummary(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

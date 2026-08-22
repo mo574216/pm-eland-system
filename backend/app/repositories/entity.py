@@ -295,6 +295,57 @@ class EntityRepository:
             for row in rows
         )
 
+    async def acquire_hierarchy_lock(self, workspace_id: UUID) -> None:
+        lock_key = int.from_bytes(workspace_id.bytes[:8], byteorder="big", signed=True)
+        await self.session.execute(select(func.pg_advisory_xact_lock(lock_key)))
+
+    async def would_create_cycle(
+        self, entity_id: UUID, new_parent_id: UUID, workspace_id: UUID
+    ) -> bool:
+        ancestors = select(
+            EntityObject.id.label("id"),
+            EntityObject.parent_id.label("parent_id"),
+            array([EntityObject.id]).label("path"),
+        ).where(
+            EntityObject.id == new_parent_id,
+            EntityObject.workspace_id == workspace_id,
+            EntityObject.deleted_at.is_(None),
+            EntityObject.status != "DELETED",
+        )
+        ancestor_tree = ancestors.cte("ancestors", recursive=True)
+        parent = aliased(EntityObject, name="ancestor_parent")
+        ancestor_tree = ancestor_tree.union_all(
+            select(
+                parent.id,
+                parent.parent_id,
+                ancestor_tree.c.path + array([parent.id]),
+            )
+            .join(ancestor_tree, parent.id == ancestor_tree.c.parent_id)
+            .where(
+                parent.workspace_id == workspace_id,
+                parent.deleted_at.is_(None),
+                parent.status != "DELETED",
+                ~(parent.id == any_(ancestor_tree.c.path)),
+            )
+        )
+        statement = select(
+            exists(select(ancestor_tree.c.id).where(ancestor_tree.c.id == entity_id))
+        )
+        return bool(await self.session.scalar(statement))
+
+    async def update_parent(
+        self,
+        entity_id: UUID,
+        expected_version: int,
+        parent_id: UUID | None,
+        updated_by: UUID,
+    ) -> EntityObject | None:
+        return await self.update_entity(
+            entity_id,
+            expected_version,
+            {"parent_id": parent_id, "updated_by": updated_by},
+        )
+
     async def update_entity(
         self, entity_id: UUID, expected_version: int, values: dict[str, object]
     ) -> EntityObject | None:

@@ -838,6 +838,44 @@ NEXT_TASK:
 HIER-BE-002 Reparent and Cycle Prevention.
 ```
 
+Hierarchy mutation implementation entry:
+
+```text
+DATE:
+2026-08-23
+
+MILESTONE:
+M2 Metadata and Generic Entity Platform
+
+TASKS_COMPLETED:
+HIER-BE-002 Reparent and Cycle Prevention
+
+TASKS_IN_PROGRESS:
+None
+
+TEST_RESULTS:
+Backend formatting, lint, strict mypy, 110 tests, and the OpenAPI contract check
+pass. Live PostgreSQL/API verification moved a child to another root with a version
+increment, rejected moving that root beneath the child with HIERARCHY_CYCLE, and
+successfully restored the original hierarchy.
+
+SECURITY:
+Reparenting requires active workspace access and effective ENTITY_UPDATE. Candidate
+parents must be active and in the same workspace. Hierarchy writes are serialized by
+a transaction-scoped workspace advisory lock, cycle checks use a recursive CTE, the
+row update is optimistic, and before/after audit state is committed atomically.
+
+DATABASE_CHANGES:
+None.
+
+KNOWN_LIMITATIONS:
+Phase/resource lock enforcement remains deferred until the phase lock-policy schema
+and service exist.
+
+NEXT_TASK:
+ENT-FE-001 Entity Tree Viewer, then ENT-FE-002 Generic Entity Detail Page.
+```
+
 ---
 
 # 13. Recommended Immediate Implementation Sequence

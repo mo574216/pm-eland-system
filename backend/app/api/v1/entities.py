@@ -14,6 +14,7 @@ from app.repositories.entity import EntityRecord
 from app.schemas.entity import (
     EntityCreate,
     EntityListResponse,
+    EntityParentUpdate,
     EntityResponse,
     EntityTreeNode,
     EntityTreeResponse,
@@ -160,6 +161,23 @@ async def get_entity_tree(
     )
     response = EntityTreeResponse(items=nodes, root_id=root_id, depth=depth)
     return success_envelope(response.model_dump(mode="json"))
+
+
+@router.patch("/entities/{entity_id}/parent")
+async def reparent_entity(
+    entity_id: UUID,
+    payload: EntityParentUpdate,
+    request: Request,
+    actor: Annotated[AuthenticatedIdentity, Depends(get_current_identity)],
+    session: Annotated[AsyncSession, Depends(get_database_session)],
+) -> dict[str, object]:
+    record = await EntityService(session, actor).reparent_entity(
+        entity_id,
+        parent_id=payload.parent_id,
+        expected_version=payload.version,
+        audit=_audit_context(request),
+    )
+    return success_envelope(_entity_response(record).model_dump(mode="json"))
 
 
 @router.patch("/entities/{entity_id}")

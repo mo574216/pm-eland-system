@@ -8,6 +8,7 @@ import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import (
+    HierarchyCycleError,
     InvalidMetadataError,
     PermissionDeniedError,
     ResourceNotFoundError,
@@ -88,6 +89,9 @@ class FakeEntityRepository:
         self.updated: EntityObject | None = None
         self.fail_mutation = False
         self.tree_records: tuple[EntityTreeRecord, ...] = ()
+        self.candidate_parent: EntityObject | None = None
+        self.cycle = False
+        self.hierarchy_locks: list[UUID] = []
 
     def add_entity(self, entity: EntityObject) -> None:
         self.entities.append(entity)
@@ -101,8 +105,20 @@ class FakeEntityRepository:
             entity.created_at = now
             entity.updated_at = now
 
-    async def entity_in_workspace(self, _: UUID, __: UUID) -> EntityObject | None:
-        return self.parent
+    async def entity_in_workspace(self, entity_id: UUID, workspace_id: UUID) -> EntityObject | None:
+        if (
+            self.candidate_parent is not None
+            and self.candidate_parent.id == entity_id
+            and self.candidate_parent.workspace_id == workspace_id
+        ):
+            return self.candidate_parent
+        if (
+            self.parent is not None
+            and self.parent.id == entity_id
+            and self.parent.workspace_id == workspace_id
+        ):
+            return self.parent
+        return None
 
     async def accessible_entity_record(self, _: UUID, __: UUID) -> EntityRecord | None:
         if self.parent is None:
@@ -142,6 +158,21 @@ class FakeEntityRepository:
 
     async def entity_tree(self, *_: object, **__: object) -> tuple[EntityTreeRecord, ...]:
         return self.tree_records
+
+    async def acquire_hierarchy_lock(self, workspace_id: UUID) -> None:
+        self.hierarchy_locks.append(workspace_id)
+
+    async def would_create_cycle(self, *_: object) -> bool:
+        return self.cycle
+
+    async def update_parent(
+        self, entity_id: UUID, version: int, parent_id: UUID | None, updated_by: UUID
+    ) -> EntityObject | None:
+        return await self.update_entity(
+            entity_id,
+            version,
+            {"parent_id": parent_id, "updated_by": updated_by},
+        )
 
 
 def entity_type(workspace_id: UUID) -> EntityType:
@@ -469,3 +500,127 @@ async def test_missing_hierarchy_root_is_not_disclosed() -> None:
             max_depth=None,
             include_type=False,
         )
+
+
+@pytest.mark.asyncio
+async def test_reparent_is_serialized_versioned_and_audited() -> None:
+    actor = identity(PermissionCode.ENTITY_UPDATE)
+    workspace = Workspace(id=uuid4(), name="A", slug="a", owner_id=actor.user.id)
+    entity_type_value = entity_type(workspace.id)
+    service, _, repository = build_service(
+        actor, workspace, FakeMetadataRepository(entity_type_value, ())
+    )
+    repository.parent = EntityObject(
+        id=uuid4(),
+        workspace_id=workspace.id,
+        entity_type_id=entity_type_value.id,
+        name="Move me",
+        status="ACTIVE",
+        attributes={},
+        version=2,
+    )
+    repository.candidate_parent = EntityObject(
+        id=uuid4(),
+        workspace_id=workspace.id,
+        entity_type_id=entity_type_value.id,
+        name="New parent",
+        status="ACTIVE",
+        attributes={},
+    )
+
+    result = await service.reparent_entity(
+        repository.parent.id,
+        parent_id=repository.candidate_parent.id,
+        expected_version=2,
+        audit=audit_context(),
+    )
+
+    assert result.entity.parent_id == repository.candidate_parent.id
+    assert result.entity.version == 3
+    assert repository.hierarchy_locks == [workspace.id]
+    assert repository.audit_logs[-1].action == "ENTITY_REPARENTED"
+    assert repository.audit_logs[-1].before_state is not None
+    assert repository.audit_logs[-1].after_state is not None
+
+
+@pytest.mark.asyncio
+async def test_reparent_rejects_self_parent_and_descendant_cycles() -> None:
+    actor = identity(PermissionCode.ENTITY_UPDATE)
+    workspace = Workspace(id=uuid4(), name="A", slug="a", owner_id=actor.user.id)
+    entity_type_value = entity_type(workspace.id)
+    service, _, repository = build_service(
+        actor, workspace, FakeMetadataRepository(entity_type_value, ())
+    )
+    repository.parent = EntityObject(
+        id=uuid4(),
+        workspace_id=workspace.id,
+        entity_type_id=entity_type_value.id,
+        name="Entity",
+        status="ACTIVE",
+        attributes={},
+        version=1,
+    )
+
+    with pytest.raises(HierarchyCycleError):
+        await service.reparent_entity(
+            repository.parent.id,
+            parent_id=repository.parent.id,
+            expected_version=1,
+            audit=audit_context(),
+        )
+
+    repository.candidate_parent = EntityObject(
+        id=uuid4(),
+        workspace_id=workspace.id,
+        entity_type_id=entity_type_value.id,
+        name="Descendant",
+        status="ACTIVE",
+        attributes={},
+    )
+    repository.cycle = True
+    with pytest.raises(HierarchyCycleError):
+        await service.reparent_entity(
+            repository.parent.id,
+            parent_id=repository.candidate_parent.id,
+            expected_version=1,
+            audit=audit_context(),
+        )
+
+    assert repository.audit_logs == []
+
+
+@pytest.mark.asyncio
+async def test_reparent_rejects_cross_workspace_parent() -> None:
+    actor = identity(PermissionCode.ENTITY_UPDATE)
+    workspace = Workspace(id=uuid4(), name="A", slug="a", owner_id=actor.user.id)
+    entity_type_value = entity_type(workspace.id)
+    service, _, repository = build_service(
+        actor, workspace, FakeMetadataRepository(entity_type_value, ())
+    )
+    repository.parent = EntityObject(
+        id=uuid4(),
+        workspace_id=workspace.id,
+        entity_type_id=entity_type_value.id,
+        name="Entity",
+        status="ACTIVE",
+        attributes={},
+        version=1,
+    )
+    repository.candidate_parent = EntityObject(
+        id=uuid4(),
+        workspace_id=uuid4(),
+        entity_type_id=entity_type_value.id,
+        name="Other workspace",
+        status="ACTIVE",
+        attributes={},
+    )
+
+    with pytest.raises(ResourceNotFoundError):
+        await service.reparent_entity(
+            repository.parent.id,
+            parent_id=repository.candidate_parent.id,
+            expected_version=1,
+            audit=audit_context(),
+        )
+
+    assert repository.audit_logs == []

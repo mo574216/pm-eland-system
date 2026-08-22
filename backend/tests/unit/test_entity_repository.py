@@ -119,3 +119,23 @@ async def test_hierarchy_uses_one_workspace_scoped_recursive_cte() -> None:
     assert "child.deleted_at IS NULL" in sql
     assert "possible_child" in sql
     assert "ORDER BY entity_tree.path" in sql
+
+
+@pytest.mark.asyncio
+async def test_cycle_check_is_recursive_workspace_scoped_and_serialized() -> None:
+    session = CapturingSession()
+    repository = EntityRepository(cast(AsyncSession, session))
+    workspace_id = uuid4()
+
+    await repository.acquire_hierarchy_lock(workspace_id)
+    await repository.would_create_cycle(uuid4(), uuid4(), workspace_id)
+
+    assert len(session.statements) == 2
+    lock_sql = str(session.statements[0])
+    cycle_sql = str(session.statements[1])
+    assert "pg_advisory_xact_lock" in lock_sql
+    assert "WITH RECURSIVE ancestors" in cycle_sql
+    assert "UNION ALL" in cycle_sql
+    assert "entity_objects.workspace_id" in cycle_sql
+    assert "ancestor_parent.workspace_id" in cycle_sql
+    assert "entity_objects.deleted_at IS NULL" in cycle_sql

@@ -968,7 +968,7 @@ Reparent entity.
 
 ```json
 {
-  "parent_id": "...",
+  "parent_id": "... or null to move to a root",
   "version": 5
 }
 ```
@@ -979,6 +979,13 @@ Reparent entity.
 - no cycle,
 - permission,
 - lock policy.
+
+Hierarchy mutations are serialized per workspace before the recursive ancestor
+check, then applied with optimistic concurrency. A successful move preserves the
+entity identifier, increments `version`, and atomically audits before/after state.
+An invisible, cross-workspace, archived, or deleted proposed parent is reported as
+`RESOURCE_NOT_FOUND`; self-parenting and descendant-parenting both return
+`HIERARCHY_CYCLE`.
 
 ### Error
 

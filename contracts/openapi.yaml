@@ -665,6 +665,35 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
+  /entities/{entityId}/parent:
+    parameters:
+      - $ref: '#/components/parameters/EntityId'
+    patch:
+      tags: [Entities]
+      operationId: reparentEntity
+      summary: Move an entity within its workspace hierarchy
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EntityParentUpdate'
+      responses:
+        '200':
+          description: Entity reparented
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessEnvelope'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '423':
+          $ref: '#/components/responses/Locked'
+
   /workspaces/{workspaceId}/relationships:
     post:
       tags: [Relationships]
@@ -1209,6 +1238,14 @@ components:
             $ref: '#/components/schemas/EntityTreeNode'
         root_id: {type: [string, 'null'], format: uuid}
         depth: {type: [integer, 'null'], minimum: 1}
+
+    EntityParentUpdate:
+      type: object
+      required: [parent_id, version]
+      additionalProperties: false
+      properties:
+        parent_id: {type: [string, 'null'], format: uuid}
+        version: {type: integer, minimum: 1}
 
     RelationshipCreate:
       type: object
