@@ -234,7 +234,7 @@ COMPLETE
 Implementation:
 
 ```text
-IN PROGRESS - FND-001 through FND-007 complete; M1 identity and security work underway
+IN PROGRESS - M0 and M1 complete; M2 metadata and generic entity platform underway
 ```
 
 See:

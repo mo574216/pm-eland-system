@@ -3,13 +3,22 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Request, Response, status
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies.authentication import get_auth_service, get_current_identity
 from app.api.envelopes import success_envelope
 from app.core.config import Settings
+from app.core.database import get_database_session
 from app.core.exceptions import AuthenticationRequiredError
-from app.schemas.auth import CurrentUserResponse, LoginRequest, TokenResponse, UserSummary
+from app.schemas.auth import (
+    CurrentUserResponse,
+    CurrentUserWorkspace,
+    LoginRequest,
+    TokenResponse,
+    UserSummary,
+)
 from app.services.auth import AuthenticatedIdentity, AuthService, IssuedTokens
+from app.services.workspace import WorkspaceService
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
@@ -90,13 +99,22 @@ async def logout(
 @router.get("/me")
 async def me(
     identity: Annotated[AuthenticatedIdentity, Depends(get_current_identity)],
+    session: Annotated[AsyncSession, Depends(get_database_session)],
 ) -> dict[str, object]:
+    workspaces, _ = await WorkspaceService(session, identity).list_workspaces(
+        page=1,
+        page_size=200,
+        status=None,
+        search=None,
+    )
     data = CurrentUserResponse(
         id=identity.user.id,
         username=identity.user.username,
         display_name=identity.user.display_name,
         roles=identity.roles,
         permissions=identity.permissions,
-        workspaces=(),
+        workspaces=tuple(
+            CurrentUserWorkspace(id=workspace.id, name=workspace.name) for workspace in workspaces
+        ),
     )
     return success_envelope(data.model_dump(mode="json"))

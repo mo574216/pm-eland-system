@@ -647,8 +647,8 @@ Mitigation:
 # 12. Current Milestone Status
 
 ```text
-M0 Repository/Foundation        IN PROGRESS (FND-001 through FND-005 and FND-007 COMPLETE)
-M1 Identity/Workspace           IN PROGRESS (AUTH-DB-001, AUTH-BE-001, AUTH-BE-002 COMPLETE)
+M0 Repository/Foundation        COMPLETE (FND-001 through FND-007 COMPLETE)
+M1 Identity/Workspace           COMPLETE (identity, auth, workspace schema/API/UI and current test matrix)
 M2 Metadata/Entity Platform     NOT STARTED
 M3 Dynamic Forms                NOT STARTED
 M4 Documents/Import             NOT STARTED
@@ -670,7 +670,7 @@ DATE:
 2026-08-22
 
 MILESTONE:
-M0 Repository and Engineering Foundation
+M1 Identity, Workspace, and Security Foundation
 
 TASKS_COMPLETED:
 FND-001 Initialize Monorepo
@@ -683,6 +683,10 @@ FND-007 Persian-First RTL Foundation
 AUTH-DB-001 Identity Schema
 AUTH-BE-001 Authentication Service
 AUTH-BE-002 Authorization Service
+AUTH-FE-001 Login and Auth Context
+WS-DB-001 Workspace Schema
+WS-BE-001 Workspace CRUD
+WS-FE-001 Workspace UI
 
 TASKS_IN_PROGRESS:
 None
@@ -715,7 +719,8 @@ ADR-0003 Persian-First Localization Boundary
 ADR-0004 Bearer Access Tokens and Rotating Refresh Sessions
 
 NEXT_TASK:
-Begin AUTH-FE-001 Login and Auth Context.
+Begin META-DB-001 Metadata Schema while extending TEST-WS-001 with every new
+workspace-scoped resource.
 Resolve OD-015 before implementing date- or number-intensive frontend workflows.
 ```
 

@@ -186,6 +186,12 @@ jobs:
       - name: Verify identity schema and idempotent seeds
         working-directory: backend
         run: uv run --frozen python -m scripts.verify_identity_schema
+      - name: Verify workspace schema and isolation constraints
+        working-directory: backend
+        run: uv run --frozen python -m scripts.verify_workspace_schema
+      - name: Verify generic metadata schema
+        working-directory: backend
+        run: uv run --frozen python -m scripts.verify_metadata_schema
 
   secret-scan:
     name: Secret scan

@@ -6,6 +6,7 @@ import { I18nextProvider } from 'react-i18next'
 import { Provider as ReduxProvider } from 'react-redux'
 
 import { i18n } from '../i18n'
+import { AuthProvider } from '../modules/auth/AuthProvider'
 import { store } from '../store/store'
 import { queryClient } from './queryClient'
 import { rtlCache } from './rtlCache'
@@ -16,12 +17,14 @@ export function AppProviders({ children }: PropsWithChildren) {
     <I18nextProvider i18n={i18n}>
       <CacheProvider value={rtlCache}>
         <ReduxProvider store={store}>
-          <QueryClientProvider client={queryClient}>
-            <ThemeProvider theme={theme}>
-              <CssBaseline />
-              {children}
-            </ThemeProvider>
-          </QueryClientProvider>
+          <AuthProvider>
+            <QueryClientProvider client={queryClient}>
+              <ThemeProvider theme={theme}>
+                <CssBaseline />
+                {children}
+              </ThemeProvider>
+            </QueryClientProvider>
+          </AuthProvider>
         </ReduxProvider>
       </CacheProvider>
     </I18nextProvider>

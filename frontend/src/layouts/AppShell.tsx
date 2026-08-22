@@ -1,7 +1,9 @@
-import { AccountCircleOutlined } from '@mui/icons-material'
-import { AppBar, Box, Container, IconButton, Toolbar, Typography } from '@mui/material'
+import { AppBar, Box, Container, Toolbar, Typography } from '@mui/material'
 import { useTranslation } from 'react-i18next'
 import { Outlet } from 'react-router-dom'
+
+import { UserMenu } from '../modules/auth/UserMenu'
+import { WorkspaceSelector } from '../modules/workspaces/WorkspaceSelector'
 
 export function AppShell() {
   const { t } = useTranslation()
@@ -13,9 +15,8 @@ export function AppShell() {
           <Typography component="div" sx={{ flexGrow: 1 }} variant="h6">
             {t('app.title')}
           </Typography>
-          <IconButton aria-label={t('app.userMenu')} color="inherit">
-            <AccountCircleOutlined />
-          </IconButton>
+          <WorkspaceSelector />
+          <UserMenu />
         </Toolbar>
       </AppBar>
       <Container component="main" maxWidth="lg" sx={{ py: 4 }}>
