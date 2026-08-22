@@ -649,7 +649,7 @@ Mitigation:
 ```text
 M0 Repository/Foundation        COMPLETE (FND-001 through FND-007 COMPLETE)
 M1 Identity/Workspace           COMPLETE (identity, auth, workspace schema/API/UI and current test matrix)
-M2 Metadata/Entity Platform     NOT STARTED
+M2 Metadata/Entity Platform     IN PROGRESS (metadata schema/API/validation/UI complete)
 M3 Dynamic Forms                NOT STARTED
 M4 Documents/Import             NOT STARTED
 M5 Workflow/Reporting           NOT STARTED
@@ -722,6 +722,44 @@ NEXT_TASK:
 Begin META-DB-001 Metadata Schema while extending TEST-WS-001 with every new
 workspace-scoped resource.
 Resolve OD-015 before implementing date- or number-intensive frontend workflows.
+```
+
+Metadata platform implementation entry:
+
+```text
+DATE:
+2026-08-22
+
+MILESTONE:
+M2 Metadata and Generic Entity Platform
+
+TASKS_COMPLETED:
+META-DB-001 Metadata Schema
+META-BE-001 Entity Type API
+META-BE-002 Attribute Definition API
+META-BE-003 Metadata Validation Engine
+META-FE-001 Metadata Administration
+
+TASKS_IN_PROGRESS:
+ENT-DB-001 Generic Entity Schema
+
+TEST_RESULTS:
+Backend formatting, lint, strict mypy, 87 tests, and Alembic 0005/0006 offline
+upgrade/downgrade validation pass. Frontend strict TypeScript, zero-warning ESLint,
+18 tests, and production build pass.
+
+SECURITY:
+Metadata mutations require effective METADATA_MANAGE after active workspace membership
+is verified. Reads are membership-scoped. Mutations use optimistic concurrency and
+transactional audit logs. Configurable regex is restricted to a bounded safe subset.
+
+LIMITATIONS:
+Live PostgreSQL migration verification still requires local database credentials.
+The metadata UI currently exposes the core create/edit flow; advanced JSON configuration
+editing is intentionally deferred to later form/rule tooling.
+
+NEXT_TASK:
+ENT-DB-001 Generic Entity Schema, followed by ENT-BE-001 through ENT-BE-003.
 ```
 
 ---

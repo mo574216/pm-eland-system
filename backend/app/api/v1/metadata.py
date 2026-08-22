@@ -11,6 +11,9 @@ from app.api.envelopes import success_envelope
 from app.core.database import get_database_session
 from app.core.request_context import get_request_id
 from app.schemas.metadata import (
+    AttributeCreate,
+    AttributeResponse,
+    AttributeUpdate,
     EntityTypeCreate,
     EntityTypeListResponse,
     EntityTypeResponse,
@@ -110,6 +113,72 @@ async def archive_entity_type(
 ) -> None:
     await MetadataService(session, actor).archive_entity_type(
         entity_type_id,
+        expected_version=version,
+        audit=_audit_context(request),
+    )
+
+
+@router.post(
+    "/entity-types/{entity_type_id}/attributes",
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_attribute(
+    entity_type_id: UUID,
+    payload: AttributeCreate,
+    request: Request,
+    actor: Annotated[AuthenticatedIdentity, Depends(get_current_identity)],
+    session: Annotated[AsyncSession, Depends(get_database_session)],
+) -> dict[str, object]:
+    attribute = await MetadataService(session, actor).create_attribute(
+        entity_type_id,
+        values=payload.model_dump(),
+        audit=_audit_context(request),
+    )
+    return success_envelope(AttributeResponse.model_validate(attribute).model_dump(mode="json"))
+
+
+@router.get("/entity-types/{entity_type_id}/attributes")
+async def list_attributes(
+    entity_type_id: UUID,
+    actor: Annotated[AuthenticatedIdentity, Depends(get_current_identity)],
+    session: Annotated[AsyncSession, Depends(get_database_session)],
+) -> dict[str, object]:
+    attributes = await MetadataService(session, actor).list_attributes(entity_type_id)
+    return success_envelope(
+        [
+            AttributeResponse.model_validate(attribute).model_dump(mode="json")
+            for attribute in attributes
+        ]
+    )
+
+
+@router.patch("/attributes/{attribute_id}")
+async def update_attribute(
+    attribute_id: UUID,
+    payload: AttributeUpdate,
+    request: Request,
+    actor: Annotated[AuthenticatedIdentity, Depends(get_current_identity)],
+    session: Annotated[AsyncSession, Depends(get_database_session)],
+) -> dict[str, object]:
+    attribute = await MetadataService(session, actor).update_attribute(
+        attribute_id,
+        expected_version=payload.version,
+        values=payload.model_dump(exclude={"version"}, exclude_unset=True),
+        audit=_audit_context(request),
+    )
+    return success_envelope(AttributeResponse.model_validate(attribute).model_dump(mode="json"))
+
+
+@router.delete("/attributes/{attribute_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def deactivate_attribute(
+    attribute_id: UUID,
+    request: Request,
+    actor: Annotated[AuthenticatedIdentity, Depends(get_current_identity)],
+    session: Annotated[AsyncSession, Depends(get_database_session)],
+    version: Annotated[int, Query(ge=1)],
+) -> None:
+    await MetadataService(session, actor).deactivate_attribute(
+        attribute_id,
         expected_version=version,
         audit=_audit_context(request),
     )

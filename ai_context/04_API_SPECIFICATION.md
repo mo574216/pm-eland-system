@@ -680,6 +680,17 @@ Update entity type.
 
 Stable keys SHOULD NOT be changed after persistent usage unless explicitly supported.
 
+The MVP treats `key` as immutable. Updates require the current `version`; stale writes
+return `STALE_VERSION`.
+
+---
+
+# 8.4.1 DELETE /entity-types/{entity_type_id}?version={version}
+
+Logically archive an entity type. The operation requires `METADATA_MANAGE`, an active
+membership in the owning workspace, the current resource version, and writes an audit
+record in the same transaction. Archived types are excluded from normal lookup.
+
 ---
 
 # 8.5 POST /entity-types/{entity_type_id}/attributes
@@ -719,11 +730,22 @@ Update attribute metadata.
 
 Changes SHALL be validated against existing data where necessary.
 
+The MVP keeps `key` and `data_type` immutable. Mutable fields require the current
+`version`; all changes require `METADATA_MANAGE` and are audited atomically.
+
 ---
 
 # 8.8 DELETE /attributes/{attribute_id}
 
 Logical deactivation is preferred if persistent values exist.
+
+The MVP uses `DELETE /attributes/{attribute_id}?version={version}` as a logical
+deactivation and excludes deactivated definitions from the active ordered list.
+
+For ENUM and MULTI_ENUM, `display_config.options` is a required non-empty list of
+unique `{value, label}` objects. MVP inheritance uses a `source` object with `scope`,
+stable `attribute`, and optional `entity_type_id`, plus `mode` (`prefill` or
+`read_only`). Referenced metadata must exist in the same workspace.
 
 ---
 

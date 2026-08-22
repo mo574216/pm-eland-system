@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
-import { Navigate, useParams } from 'react-router-dom'
+import { Navigate, useNavigate, useParams } from 'react-router-dom'
 
 import { ApiError } from '../../api/client'
 import { WorkspaceMemberManager } from './WorkspaceMemberManager'
@@ -17,6 +17,7 @@ interface WorkspaceSettingsValues {
 export function WorkspaceSettingsPage() {
   const { t } = useTranslation()
   const { workspaceId } = useParams()
+  const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [saveError, setSaveError] = useState<string | null>(null)
   const [saved, setSaved] = useState(false)
@@ -85,6 +86,9 @@ export function WorkspaceSettingsPage() {
       <Typography component="h1" variant="h1">
         {t('workspaces.settings')}
       </Typography>
+      <Button onClick={() => void navigate(`/workspaces/${workspaceId}/metadata`)}>
+        {t('metadata.openAdministration')}
+      </Button>
       <Stack component="form" noValidate onSubmit={(event) => void submit(event)} spacing={2}>
         {saveError ? <Alert severity="error">{saveError}</Alert> : null}
         {saved ? <Alert severity="success">{t('workspaces.saved')}</Alert> : null}
