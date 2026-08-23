@@ -1200,6 +1200,57 @@ FORM-BE-002 Form Publish and Versioning, while FORM-BE-003 becomes independently
 dependency-ready after FORM-BE-001.
 ```
 
+Form rule evaluator implementation entry:
+
+```text
+DATE:
+2026-08-23
+
+MILESTONE:
+M3 Dynamic Forms and Structured Data
+
+TASKS_COMPLETED:
+FORM-BE-003 Form Rule Evaluator
+
+TASKS_IN_PROGRESS:
+None
+
+TEST_RESULTS:
+Backend formatting, lint, strict mypy, and 131 tests pass. Unit tests cover nested
+visibility, conditional requirement, parent/static inheritance modes, missing values,
+invalid versions/operators/paths, and depth/clause bounds. The live API rejected an
+unknown executable-style operator with INVALID_METADATA/422 and accepted a valid
+version-1 rule set.
+
+SECURITY:
+Rules are interpreted only by a bounded JSON AST; no eval, exec, dynamic import,
+attribute access, templates, or stored code execution is used. Paths traverse only
+explicit dictionary context, operators are allowlisted, nesting is capped at 10, and
+total clauses are capped at 100. Draft field creation invokes the shared validator.
+
+DATABASE_CHANGES:
+None.
+
+API_CHANGES:
+Documented the version-1 conditional and inheritance rule grammar in the API
+specification. Existing JSON payload fields are unchanged.
+
+USER_VISIBLE_RESULT:
+Demo Specification now also has a Mitigation field with conditional visibility and
+requirement plus an editable static default, ready for render-contract testing.
+
+KNOWN_LIMITATIONS:
+The evaluator returns deterministic field state and inherited candidates; loading
+entity/parent/reference/user context and producing the normalized client contract are
+implemented by FORM-BE-004. Publish consumes this validator in FORM-BE-002.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+FORM-BE-002 Form Publish and Versioning.
+```
+
 ---
 
 # 13. Recommended Immediate Implementation Sequence

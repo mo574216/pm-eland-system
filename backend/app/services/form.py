@@ -18,6 +18,7 @@ from app.repositories.form import FormRecord, FormRepository
 from app.repositories.workspace import WorkspaceRepository
 from app.services.auth import AuthenticatedIdentity
 from app.services.authorization import AuditContext, AuthorizationService
+from app.services.form_rules import FormRuleEvaluator, InvalidFormRuleError
 
 
 class FormService:
@@ -27,6 +28,7 @@ class FormService:
         self.authorization = AuthorizationService(actor)
         self.workspace_repository = WorkspaceRepository(session)
         self.repository = FormRepository(session)
+        self.rule_evaluator = FormRuleEvaluator()
 
     async def _require_permission(self, workspace_id: UUID, permission: PermissionCode) -> None:
         workspace = await self.workspace_repository.accessible_workspace(
@@ -163,6 +165,14 @@ class FormService:
             section_key = values.get("section_key")
             if section_key is not None and section_key not in self._section_keys(form):
                 raise InvalidMetadataError({"field": "section_key", "reason": "not_found"})
+            try:
+                self.rule_evaluator.validate_rules(
+                    visibility_rule=self._rule_mapping(values.get("visibility_rule")),
+                    validation_rule=self._rule_mapping(values.get("validation_rule")),
+                    inheritance_rule=self._rule_mapping(values.get("inheritance_rule")),
+                )
+            except InvalidFormRuleError as error:
+                raise InvalidMetadataError({"field": "rules", "reason": "invalid_rule"}) from error
             attribute_id = values.get("attribute_definition_id")
             if attribute_id is not None:
                 if not isinstance(attribute_id, UUID):
@@ -218,6 +228,12 @@ class FormService:
             for section in sections
             if isinstance(section, dict) and isinstance(section.get("key"), str)
         }
+
+    @staticmethod
+    def _rule_mapping(value: object) -> dict[str, object]:
+        if not isinstance(value, dict) or not all(isinstance(key, str) for key in value):
+            raise InvalidFormRuleError("Rule must be an object with string keys.")
+        return value
 
     @staticmethod
     def _form_state(form: FormDefinition) -> dict[str, object]:

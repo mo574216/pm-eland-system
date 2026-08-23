@@ -1174,6 +1174,39 @@ Add field to draft form.
 }
 ```
 
+Rule objects use a bounded, versioned JSON grammar. Empty objects mean no rule.
+Conditional rules use `version: 1` plus `condition` (visibility) or `required_when`
+(conditional requirement). Expressions support `all`, `any`, `not`, and comparisons:
+
+```json
+{
+  "version": 1,
+  "condition": {
+    "path": "current.risk_level",
+    "operator": "eq",
+    "value": "HIGH"
+  }
+}
+```
+
+Comparison operators are `eq`, `neq`, `in`, `not_in`, `exists`, `gt`, `gte`, `lt`,
+and `lte`. Paths resolve only through supplied metadata contexts such as `current`,
+`parent`, `referenced`, and `user`.
+
+Inheritance rules use exactly one of `source_path` or `static_value` and an explicit
+mode of `READ_ONLY` or `EDITABLE_DEFAULT`:
+
+```json
+{
+  "version": 1,
+  "source_path": "parent.name",
+  "mode": "READ_ONLY"
+}
+```
+
+Unknown versions/operators/keys, invalid paths, more than 100 clauses, or nesting
+deeper than 10 levels SHALL be rejected. Stored rules SHALL never execute code.
+
 ---
 
 # 11.6 POST /forms/{form_id}/publish

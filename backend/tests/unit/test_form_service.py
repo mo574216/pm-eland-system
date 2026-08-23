@@ -258,6 +258,15 @@ async def test_add_field_validates_attribute_type_and_audits() -> None:
         "inheritance_rule": {},
     }
 
+    values["visibility_rule"] = {
+        "version": 1,
+        "condition": {"path": "current.risk", "operator": "python_eval", "value": "x"},
+    }
+    with pytest.raises(InvalidMetadataError) as invalid_rule:
+        await service.add_field(repository.form.id, values=values, audit=audit_context())
+    assert invalid_rule.value.details == {"field": "rules", "reason": "invalid_rule"}
+
+    values["visibility_rule"] = {}
     with pytest.raises(InvalidMetadataError):
         await service.add_field(repository.form.id, values=values, audit=audit_context())
 
