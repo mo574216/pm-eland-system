@@ -876,6 +876,44 @@ NEXT_TASK:
 ENT-FE-001 Entity Tree Viewer, then ENT-FE-002 Generic Entity Detail Page.
 ```
 
+Entity tree frontend implementation entry:
+
+```text
+DATE:
+2026-08-23
+
+MILESTONE:
+M2 Metadata and Generic Entity Platform
+
+TASKS_COMPLETED:
+ENT-FE-001 Entity Tree Viewer
+
+TASKS_IN_PROGRESS:
+None
+
+TEST_RESULTS:
+Frontend zero-warning ESLint, strict TypeScript, 10 test files with 20 tests, and
+the production build pass. Component tests cover cached root expansion, lazy deeper
+child loading, node selection, initial failure, and retry.
+
+SECURITY:
+The viewer consumes only the backend-authorized workspace hierarchy response and
+does not infer access locally. Optional node actions are injected through a generic
+render hook so callers can gate them using effective permissions without embedding
+domain-specific behavior.
+
+USER_VISIBLE_RESULT:
+Opening a workspace now navigates to the generic entity explorer. The live Demo
+Workspace contains Demo Root, Demo Child, Second Root, and the Demo Node metadata
+type for previewing hierarchy expansion.
+
+KNOWN_LIMITATIONS:
+Entity creation/editing and detail tabs are delivered by subsequent frontend tasks.
+
+NEXT_TASK:
+ENT-FE-002 Generic Entity Detail Page.
+```
+
 ---
 
 # 13. Recommended Immediate Implementation Sequence

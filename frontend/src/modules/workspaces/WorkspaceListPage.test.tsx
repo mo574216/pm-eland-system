@@ -83,7 +83,7 @@ describe('WorkspaceListPage', () => {
     await user.click(await screen.findByRole('button', { name: 'باز کردن' }))
 
     expect(
-      screen.getByText('/workspaces/6ab93847-d2b3-43b8-aae1-15662031feb8/settings'),
+      screen.getByText('/workspaces/6ab93847-d2b3-43b8-aae1-15662031feb8/entities'),
     ).toBeInTheDocument()
   })
 })

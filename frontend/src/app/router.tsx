@@ -3,6 +3,7 @@ import { Navigate, createBrowserRouter } from 'react-router-dom'
 import { AppShell } from '../layouts/AppShell'
 import { LoginPage } from '../modules/auth/LoginPage'
 import { ProtectedRoute } from '../modules/auth/ProtectedRoute'
+import { EntityExplorerPage } from '../modules/entities/EntityExplorerPage'
 import { EntityTypeEditor } from '../modules/metadata/EntityTypeEditor'
 import { EntityTypeList } from '../modules/metadata/EntityTypeList'
 import { WorkspaceListPage } from '../modules/workspaces/WorkspaceListPage'
@@ -19,6 +20,7 @@ export const router = createBrowserRouter([
         element: <AppShell />,
         children: [
           { path: '/workspaces', element: <WorkspaceListPage /> },
+          { path: '/workspaces/:workspaceId/entities', element: <EntityExplorerPage /> },
           { path: '/workspaces/:workspaceId/metadata', element: <EntityTypeList /> },
           {
             path: '/workspaces/:workspaceId/metadata/:entityTypeId',
