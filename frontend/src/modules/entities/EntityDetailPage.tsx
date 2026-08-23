@@ -17,6 +17,7 @@ import { useSelector } from 'react-redux'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
 
 import { listAttributes } from '../metadata/metadataApi'
+import { EntityFormsPanel } from '../forms/EntityFormsPanel'
 import { RelationshipPanel } from '../relationships/RelationshipPanel'
 import type { RootState } from '../../store/store'
 import { getEntity } from './entityApi'
@@ -38,6 +39,9 @@ export function EntityDetailPage() {
   const navigate = useNavigate()
   const canManageRelationships = useSelector((state: RootState) =>
     state.auth.user?.permissions.includes('RELATIONSHIP_MANAGE'),
+  ) ?? false
+  const canSubmitForms = useSelector((state: RootState) =>
+    state.auth.user?.permissions.includes('FORM_SUBMIT'),
   ) ?? false
   const { workspaceId, entityId } = useParams()
   const [activeTab, setActiveTab] = useState<TabKey>('overview')
@@ -150,7 +154,16 @@ export function EntityDetailPage() {
         />
       ) : null}
 
-      {!['overview', 'information', 'relationships'].includes(activeTab) ? (
+      {activeTab === 'forms' ? (
+        <EntityFormsPanel
+          canEdit={canSubmitForms}
+          entityId={entityId}
+          entityTypeId={entity.data.entity_type_id}
+          workspaceId={workspaceId}
+        />
+      ) : null}
+
+      {!['overview', 'information', 'forms', 'relationships'].includes(activeTab) ? (
         <Alert severity="info">{t('entities.sectionPending')}</Alert>
       ) : null}
     </Stack>

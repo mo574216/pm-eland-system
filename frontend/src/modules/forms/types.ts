@@ -33,6 +33,52 @@ export interface FormRenderField {
   validation_rule: Record<string, unknown>
 }
 
+export interface FormRenderSection {
+  key: string | null
+  label: string | null
+  order: number
+  configuration: Record<string, unknown>
+  fields: FormRenderField[]
+}
+
+export interface FormRenderContract {
+  form: {
+    id: string
+    key: string
+    name: string
+    version_number: number
+    lifecycle_status: 'DRAFT' | 'PUBLISHED' | 'RETIRED'
+  }
+  entity_id: string | null
+  sections: FormRenderSection[]
+}
+
+export interface FormSummary {
+  id: string
+  workspace_id: string
+  entity_type_id: string | null
+  key: string
+  name: string
+  description: string | null
+  version_number: number
+  lifecycle_status: 'DRAFT' | 'PUBLISHED' | 'RETIRED'
+}
+
+export interface FormInstance {
+  id: string
+  workspace_id: string
+  form_definition_id: string
+  entity_id: string
+  status: 'DRAFT' | 'SUBMITTED' | 'APPROVED' | 'REVISION_REQUESTED'
+  values: Record<string, unknown>
+  version: number
+  created_at: string
+  updated_at: string
+  submitted_by: string | null
+  submitted_at: string | null
+  form: FormRenderContract['form']
+}
+
 export interface TableColumn {
   key: string
   label: string

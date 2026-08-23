@@ -1536,6 +1536,69 @@ NEXT_TASK:
 FORM-FE-002 Dynamic Form Renderer, as the next single demo-visible feature.
 ```
 
+Dynamic form renderer implementation entry:
+
+```text
+DATE:
+2026-08-23
+
+MILESTONE:
+M3 Dynamic Forms and Structured Data
+
+TASKS_COMPLETED:
+FORM-FE-002 Dynamic Form Renderer
+
+TASKS_IN_PROGRESS:
+None
+
+TEST_RESULTS:
+Quota-conscious focused frontend verification passes: zero-warning ESLint across
+the forms module and entity integration, strict application TypeScript, and 2
+targeted form-level interaction tests. The test assertions cover the critical
+fetch/render/create/save/error flow and complete in under one second after module
+loading. Full frontend regression, production build, and browser E2E remain deferred
+to the demo release checkpoint.
+
+SECURITY:
+The frontend shows save controls only with FORM_SUBMIT as a UX guard. Backend
+membership, FORM_SUBMIT/ENTITY_READ authorization, workspace isolation, validation,
+and optimistic concurrency remain authoritative. Backend errors are mapped using
+stable codes and field paths rather than displaying server diagnostics.
+
+DATABASE_CHANGES:
+None.
+
+API_CHANGES:
+None. The feature consumes FORM-BE-004 and DATA-BE-001 contracts.
+
+TESTS_ADDED:
+Focused coverage verifies ordered section rendering, current-value population,
+first-save instance creation, versioned draft persistence, success feedback, and
+authoritative backend validation mapping to the correct field.
+
+USER_VISIBLE_RESULT:
+The generic entity detail Forms tab now lists published forms for the entity type,
+opens the selected form, renders all metadata-defined sections/fields, visually
+preserves inherited/read-only values, creates a draft on first save, and persists
+later edits using optimistic concurrency. No domain-specific entity/form branches
+were introduced.
+
+KNOWN_LIMITATIONS:
+There is no instance-by-entity/form lookup endpoint, so reopening the page cannot yet
+rediscover a previously created draft; the current browser session keeps and updates
+the created instance. Final submit/required validation and canonical entity-value
+synchronization remain DATA-BE-002. The local backend must be restarted before the
+running website exposes the supporting APIs.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+DATA-BE-002 Submit Form Instance as the next single important feature. A durable
+instance lookup/resume API remains an open product-contract decision and is not
+invented inside this task.
+```
+
 ---
 
 # 13. Recommended Immediate Implementation Sequence
