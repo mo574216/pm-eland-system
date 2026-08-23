@@ -92,6 +92,6 @@ describe('EntityDetailPage', () => {
     expect(screen.getByText('12')).toBeInTheDocument()
 
     await user.click(screen.getByRole('tab', { name: 'اسناد' }))
-    expect(screen.getByText('این بخش در گام بعدی پیاده‌سازی می‌شود.')).toBeInTheDocument()
+    expect(screen.getByText('شما اجازه مشاهده اسناد این فضای کاری را ندارید.')).toBeInTheDocument()
   })
 })

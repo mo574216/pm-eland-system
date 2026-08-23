@@ -1451,11 +1451,45 @@ Response:
 
 ---
 
+# 13.1A GET /entities/{entity_id}/documents
+
+Return a paginated list of logical documents associated with an accessible entity.
+The caller requires `DOCUMENT_READ`. Each item includes logical metadata and the
+current immutable version summary; private object keys are never returned.
+
+---
+
 # 13.2 POST /documents/{document_id}/versions
 
 Upload new immutable version.
 
 Silent overwrite is prohibited.
+
+### Content Type
+
+```text
+multipart/form-data
+```
+
+### Parts
+
+```text
+file
+comment (optional)
+```
+
+The caller requires `DOCUMENT_UPLOAD`. The backend SHALL lock the logical
+document while allocating the next version number, preserve all previous version
+rows and objects, and advance `current_version_id` transactionally.
+
+### Success
+
+```text
+202 Accepted
+```
+
+The response uses the same document/version/scan-status envelope as the first
+version upload, with the newly allocated version number.
 
 ---
 
@@ -1463,17 +1497,29 @@ Silent overwrite is prohibited.
 
 Retrieve logical document metadata.
 
+The response includes the current-version summary but excludes private storage
+object keys. Active workspace membership and `DOCUMENT_READ` are required.
+
 ---
 
 # 13.4 GET /documents/{document_id}/versions
 
 Paginated version history.
 
+Versions are returned newest first and preserve immutable historical metadata.
+Private object keys are excluded. Active workspace membership and `DOCUMENT_READ`
+are required.
+
 ---
 
 # 13.5 GET /document-versions/{version_id}/download
 
 Authorized download.
+
+The caller requires active workspace membership and `DOCUMENT_READ`. Authorization
+and configured scan-state policy SHALL be evaluated before storage access is
+generated. Inaccessible version identifiers SHALL NOT disclose cross-workspace
+existence.
 
 Implementation MAY:
 
@@ -1494,11 +1540,21 @@ If returning URL:
 }
 ```
 
+Presigned access SHALL scope to the exact immutable object and expire within the
+configured security bound of 5–15 minutes.
+
 ---
 
 # 13.6 GET /document-versions/{version_id}/preview
 
 Return preview availability.
+
+Active workspace membership and `DOCUMENT_READ` are required, and configured
+scan-state policy is enforced before any preview access is generated. CLEAN PDF,
+PNG, and JPEG versions MAY use their exact immutable private object for safe
+browser-native preview. Raw SVG SHALL NOT be returned for embedding. Office and
+other conversion-dependent formats require an isolated background conversion
+workflow and do not expose their original object as a preview.
 
 Possible response:
 
@@ -1522,11 +1578,30 @@ If conversion pending:
 202 Accepted
 ```
 
+All ready preview URLs use the same bounded presigned-access policy as downloads.
+
 ---
 
 # 14. Import API
 
 The import API SHALL use a staged lifecycle.
+
+# 14.0 Import Profiles
+
+Reusable profiles and their mappings are managed through:
+
+```text
+POST /workspaces/{workspace_id}/import-profiles
+GET /workspaces/{workspace_id}/import-profiles
+GET /import-profiles/{profile_id}
+PATCH /import-profiles/{profile_id}
+```
+
+Creating a profile stores its mappings atomically. A mapping targets exactly one
+active attribute definition belonging to the profile entity type or one supported
+generic entity system field (`name`, `description`, or `parent_id`). Replacing a
+mapping set is atomic. Every operation requires active workspace membership and
+`IMPORT_EXECUTE`; mutations are audited.
 
 # 14.1 POST /workspaces/{workspace_id}/imports
 

@@ -7,6 +7,10 @@ from pydantic import AnyHttpUrl, Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+def _default_download_scan_statuses() -> list[Literal["PENDING", "CLEAN"]]:
+    return ["CLEAN"]
+
+
 class Settings(BaseSettings):
     """Application settings loaded from environment variables or local dotenv files."""
 
@@ -40,6 +44,31 @@ class Settings(BaseSettings):
     allowed_hosts: list[str] = Field(
         default_factory=lambda: ["localhost", "127.0.0.1", "testserver"]
     )
+    storage_endpoint: str = "localhost:9000"
+    storage_access_key: SecretStr | None = None
+    storage_secret_key: SecretStr | None = None
+    storage_secure: bool = False
+    storage_bucket: str = "pm-eland-documents"
+    storage_presigned_expiry_seconds: int = Field(default=600, ge=60, le=900)
+    document_max_upload_bytes: int = Field(default=52_428_800, ge=1, le=1_073_741_824)
+    document_allowed_mime_by_extension: dict[str, list[str]] = Field(
+        default_factory=lambda: {
+            ".pdf": ["application/pdf"],
+            ".docx": ["application/vnd.openxmlformats-officedocument.wordprocessingml.document"],
+            ".xlsx": ["application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"],
+            ".csv": ["text/csv", "application/csv"],
+            ".png": ["image/png"],
+            ".jpg": ["image/jpeg"],
+            ".jpeg": ["image/jpeg"],
+            ".svg": ["image/svg+xml"],
+            ".bpmn": ["application/xml", "text/xml"],
+            ".xml": ["application/xml", "text/xml"],
+            ".vpp": ["application/octet-stream"],
+        }
+    )
+    document_download_allowed_scan_statuses: list[Literal["PENDING", "CLEAN"]] = Field(
+        default_factory=_default_download_scan_statuses
+    )
 
     @model_validator(mode="after")
     def validate_authentication_security(self) -> Self:
@@ -50,6 +79,8 @@ class Settings(BaseSettings):
                 raise ValueError("JWT_SECRET is required in production.")
             if not self.auth_cookie_secure:
                 raise ValueError("AUTH_COOKIE_SECURE must be enabled in production.")
+            if self.storage_access_key is None or self.storage_secret_key is None:
+                raise ValueError("Object-storage credentials are required in production.")
         return self
 
 

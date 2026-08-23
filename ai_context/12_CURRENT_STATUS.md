@@ -1969,6 +1969,852 @@ After these, implementation should begin rather than continuing architecture doc
 
 ---
 
+Form designer MVP implementation entry:
+
+```text
+DATE:
+2026-08-23
+
+MILESTONE:
+M3 Dynamic Forms and Structured Data
+
+TASKS_COMPLETED:
+FORM-FE-004 Form Designer MVP
+
+TASKS_IN_PROGRESS:
+None
+
+SUMMARY:
+Added a Persian RTL workspace form designer for creating generic draft forms,
+adding ordered sections and fields, configuring options, required/read-only
+behavior and inheritance metadata, and previewing the backend render contract.
+
+FILES_CHANGED:
+Frontend form types/API, form designer page and focused test, dynamic form preview,
+workspace route/navigation/dashboard, and Persian localization.
+
+DATABASE_CHANGES:
+None.
+
+API_CHANGES:
+None. The UI consumes the existing FORM-BE-001 and FORM-BE-004 contracts.
+
+TESTS_ADDED:
+One focused interaction test proving an administrator can select a draft and add
+a metadata-defined ordered section through the authoritative form API.
+
+TEST_RESULTS:
+Quota-conscious focused gates pass: zero-warning ESLint for all affected frontend
+modules, strict application TypeScript, and the focused FormDesignerPage test
+(1 test passed). Broad regression/build gates remain deferred to the demo checkpoint.
+
+SECURITY_IMPACT:
+No authorization authority moved to the frontend. The designer only invokes the
+existing backend-authorized, workspace-isolated form and metadata endpoints.
+
+KNOWN_LIMITATIONS:
+Field editing/removal and drag-and-drop ordering are not exposed by the current
+draft-form contract. Publishing and creating a new version remain FORM-FE-005.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+FORM-FE-005 Publish/New Version UI, the next dependency-ready demo-visible feature.
+```
+
+Publish/new-version UI implementation entry:
+
+```text
+DATE:
+2026-08-23
+
+MILESTONE:
+M3 Dynamic Forms and Structured Data
+
+TASKS_COMPLETED:
+FORM-FE-005 Publish/New Version UI
+
+TASKS_IN_PROGRESS:
+None
+
+SUMMARY:
+Added lifecycle controls to publish draft form definitions through an explicit
+immutability confirmation and to copy published definitions into a newly selected
+draft version for continued design.
+
+FILES_CHANGED:
+Frontend form API, form designer lifecycle UI, Persian localization, focused form
+designer tests, and current status documentation.
+
+DATABASE_CHANGES:
+None.
+
+API_CHANGES:
+None. The UI consumes the existing FORM-BE-002 publish and new-version endpoints.
+
+TESTS_ADDED:
+Focused interaction coverage for publish confirmation and creating/selecting a
+new draft version, alongside the existing draft-section designer test.
+
+TEST_RESULTS:
+Quota-conscious focused gates pass: zero-warning ESLint for affected modules,
+strict application TypeScript, and 3 FormDesignerPage interaction tests.
+
+SECURITY_IMPACT:
+Frontend controls are UX only. FORM_DESIGN authorization, workspace isolation,
+validation, audit, and published-definition immutability remain backend enforced.
+
+KNOWN_LIMITATIONS:
+The list currently displays stable lifecycle codes with version numbers; richer
+localized lifecycle filters and history comparison are deferred UI enhancements.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+Housekeeping and dependency audit for the next P0 M4 document/import slice.
+```
+
+Document schema implementation entry:
+
+```text
+DATE:
+2026-08-23
+
+MILESTONE:
+M4 Documents and Import
+
+TASKS_COMPLETED:
+DOC-DB-001 Document Schema
+
+TASKS_IN_PROGRESS:
+None
+
+SUMMARY:
+Added the generic logical-document and immutable document-version persistence
+model, including private object keys, checksums, scan/preview states, version
+identity, current-version linkage, and workspace/entity ownership metadata.
+
+FILES_CHANGED:
+Document ORM models and exports, Alembic revision 0010, focused schema-contract
+tests, and current status documentation.
+
+DATABASE_CHANGES:
+Revision 0010 creates documents and document_versions, their constraints and
+indexes, then adds the circular current-version foreign key safely. The local
+PostgreSQL database migrated successfully from 0009 to 0010 (head).
+
+API_CHANGES:
+None.
+
+TESTS_ADDED:
+Two schema-contract tests covering workspace/entity ownership, current-version
+linkage, immutable version numbering, unique object keys, JSON metadata, and
+storage-state constraints.
+
+TEST_RESULTS:
+Focused Ruff and strict mypy checks pass; 2 schema tests pass; Alembic upgrade to
+0010 completes against local PostgreSQL and reports 0010 as head.
+
+SECURITY_IMPACT:
+Binary data remains outside PostgreSQL. The schema stores only private object
+identifiers and security workflow state; it introduces no public storage access
+or client credentials. API authorization remains future document-service work.
+
+KNOWN_LIMITATIONS:
+Schema alone cannot enforce that current_version_id belongs to the same logical
+document; the document service must set it transactionally from a locked version
+record belonging to that document. Storage IO starts with DOC-BE-001.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+DOC-BE-001 Storage Provider Abstraction.
+```
+
+Storage provider abstraction implementation entry:
+
+```text
+DATE:
+2026-08-23
+
+MILESTONE:
+M4 Documents and Import
+
+TASKS_COMPLETED:
+DOC-BE-001 Storage Provider Abstraction
+
+TASKS_IN_PROGRESS:
+None
+
+SUMMARY:
+Added the async StorageProvider boundary and a MinioStorageProvider adapter for
+private uploads, deletion, existence checks, bucket initialization, and bounded
+presigned upload/download access. Added validated environment configuration and
+a factory that unwraps credentials only when constructing the adapter.
+
+FILES_CHANGED:
+Backend storage service, settings, MinIO dependency/lock, focused storage tests,
+one production-settings fixture, and current status documentation.
+
+DATABASE_CHANGES:
+None.
+
+API_CHANGES:
+None.
+
+TESTS_ADDED:
+Focused coverage verifies private-bucket operations, exact object scoping,
+five-minute URL expiry, rejection of unsafe path shapes before IO, missing-secret
+failure, and the maximum expiry bound.
+
+TEST_RESULTS:
+Focused Ruff and strict mypy checks pass; 12 storage/config/security tests pass;
+the frozen dependency lock resolves successfully using the repository-local cache.
+
+SECURITY_IMPACT:
+Buckets remain private, URLs are limited to 60–900 seconds, object keys reject
+absolute/traversal shapes, secrets use SecretStr and are never returned by the
+adapter, and provider failures expose stable non-sensitive messages.
+
+KNOWN_LIMITATIONS:
+The adapter is unit-tested against a faithful client fake; live MinIO integration
+is deferred until deployment services are available. Authorization must occur in
+the document service before requesting any presigned URL.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+DOC-BE-002 Upload First Document Version.
+```
+
+First document-version upload implementation entry:
+
+```text
+DATE:
+2026-08-23
+
+MILESTONE:
+M4 Documents and Import
+
+TASKS_COMPLETED:
+DOC-BE-002 Upload First Document Version
+
+TASKS_IN_PROGRESS:
+None
+
+SUMMARY:
+Added the authenticated multipart upload endpoint and transactional document
+service that creates a logical document plus immutable version 1, stores the
+binary under a server-generated private key, computes SHA-256, marks scanning
+pending, sets the current version, and emits a workspace-scoped audit record.
+
+FILES_CHANGED:
+Document API/dependency/schema/repository/service, router/application injection,
+file-policy settings and errors, document model type alignment, multipart
+dependency/lock, focused service/OpenAPI tests, and current status documentation.
+
+DATABASE_CHANGES:
+No new migration. DOC-DB-001 revision 0010 is consumed. The ORM file-size type
+was aligned with the migration's BIGINT definition.
+
+API_CHANGES:
+Implemented the already-published POST /api/v1/entities/{entity_id}/documents
+multipart contract with its canonical 202 success envelope.
+
+TESTS_ADDED:
+Focused tests cover permission-before-IO, workspace/entity ownership, extension
+and MIME pairing, PDF spoof detection, actual-size limits, safe generated keys,
+checksum/version/current linkage, audit emission, and orphan cleanup after a
+database failure. Generated OpenAPI multipart/202 behavior is also asserted.
+
+TEST_RESULTS:
+Focused Ruff and strict mypy checks pass; 9 combined document schema, storage,
+upload-service, and OpenAPI tests pass. The dependency lock includes and installs
+python-multipart successfully.
+
+SECURITY_IMPACT:
+The backend is authoritative for permission and workspace scope. Original names
+never influence object paths; unsafe filenames, disallowed extension/MIME pairs,
+oversized/empty files, and obvious signature mismatches are rejected before IO.
+Audit state excludes object keys and checksums. Failed persistence triggers
+best-effort private-object cleanup.
+
+KNOWN_LIMITATIONS:
+Deep malware analysis remains DOC-BE-006. Signature checks are deliberately
+lightweight and do not replace quarantined scanning. Live MinIO integration is
+still deferred to deployment-service availability.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+DOC-BE-003 Add Document Version.
+```
+
+Immutable document-version upload implementation entry:
+
+```text
+DATE:
+2026-08-23
+
+MILESTONE:
+M4 Documents and Import
+
+TASKS_COMPLETED:
+DOC-BE-003 Add Document Version
+
+TASKS_IN_PROGRESS:
+None
+
+SUMMARY:
+Added multipart upload of subsequent immutable versions. The service locks the
+accessible active logical document, allocates the next number, stores a new
+private object, preserves every previous row/object, advances the current pointer
+transactionally, and audits the before/after version identity.
+
+FILES_CHANGED:
+Document repository/service/API/schema, canonical and narrative API contracts,
+focused service/OpenAPI tests, and current status documentation.
+
+DATABASE_CHANGES:
+None. Existing DOC-DB-001 uniqueness and foreign-key constraints are consumed.
+
+API_CHANGES:
+Added POST /api/v1/documents/{document_id}/versions as multipart file plus optional
+comment, returning the canonical 202 document/version/scan-status envelope. The
+previously missing endpoint is now recorded in contracts/openapi.yaml and the API
+specification.
+
+TESTS_ADDED:
+Focused coverage proves row-lock use, monotonically allocated version 2, untouched
+version 1 identity/object key, current pointer advancement, comment persistence,
+audit before/after state, and generated multipart OpenAPI behavior.
+
+TEST_RESULTS:
+Focused Ruff and strict mypy checks pass; 10 combined document schema, storage,
+upload/version-service, and OpenAPI tests pass; canonical OpenAPI YAML parses.
+
+SECURITY_IMPACT:
+Active membership and DOCUMENT_UPLOAD are enforced before storage access; locked
+allocation prevents concurrent silent overwrite; every version uses a new
+server-generated key; all first-upload file security checks are reused.
+
+KNOWN_LIMITATIONS:
+Version history retrieval is implemented with the upcoming document panel/API
+work. Malware and preview state processing remain separate backlog tasks.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+DOC-BE-004 Download Access, while document metadata/history reads required by the
+frontend panel will be added with the smallest contract-aligned read slice.
+```
+
+Authorized document download implementation entry:
+
+```text
+DATE:
+2026-08-23
+
+MILESTONE:
+M4 Documents and Import
+
+TASKS_COMPLETED:
+DOC-BE-004 Download Access
+
+TASKS_IN_PROGRESS:
+None
+
+SUMMARY:
+Added authorized exact-version download access through a private, short-lived
+presigned URL. Version lookup is membership-scoped, DOCUMENT_READ is authoritative,
+and configured scan policy is evaluated before any object-storage URL is generated.
+
+FILES_CHANGED:
+Document repository/service/API/schema, scan-policy settings and stable exception,
+canonical/narrative API contracts, focused service/OpenAPI tests, and status docs.
+
+DATABASE_CHANGES:
+None.
+
+API_CHANGES:
+Added GET /api/v1/document-versions/{version_id}/download returning url and
+expires_at in the canonical success envelope. The route is recorded in both API
+contracts with 403/404/422 behavior.
+
+TESTS_ADDED:
+Focused coverage proves inaccessible versions, missing DOCUMENT_READ, and PENDING
+scan status never generate storage access; CLEAN versions generate a URL for only
+their exact object with the configured ten-minute expiry.
+
+TEST_RESULTS:
+Focused Ruff and strict mypy checks pass; 11 combined document schema, storage,
+upload/version/download, and OpenAPI tests pass; canonical OpenAPI YAML parses.
+
+SECURITY_IMPACT:
+Private-bucket access is generated only after membership, permission, and scan
+checks. Cross-workspace identifiers are hidden as not found. Default quarantine
+permits only CLEAN objects, and presigned expiry remains bounded to 5–15 minutes.
+
+KNOWN_LIMITATIONS:
+Uploads remain PENDING until DOC-BE-006 supplies malware-state transitions. The
+default policy intentionally prevents downloading unscanned content.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+DOC-FE-001 Document Panel with the contract-aligned document metadata/history read
+slice, prioritized as the next demo-visible feature. DOC-BE-005 remains required
+before DOC-FE-002 preview UI.
+```
+
+Document panel and metadata/history read implementation entry:
+
+```text
+DATE:
+2026-08-23
+
+MILESTONE:
+M4 Documents and Import
+
+TASKS_COMPLETED:
+DOC-FE-001 Document Panel
+Supporting contract-aligned document metadata/history read slice
+
+TASKS_IN_PROGRESS:
+None
+
+SUMMARY:
+Mounted a generic Persian RTL Document Panel in every entity detail page. Users
+with permissions can upload a logical document, see current scan/version state,
+open immutable history, upload subsequent versions, and download CLEAN versions.
+Added workspace-authorized list/detail/history reads needed by the panel.
+
+FILES_CHANGED:
+Backend document read repository/service/API/schemas, canonical/narrative API
+contracts and tests; frontend multipart client handling, generic document API/types/
+panel and test, entity-detail integration, Persian localization, and status docs.
+
+DATABASE_CHANGES:
+None.
+
+API_CHANGES:
+Added contract-aligned GET endpoints for entity documents, logical document
+metadata, and immutable version history. Responses exclude private object keys.
+
+TESTS_ADDED:
+Backend coverage verifies workspace/permission-scoped metadata/history reads with
+no storage access. Frontend coverage verifies list/current state, expandable
+immutable history, and multipart logical-document upload; entity-tab integration
+now verifies the document permission state.
+
+TEST_RESULTS:
+Focused backend Ruff/mypy and 7 read/service/OpenAPI tests pass. Frontend zero-
+warning ESLint, strict TypeScript, the DocumentPanel test, and the entity-detail
+integration test pass. Canonical OpenAPI YAML parses. Broad gates remain deferred
+to the demo checkpoint per quota policy.
+
+SECURITY_IMPACT:
+Backend membership and DOCUMENT_READ/UPLOAD remain authoritative. Metadata reads
+never require or expose storage credentials/object keys. Download stays disabled
+in the UI unless CLEAN, while the backend independently enforces scan policy.
+Client file checks are UX only and multipart boundaries are browser-generated.
+
+KNOWN_LIMITATIONS:
+Upload progress is represented by disabled/pending controls rather than byte-level
+progress because the shared fetch client does not expose upload progress events.
+The running local backend must be restarted before the browser can use new routes.
+Preview waits for DOC-BE-005 and DOC-FE-002.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+DOC-BE-005 Preview Workflow, followed by DOC-FE-002 Preview and Version History UI.
+```
+
+Native document preview workflow implementation entry:
+
+```text
+DATE:
+2026-08-23
+
+MILESTONE:
+M4 Documents and Import
+
+TASKS_COMPLETED:
+DOC-BE-005 Preview Workflow (P0 PDF/images)
+
+TASKS_IN_PROGRESS:
+None
+
+SUMMARY:
+Added authorized preview availability and short-lived exact-object access for
+CLEAN PDF, PNG, and JPEG versions. Native-preview capability is recorded at upload
+without bypassing quarantine. Conversion-dependent formats remain explicitly
+unavailable/queued, and raw SVG is never returned for embedding.
+
+FILES_CHANGED:
+Document upload/preview service, preview API/schema, canonical/narrative contracts,
+focused preview/OpenAPI tests, and current status documentation.
+
+DATABASE_CHANGES:
+None. Existing preview_status metadata is used; newly uploaded native-preview
+formats are marked READY while scan_status remains independently PENDING.
+
+API_CHANGES:
+Added GET /api/v1/document-versions/{version_id}/preview with 200 availability/
+ready responses and declared 202 behavior for queued conversion workflows.
+
+TESTS_ADDED:
+Focused coverage verifies PENDING quarantine, CLEAN PDF and raster IMAGE access,
+exact-object URL generation, bounded expiry, and refusal to preview raw SVG.
+
+TEST_RESULTS:
+Focused Ruff and strict mypy checks pass; 7 document-service/OpenAPI tests pass;
+canonical OpenAPI YAML parses.
+
+SECURITY_IMPACT:
+Membership, DOCUMENT_READ, and scan policy precede storage access. URLs stay
+private, exact-object, and bounded. No server-side PDF execution, raw SVG embed,
+Office macro execution, or in-process conversion was introduced.
+
+KNOWN_LIMITATIONS:
+Office preview conversion is P1 and requires an isolated background worker. Old
+rows created before this feature may retain NOT_REQUESTED until reprocessed.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+DOC-FE-002 Preview and Version History UI.
+```
+
+Document preview and version-history UI implementation entry:
+
+```text
+DATE:
+2026-08-23
+
+MILESTONE:
+M4 Documents and Import
+
+TASKS_COMPLETED:
+DOC-FE-002 Preview and Version History UI
+
+TASKS_IN_PROGRESS:
+None
+
+SUMMARY:
+Extended the generic Document Panel with backend-authorized preview access and a
+Persian RTL dialog for immutable versions. Backend-declared PDF previews render in
+a dedicated iframe and raster images render responsively; history, scan/preview
+states, version upload, and download remain available together.
+
+FILES_CHANGED:
+Frontend document types/API/panel, Persian localization, focused panel test, and
+current status documentation.
+
+DATABASE_CHANGES:
+None.
+
+API_CHANGES:
+None. The UI consumes the DOC-BE-005 preview contract.
+
+TESTS_ADDED:
+Focused interaction coverage verifies history expansion, preview request for the
+selected immutable version, safe PDF dialog rendering with the authorized URL,
+dialog closure, and the existing multipart upload flow.
+
+TEST_RESULTS:
+Zero-warning ESLint and strict application TypeScript pass; the focused Document
+Panel preview/history/upload interaction test passes. Broader gates remain deferred
+to the demo checkpoint per quota policy.
+
+SECURITY_IMPACT:
+The frontend renders only backend-declared PDF or IMAGE preview types, uses
+no-referrer embeds, and never infers/executes SVG or Office content. Preview buttons
+remain disabled unless scan and preview states are CLEAN/READY; backend policy is
+still authoritative.
+
+KNOWN_LIMITATIONS:
+Office conversion preview remains P1. Byte-level upload progress is still not
+available through the shared fetch client. New backend routes require a local API
+restart before browser use.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+IMP-DB-001 Import Schema, the next dependency-ready P0 backlog task. DOC-BE-006
+Malware Scan Workflow remains P1 security hardening.
+```
+
+Import schema implementation entry:
+
+```text
+DATE:
+2026-08-23
+
+MILESTONE:
+M4 Documents and Import
+
+TASKS_COMPLETED:
+IMP-DB-001 Import Schema
+
+TASKS_IN_PROGRESS:
+None
+
+SUMMARY:
+Added the generic, metadata-driven persistence foundation for reusable import
+profiles, column mappings, staged import jobs, and explicit conflict resolution.
+The schema follows the documented safe lifecycle and does not introduce any
+domain-specific concepts.
+
+FILES_CHANGED:
+Import ORM models and exports, Alembic revision 0011, focused schema contract
+tests, and current status documentation.
+
+DATABASE_CHANGES:
+Revision 0011 creates import_profiles, import_mappings, import_jobs, and
+import_conflicts with the specified foreign keys, JSONB configuration/value
+fields, lifecycle and resolution checks, conflict lookup index, and optional
+workspace-scoped idempotency uniqueness. The local database was upgraded from
+0010 to 0011 successfully.
+
+API_CHANGES:
+None.
+
+TESTS_ADDED:
+Three focused contract tests cover generic profile/mapping metadata, staged job
+summaries and idempotency, and preservation of both conflict values with explicit
+resolution.
+
+TEST_RESULTS:
+Ruff formatting and lint pass for the changed files; strict mypy passes for the
+new model; all three focused schema tests pass; migration upgrade to 0011 and head
+verification pass. The repository-wide Alembic drift check still reports older
+identity/audit ORM-to-migration differences outside this task.
+
+SECURITY_IMPACT:
+Profiles and jobs are workspace-scoped, import source objects remain private
+storage references, job retries can be made idempotent per workspace, and conflict
+records retain both canonical and imported values so later services cannot silently
+overwrite data.
+
+KNOWN_LIMITATIONS:
+Service-layer work must validate that profiles, entity types, attributes, jobs,
+and users belong to the same workspace. Parser limits, mapping validation, dry-run,
+transactional commit, authorization, and audit behavior are implemented by the
+following IMP-BE tasks rather than this persistence-only task. Pre-existing
+identity/audit Alembic drift remains to be reconciled during housekeeping.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+IMP-BE-001 XLSX/CSV Parser.
+```
+
+Import parser implementation entry:
+
+```text
+DATE:
+2026-08-23
+
+MILESTONE:
+M4 Documents and Import
+
+TASKS_COMPLETED:
+IMP-BE-001 XLSX/CSV Parser
+
+TASKS_IN_PROGRESS:
+None
+
+SUMMARY:
+Implemented a generic, bounded ImportParser that inspects UTF-8 CSV and XLSX
+workbooks and returns sheet names, data-row counts, column headers, and bounded
+sample values. XLSX formulas are read only as cached values and are never
+evaluated. Malformed inputs and deterministic resource-limit violations fail with
+safe reason codes that do not disclose imported content.
+
+FILES_CHANGED:
+Import parser service, focused parser tests, backend dependency manifest and lock,
+backend parser strategy documentation, and current status documentation.
+
+DATABASE_CHANGES:
+None.
+
+API_CHANGES:
+None. Import upload/analyze endpoints remain a later service/API task.
+
+TESTS_ADDED:
+Eight focused cases cover CSV inspection and bounded sampling, multi-sheet XLSX
+inspection, formula non-evaluation, malformed XLSX, invalid CSV encoding, duplicate
+headers, empty input, unsupported file types, input/row limits, and suspicious ZIP
+compression.
+
+TEST_RESULTS:
+Ruff formatting and lint pass; strict mypy passes; all eight parser tests pass;
+the combined import schema/parser suite passes all 11 tests. Runtime verification
+confirms openpyxl is using defusedxml.
+
+SECURITY_IMPACT:
+Untrusted input is bounded by compressed bytes, expanded archive bytes, archive
+entries, compression ratio, sheets, rows, columns, cell size, and sample count.
+XLSX uses read-only/data-only mode with external-link preservation disabled and
+defused XML parsing. Formulas are not executed and safe errors contain no cell
+content.
+
+KNOWN_LIMITATIONS:
+The synchronous parser intentionally rejects files above its limits. Larger files
+require a future isolated background worker with equivalent archive, time, and
+memory safeguards. CSV currently accepts UTF-8 with optional BOM; legacy encodings
+require an explicit future product decision. Upload persistence, workspace
+authorization, job state transitions, and asynchronous dispatch follow in later
+IMP-BE tasks.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+IMP-BE-002 Import Profiles and Mapping.
+```
+
+Import profile and mapping implementation entry:
+
+```text
+DATE:
+2026-08-23
+
+MILESTONE:
+M4 Documents and Import
+
+TASKS_COMPLETED:
+IMP-BE-002 Import Profiles and Mapping
+
+TASKS_IN_PROGRESS:
+None
+
+SUMMARY:
+Implemented reusable workspace-scoped import profiles with atomic mapping creation
+and replacement. Profiles target generic entity types; mappings target exactly one
+active attribute belonging to that type or an allowed generic entity system field.
+Create, list, retrieve, and update operations are exposed through authenticated API
+routes and material mutations are audited in the same transaction.
+
+FILES_CHANGED:
+Import profile schemas, repository, service, API router, API specification,
+canonical OpenAPI contract, focused service/OpenAPI tests, and status documentation.
+
+DATABASE_CHANGES:
+None. The implementation uses the IMP-DB-001 tables.
+
+API_CHANGES:
+Added POST/GET /workspaces/{workspace_id}/import-profiles and GET/PATCH
+/import-profiles/{profile_id}. The canonical and narrative API contracts were
+updated together.
+
+TESTS_ADDED:
+Six focused service/schema cases cover exclusive mapping targets, atomic audited
+creation, workspace-role permissions, missing permission rejection, foreign or
+wrong-type attribute rejection, and atomic audited mapping replacement. OpenAPI
+coverage asserts both route groups.
+
+TEST_RESULTS:
+Ruff formatting/lint and strict mypy pass for the implementation; all seven focused
+service/OpenAPI tests pass; canonical OpenAPI YAML parses successfully.
+
+SECURITY_IMPACT:
+Backend IMPORT_EXECUTE authorization and active workspace membership are required.
+Entity types and attribute targets are verified in the same workspace/type;
+cross-workspace references fail. Mapping replacement and audit writes are atomic,
+and request schemas reject unknown fields and multiple/no mapping targets.
+
+KNOWN_LIMITATIONS:
+Matching strategy configuration is intentionally deferred to IMP-BE-003. Parser
+upload/job orchestration and mapping execution follow in subsequent import tasks.
+The import-profile table has no optimistic version column in the accepted schema,
+so updates use transaction atomicity but not client version preconditions.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+Repository/CI stabilization for PR #6, as requested, before IMP-BE-003.
+```
+
+PR #6 CI stabilization entry:
+
+```text
+DATE:
+2026-08-23
+
+MILESTONE:
+Repository Quality / Required CI Gate
+
+TASKS_COMPLETED:
+PR #6 backend-quality and frontend-test failure repair
+
+TASKS_IN_PROGRESS:
+None
+
+SUMMARY:
+Reproduced and repaired both root failures from GitHub Actions run 32655400502.
+Strict backend mypy failed on a Literal-typed configuration factory plus import
+parser/schema test typing; the frontend test suite failed because the dashboard
+test retained the old three-available/four-planned counts after workspace settings
+became available. The Required CI Gate failure was consequential, and the build was
+skipped because it depends on all preceding jobs.
+
+FILES_CHANGED:
+Typed configuration default factory, import parser/schema test typing, workspace
+dashboard expectation, and current status documentation.
+
+DATABASE_CHANGES:
+None.
+
+API_CHANGES:
+None.
+
+TESTS_ADDED:
+None for the stabilization itself; stale and strict-typing coverage was corrected.
+
+TEST_RESULTS:
+Full backend format check, Ruff lint, strict mypy across app/scripts/tests, and all
+166 backend tests with warnings-as-errors pass. All 31 frontend tests, zero-warning
+ESLint, TypeScript checks, and production build pass. The referenced remote run
+confirms backend quality and frontend tests were the only root failures; frontend
+quality, backend tests, migration, secret scan, and Persian RTL E2E passed. A local
+Windows E2E rerun was stopped after hanging in the browser runner, but the same E2E
+job was green in the referenced GitHub run and its code was unchanged.
+
+SECURITY_IMPACT:
+No security controls were weakened. The secret scan and migration verification in
+the referenced run passed, and backend tests continue to run with warnings treated
+as errors.
+
+KNOWN_LIMITATIONS:
+GitHub will not rerun PR checks until these working-tree changes are committed and
+pushed to the PR branch. The build job will remain skipped in the old run because
+its dependencies already failed; a new run is required.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+Commit/push the repair and IMP-BE-001/002 slices, confirm a new Required CI Gate,
+then resume IMP-BE-003 Matching Strategy.
+```
+
+---
+
 # 27. Related Specifications
 
 ```text

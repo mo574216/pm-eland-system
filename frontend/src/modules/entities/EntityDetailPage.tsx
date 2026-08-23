@@ -17,6 +17,7 @@ import { useSelector } from 'react-redux'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
 
 import { listAttributes } from '../metadata/metadataApi'
+import { DocumentPanel } from '../documents/DocumentPanel'
 import { EntityFormsPanel } from '../forms/EntityFormsPanel'
 import { RelationshipPanel } from '../relationships/RelationshipPanel'
 import type { RootState } from '../../store/store'
@@ -42,6 +43,12 @@ export function EntityDetailPage() {
   ) ?? false
   const canSubmitForms = useSelector((state: RootState) =>
     state.auth.user?.permissions.includes('FORM_SUBMIT'),
+  ) ?? false
+  const canReadDocuments = useSelector((state: RootState) =>
+    state.auth.user?.permissions.includes('DOCUMENT_READ'),
+  ) ?? false
+  const canUploadDocuments = useSelector((state: RootState) =>
+    state.auth.user?.permissions.includes('DOCUMENT_UPLOAD'),
   ) ?? false
   const { workspaceId, entityId } = useParams()
   const [activeTab, setActiveTab] = useState<TabKey>('overview')
@@ -163,7 +170,15 @@ export function EntityDetailPage() {
         />
       ) : null}
 
-      {!['overview', 'information', 'forms', 'relationships'].includes(activeTab) ? (
+      {activeTab === 'documents' ? (
+        <DocumentPanel
+          canRead={canReadDocuments}
+          canUpload={canUploadDocuments}
+          entityId={entityId}
+        />
+      ) : null}
+
+      {!['overview', 'information', 'forms', 'documents', 'relationships'].includes(activeTab) ? (
         <Alert severity="info">{t('entities.sectionPending')}</Alert>
       ) : null}
     </Stack>

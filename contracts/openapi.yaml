@@ -1031,6 +1031,23 @@ paths:
         '422': {$ref: '#/components/responses/ValidationError'}
 
   /entities/{entityId}/documents:
+    get:
+      tags: [Documents]
+      operationId: listEntityDocuments
+      summary: List workspace-authorized logical documents for an entity
+      parameters:
+        - $ref: '#/components/parameters/EntityId'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: Paginated logical documents with current-version summaries
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessEnvelope'
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
     post:
       tags: [Documents]
       operationId: uploadDocument
@@ -1061,6 +1078,202 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SuccessEnvelope'
+
+  /documents/{documentId}/versions:
+    get:
+      tags: [Documents]
+      operationId: listDocumentVersions
+      summary: List immutable version history in descending version order
+      parameters:
+        - name: documentId
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: Paginated immutable version history
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessEnvelope'
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+    post:
+      tags: [Documents]
+      operationId: uploadDocumentVersion
+      summary: Upload a new immutable version and make it current
+      parameters:
+        - name: documentId
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                comment:
+                  type: string
+                  maxLength: 10000
+      responses:
+        '202':
+          description: Immutable version accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessEnvelope'
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '413':
+          description: File exceeds the configured size limit
+        '415':
+          description: File metadata or type is not allowed
+
+  /document-versions/{versionId}/download:
+    get:
+      tags: [Documents]
+      operationId: getDocumentVersionDownload
+      summary: Authorize short-lived download access to one immutable version
+      parameters:
+        - name: versionId
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+      responses:
+        '200':
+          description: Short-lived exact-object download access
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessEnvelope'
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+
+  /document-versions/{versionId}/preview:
+    get:
+      tags: [Documents]
+      operationId: getDocumentVersionPreview
+      summary: Return safe native preview availability and short-lived access
+      parameters:
+        - name: versionId
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+      responses:
+        '200':
+          description: Preview availability or ready native preview access
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SuccessEnvelope'}
+        '202':
+          description: Preview conversion is queued
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SuccessEnvelope'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+
+  /documents/{documentId}:
+    get:
+      tags: [Documents]
+      operationId: getDocument
+      summary: Retrieve workspace-authorized logical document metadata
+      parameters:
+        - name: documentId
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+      responses:
+        '200':
+          description: Logical document and current-version metadata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessEnvelope'
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+
+  /workspaces/{workspaceId}/import-profiles:
+    post:
+      tags: [Imports]
+      operationId: createImportProfile
+      summary: Create a reusable workspace import profile and mappings
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ImportProfileCreate'}
+      responses:
+        '201':
+          description: Import profile created
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SuccessEnvelope'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+    get:
+      tags: [Imports]
+      operationId: listImportProfiles
+      summary: List reusable import profiles in an authorized workspace
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: Import profiles
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SuccessEnvelope'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+
+  /import-profiles/{profileId}:
+    parameters:
+      - name: profileId
+        in: path
+        required: true
+        schema: {type: string, format: uuid}
+    get:
+      tags: [Imports]
+      operationId: getImportProfile
+      summary: Retrieve an authorized reusable import profile
+      responses:
+        '200':
+          description: Import profile and mappings
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SuccessEnvelope'}
+        '404': {$ref: '#/components/responses/NotFound'}
+    patch:
+      tags: [Imports]
+      operationId: updateImportProfile
+      summary: Update a reusable import profile or atomically replace mappings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ImportProfileUpdate'}
+      responses:
+        '200':
+          description: Import profile updated
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SuccessEnvelope'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '422': {$ref: '#/components/responses/ValidationError'}
 
   /workspaces/{workspaceId}/imports:
     post:
@@ -1242,6 +1455,49 @@ components:
         default: 50
 
   schemas:
+    ImportMappingInput:
+      type: object
+      additionalProperties: false
+      required: [source_column]
+      properties:
+        source_sheet: {type: [string, 'null'], minLength: 1, maxLength: 255}
+        source_column: {type: string, minLength: 1, maxLength: 255}
+        target_attribute_definition_id: {type: [string, 'null'], format: uuid}
+        target_system_field:
+          type: [string, 'null']
+          enum: [name, description, parent_id, null]
+        transformation_config: {type: object, additionalProperties: true}
+        display_order: {type: integer, minimum: 0, default: 0}
+      description: Exactly one target field must be supplied.
+
+    ImportProfileCreate:
+      type: object
+      additionalProperties: false
+      required: [entity_type_id, name, source_type]
+      properties:
+        entity_type_id: {type: string, format: uuid}
+        name: {type: string, minLength: 1, maxLength: 255}
+        description: {type: [string, 'null']}
+        source_type: {type: string, enum: [XLSX, CSV]}
+        configuration: {type: object, additionalProperties: true}
+        mappings:
+          type: array
+          maxItems: 1000
+          items: {$ref: '#/components/schemas/ImportMappingInput'}
+
+    ImportProfileUpdate:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        name: {type: string, minLength: 1, maxLength: 255}
+        description: {type: [string, 'null']}
+        configuration: {type: object, additionalProperties: true}
+        mappings:
+          type: array
+          maxItems: 1000
+          items: {$ref: '#/components/schemas/ImportMappingInput'}
+
     ErrorObject:
       type: object
       description: >

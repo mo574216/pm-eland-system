@@ -92,3 +92,18 @@ class FormValidationError(ApplicationError):
 class InvalidRelationshipError(ApplicationError):
     def __init__(self, details: dict[str, Any] | None = None) -> None:
         super().__init__(code="INVALID_RELATIONSHIP", status_code=422, details=details)
+
+
+class FileTooLargeError(ApplicationError):
+    def __init__(self) -> None:
+        super().__init__(code="FILE_TOO_LARGE", status_code=413)
+
+
+class FileTypeNotAllowedError(ApplicationError):
+    def __init__(self) -> None:
+        super().__init__(code="FILE_TYPE_NOT_ALLOWED", status_code=415)
+
+
+class FileScanFailedError(ApplicationError):
+    def __init__(self) -> None:
+        super().__init__(code="FILE_SCAN_FAILED", status_code=422)
