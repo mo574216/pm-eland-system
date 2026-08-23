@@ -1256,6 +1256,27 @@ If `entity_id` is supplied, response MAY include:
 - read-only evaluation,
 - visibility evaluation context.
 
+Draft definitions are renderable only by users with `FORM_DESIGN`; published
+and retired definitions require `ENTITY_READ`. When supplied, `entity_id` MUST
+resolve inside the form workspace and MUST match the configured entity type.
+
+Each normalized field also returns:
+
+- `visible` — the evaluated version-1 visibility result,
+- `has_value` — distinguishes a present `null` from no candidate value,
+- `value_source` — `CURRENT`, `INHERITED`, `DEFAULT`, or `NONE`,
+- `visibility_rule` and `validation_rule` — the bounded JSON metadata needed for
+  responsive client-side UX; backend submission validation remains authoritative.
+
+Value precedence is current entity value, evaluated inheritance, attribute
+default, then form-field `configuration.default_value`. Rule context exposes
+`current`, `parent`, `referenced`, and `user`. Referenced context is keyed by the
+stable entity-reference attribute/form-field key and contains only entities
+resolved inside the same workspace.
+
+Fields with no configured section are preserved in one final normalized section
+whose `key` and `label` are `null`; clients SHALL render it without a heading.
+
 ### Response Example
 
 ```json

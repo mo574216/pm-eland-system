@@ -84,6 +84,11 @@ class InvalidMetadataError(ApplicationError):
         super().__init__(code="INVALID_METADATA", status_code=422, details=details)
 
 
+class FormValidationError(ApplicationError):
+    def __init__(self, details: dict[str, Any] | None = None) -> None:
+        super().__init__(code="VALIDATION_ERROR", status_code=422, details=details)
+
+
 class InvalidRelationshipError(ApplicationError):
     def __init__(self, details: dict[str, Any] | None = None) -> None:
         super().__init__(code="INVALID_RELATIONSHIP", status_code=422, details=details)

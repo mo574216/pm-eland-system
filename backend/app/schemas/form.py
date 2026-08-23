@@ -139,3 +139,73 @@ class FormListResponse(BaseModel):
     page: int
     page_size: int
     total: int
+
+
+FormRenderValueSource = Literal["CURRENT", "INHERITED", "DEFAULT", "NONE"]
+
+
+class FormRenderSummary(BaseModel):
+    id: UUID
+    key: str
+    name: str
+    version_number: int
+    lifecycle_status: FormLifecycleStatus
+
+
+class FormRenderField(BaseModel):
+    key: str
+    label: str
+    type: FormFieldType
+    required: bool
+    read_only: bool
+    visible: bool
+    value: object | None
+    has_value: bool
+    value_source: FormRenderValueSource
+    configuration: dict[str, object]
+    visibility_rule: dict[str, object]
+    validation_rule: dict[str, object]
+
+
+class FormRenderSection(BaseModel):
+    key: str | None
+    label: str | None
+    order: int
+    configuration: dict[str, object]
+    fields: tuple[FormRenderField, ...]
+
+
+class FormRenderResponse(BaseModel):
+    form: FormRenderSummary
+    entity_id: UUID | None
+    sections: tuple[FormRenderSection, ...]
+
+
+class FormInstanceCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    entity_id: UUID
+
+
+class FormInstanceUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    values: dict[str, object]
+    version: int = Field(ge=1)
+
+
+class FormInstanceResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+    id: UUID
+    workspace_id: UUID
+    form_definition_id: UUID
+    entity_id: UUID
+    status: Literal["DRAFT", "SUBMITTED", "APPROVED", "REVISION_REQUESTED"]
+    values: dict[str, object] = Field(alias="values_json")
+    version: int
+    created_at: datetime
+    updated_at: datetime
+    submitted_by: UUID | None
+    submitted_at: datetime | None
+    form: FormRenderSummary

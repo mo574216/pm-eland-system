@@ -18,6 +18,7 @@ from app.schemas.form import (
     FormFieldResponse,
     FormLifecycleStatus,
     FormListResponse,
+    FormRenderResponse,
     FormSummaryResponse,
     FormUpdate,
 )
@@ -95,6 +96,19 @@ async def get_form(
 ) -> dict[str, object]:
     record = await FormService(session, actor).get_form(form_id)
     return success_envelope(_form_response(record).model_dump(mode="json", by_alias=True))
+
+
+@router.get("/forms/{form_id}/render")
+async def render_form(
+    form_id: UUID,
+    actor: Annotated[AuthenticatedIdentity, Depends(get_current_identity)],
+    session: Annotated[AsyncSession, Depends(get_database_session)],
+    entity_id: UUID | None = None,
+) -> dict[str, object]:
+    response: FormRenderResponse = await FormService(session, actor).render_form(
+        form_id, entity_id=entity_id
+    )
+    return success_envelope(response.model_dump(mode="json"))
 
 
 @router.patch("/forms/{form_id}")

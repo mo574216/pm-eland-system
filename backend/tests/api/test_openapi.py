@@ -31,3 +31,4 @@ def test_openapi_uses_version_31_and_exposes_health_routes(client: TestClient) -
     assert "/api/v1/forms/{form_id}/fields" in document["paths"]
     assert "/api/v1/forms/{form_id}/publish" in document["paths"]
     assert "/api/v1/forms/{form_id}/new-version" in document["paths"]
+    assert "/api/v1/forms/{form_id}/render" in document["paths"]

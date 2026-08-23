@@ -1,6 +1,7 @@
 """Draft form definition authorization, validation, and audit service."""
 
 from copy import deepcopy
+from typing import cast
 from uuid import UUID, uuid4
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -13,11 +14,22 @@ from app.core.exceptions import (
     WorkspaceAccessDeniedError,
 )
 from app.core.permissions import PermissionCode
+from app.models.entity import EntityObject
 from app.models.form import FormDefinition, FormField
 from app.models.identity import AuditLog
+from app.models.metadata import AttributeDefinition
+from app.repositories.entity import EntityRepository
 from app.repositories.form import FormRecord, FormRepository
 from app.repositories.workspace import WorkspaceRepository
-from app.schemas.form import FormSchemaDefinition
+from app.schemas.form import (
+    FormFieldType,
+    FormRenderField,
+    FormRenderResponse,
+    FormRenderSection,
+    FormRenderSummary,
+    FormRenderValueSource,
+    FormSchemaDefinition,
+)
 from app.services.auth import AuthenticatedIdentity
 from app.services.authorization import AuditContext, AuthorizationService
 from app.services.form_rules import FormRuleEvaluator, InvalidFormRuleError
@@ -30,6 +42,7 @@ class FormService:
         self.authorization = AuthorizationService(actor)
         self.workspace_repository = WorkspaceRepository(session)
         self.repository = FormRepository(session)
+        self.entity_repository = EntityRepository(session)
         self.rule_evaluator = FormRuleEvaluator()
 
     async def _require_permission(self, workspace_id: UUID, permission: PermissionCode) -> None:
@@ -112,6 +125,56 @@ class FormService:
             raise ResourceNotFoundError
         await self._require_permission(record.form.workspace_id, PermissionCode.ENTITY_READ)
         return record
+
+    async def render_form(
+        self,
+        form_id: UUID,
+        *,
+        entity_id: UUID | None,
+        draft_values: dict[str, object] | None = None,
+    ) -> FormRenderResponse:
+        record = await self.repository.accessible_form_record(form_id, self.actor.user.id)
+        if record is None:
+            raise ResourceNotFoundError
+        form = record.form
+        permission = (
+            PermissionCode.FORM_DESIGN
+            if form.lifecycle_status == "DRAFT"
+            else PermissionCode.ENTITY_READ
+        )
+        await self._require_permission(form.workspace_id, permission)
+
+        entity: EntityObject | None = None
+        if entity_id is not None:
+            entity = await self.entity_repository.entity_in_workspace(entity_id, form.workspace_id)
+            if entity is None or entity.status == "DELETED":
+                raise ResourceNotFoundError
+            if form.entity_type_id is not None and entity.entity_type_id != form.entity_type_id:
+                raise InvalidMetadataError({"field": "entity_id", "reason": "wrong_entity_type"})
+
+        attribute_ids = frozenset(
+            field.attribute_definition_id
+            for field in record.fields
+            if field.attribute_definition_id is not None
+        )
+        attributes = await self.repository.attributes_in_workspace(attribute_ids, form.workspace_id)
+        if len(attributes) != len(attribute_ids):
+            raise InvalidMetadataError({"field": "fields", "reason": "attribute_not_found"})
+        context = await self._render_context(
+            form.workspace_id, entity, record.fields, attributes, draft_values
+        )
+        sections = self._render_sections(form, record.fields, attributes, context)
+        return FormRenderResponse(
+            form=FormRenderSummary(
+                id=form.id,
+                key=form.key,
+                name=form.name,
+                version_number=form.version_number,
+                lifecycle_status=form.lifecycle_status,
+            ),
+            entity_id=entity_id,
+            sections=sections,
+        )
 
     async def update_draft_form(
         self,
@@ -298,6 +361,213 @@ class FormService:
             )
             await self.repository.flush()
         return FormRecord(draft, copied_fields)
+
+    async def _render_context(
+        self,
+        workspace_id: UUID,
+        entity: EntityObject | None,
+        fields: tuple[FormField, ...],
+        attributes: dict[UUID, AttributeDefinition],
+        draft_values: dict[str, object] | None,
+    ) -> dict[str, object]:
+        current = self._entity_state(entity)
+        parent: dict[str, object] = {}
+        if entity is not None and entity.parent_id is not None:
+            parent_entity = await self.entity_repository.entity_in_workspace(
+                entity.parent_id, workspace_id
+            )
+            if parent_entity is not None and parent_entity.status != "DELETED":
+                parent = self._entity_state(parent_entity)
+
+        for field in fields:
+            attribute = (
+                attributes.get(field.attribute_definition_id)
+                if field.attribute_definition_id is not None
+                else None
+            )
+            if attribute is None or attribute.key == field.key:
+                continue
+            if attribute.key in current:
+                current[field.key] = current[attribute.key]
+            if attribute.key in parent:
+                parent[field.key] = parent[attribute.key]
+        if draft_values is not None:
+            current.update(draft_values)
+            for field in fields:
+                if field.key not in draft_values or field.attribute_definition_id is None:
+                    continue
+                attribute = attributes.get(field.attribute_definition_id)
+                if attribute is not None:
+                    current[attribute.key] = draft_values[field.key]
+
+        referenced_ids: set[UUID] = set()
+        reference_keys: dict[UUID, set[str]] = {}
+        if entity is not None:
+            for field in fields:
+                attribute = (
+                    attributes.get(field.attribute_definition_id)
+                    if field.attribute_definition_id is not None
+                    else None
+                )
+                if attribute is None or attribute.data_type != "ENTITY_REFERENCE":
+                    continue
+                reference_id = self._uuid_value(entity.attributes.get(attribute.key))
+                if reference_id is None:
+                    continue
+                referenced_ids.add(reference_id)
+                reference_keys.setdefault(reference_id, set()).update({attribute.key, field.key})
+        referenced_entities = await self.entity_repository.entities_in_workspace(
+            frozenset(referenced_ids), workspace_id
+        )
+        referenced: dict[str, object] = {}
+        for reference_id, keys in reference_keys.items():
+            reference = referenced_entities.get(reference_id)
+            if reference is None:
+                continue
+            state = self._entity_state(reference)
+            for key in keys:
+                referenced[key] = state
+
+        return {
+            "current": current,
+            "parent": parent,
+            "referenced": referenced,
+            "user": {
+                "id": str(self.actor.user.id),
+                "username": self.actor.user.username,
+                "display_name": self.actor.user.display_name,
+                "roles": list(self.actor.roles),
+            },
+        }
+
+    def _render_sections(
+        self,
+        form: FormDefinition,
+        fields: tuple[FormField, ...],
+        attributes: dict[UUID, AttributeDefinition],
+        context: dict[str, object],
+    ) -> tuple[FormRenderSection, ...]:
+        try:
+            schema = FormSchemaDefinition.model_validate(form.schema_json)
+        except ValueError as error:
+            raise InvalidMetadataError(
+                {"field": "schema_json", "reason": "invalid_schema"}
+            ) from error
+        configured_keys = {section.key for section in schema.sections}
+        grouped: dict[str | None, list[FormRenderField]] = {
+            section.key: [] for section in schema.sections
+        }
+        grouped[None] = []
+        for field in fields:
+            if field.section_key is not None and field.section_key not in configured_keys:
+                raise InvalidMetadataError({"field": field.key, "reason": "invalid_section"})
+            grouped[field.section_key].append(self._render_field(field, attributes, context))
+
+        result = [
+            FormRenderSection(
+                key=section.key,
+                label=section.label,
+                order=section.display_order,
+                configuration=section.configuration,
+                fields=tuple(grouped[section.key]),
+            )
+            for section in sorted(
+                schema.sections, key=lambda value: (value.display_order, value.key)
+            )
+        ]
+        if grouped[None]:
+            result.append(
+                FormRenderSection(
+                    key=None,
+                    label=None,
+                    order=max((section.order for section in result), default=0) + 1,
+                    configuration={},
+                    fields=tuple(grouped[None]),
+                )
+            )
+        return tuple(result)
+
+    def _render_field(
+        self,
+        field: FormField,
+        attributes: dict[UUID, AttributeDefinition],
+        context: dict[str, object],
+    ) -> FormRenderField:
+        try:
+            evaluation = self.rule_evaluator.evaluate_field(
+                is_required=field.is_required,
+                is_read_only=field.is_read_only,
+                visibility_rule=field.visibility_rule,
+                validation_rule=field.validation_rule,
+                inheritance_rule=field.inheritance_rule,
+                context=context,
+            )
+        except InvalidFormRuleError as error:
+            raise InvalidMetadataError({"field": field.key, "reason": "invalid_rule"}) from error
+        attribute = (
+            attributes.get(field.attribute_definition_id)
+            if field.attribute_definition_id is not None
+            else None
+        )
+        lookup_key = attribute.key if attribute is not None else field.key
+        current = cast(dict[str, object], context["current"])
+        value: object | None = None
+        has_value = False
+        value_source: FormRenderValueSource = "NONE"
+        if lookup_key in current:
+            value = current[lookup_key]
+            has_value = True
+            value_source = "CURRENT"
+        elif evaluation.has_inherited_value:
+            value = evaluation.inherited_value
+            has_value = True
+            value_source = "INHERITED"
+        elif attribute is not None and attribute.default_value is not None:
+            value = attribute.default_value
+            has_value = True
+            value_source = "DEFAULT"
+        elif "default_value" in field.configuration:
+            value = field.configuration["default_value"]
+            has_value = True
+            value_source = "DEFAULT"
+        return FormRenderField(
+            key=field.key,
+            label=field.label,
+            type=cast(FormFieldType, field.field_type),
+            required=evaluation.required,
+            read_only=evaluation.read_only,
+            visible=evaluation.visible,
+            value=value,
+            has_value=has_value,
+            value_source=value_source,
+            configuration=field.configuration,
+            visibility_rule=field.visibility_rule,
+            validation_rule=field.validation_rule,
+        )
+
+    @staticmethod
+    def _entity_state(entity: EntityObject | None) -> dict[str, object]:
+        if entity is None:
+            return {}
+        return {
+            **entity.attributes,
+            "id": str(entity.id),
+            "name": entity.name,
+            "description": entity.description,
+            "status": entity.status,
+            "entity_type_id": str(entity.entity_type_id),
+        }
+
+    @staticmethod
+    def _uuid_value(value: object) -> UUID | None:
+        if isinstance(value, UUID):
+            return value
+        if not isinstance(value, str):
+            return None
+        try:
+            return UUID(value)
+        except ValueError:
+            return None
 
     async def _validate_publishable(
         self, form: FormDefinition, fields: tuple[FormField, ...]

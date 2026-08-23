@@ -59,6 +59,20 @@ class EntityRepository:
         )
         return cast(EntityObject | None, await self.session.scalar(statement))
 
+    async def entities_in_workspace(
+        self, entity_ids: frozenset[UUID], workspace_id: UUID
+    ) -> dict[UUID, EntityObject]:
+        if not entity_ids:
+            return {}
+        statement = select(EntityObject).where(
+            EntityObject.id.in_(entity_ids),
+            EntityObject.workspace_id == workspace_id,
+            EntityObject.deleted_at.is_(None),
+            EntityObject.status != "DELETED",
+        )
+        values = (await self.session.scalars(statement)).all()
+        return {value.id: value for value in values}
+
     async def user_reference_exists(self, user_id: UUID, workspace_id: UUID) -> bool:
         statement = (
             select(User.id)

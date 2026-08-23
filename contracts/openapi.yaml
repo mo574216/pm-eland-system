@@ -966,6 +966,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SuccessEnvelope'
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '422': {$ref: '#/components/responses/ValidationError'}
 
   /entities/{entityId}/documents:
     post:
@@ -1604,6 +1607,61 @@ components:
         visibility_rule: {type: object, additionalProperties: true}
         validation_rule: {type: object, additionalProperties: true}
         inheritance_rule: {type: object, additionalProperties: true}
+
+    FormRenderSummary:
+      type: object
+      required: [id, key, name, version_number, lifecycle_status]
+      additionalProperties: false
+      properties:
+        id: {type: string, format: uuid}
+        key: {type: string}
+        name: {type: string}
+        version_number: {type: integer, minimum: 1}
+        lifecycle_status: {type: string, enum: [DRAFT, PUBLISHED, RETIRED]}
+
+    FormRenderField:
+      type: object
+      required: [key, label, type, required, read_only, visible, value, has_value, value_source, configuration, visibility_rule, validation_rule]
+      additionalProperties: false
+      properties:
+        key: {type: string}
+        label: {type: string}
+        type:
+          type: string
+          enum: [TEXT, RICH_TEXT, INTEGER, DECIMAL, BOOLEAN, DATE, DATETIME, ENUM, MULTI_ENUM, USER_REFERENCE, ENTITY_REFERENCE, FILE_REFERENCE, TABLE]
+        required: {type: boolean}
+        read_only: {type: boolean}
+        visible: {type: boolean}
+        value: {}
+        has_value: {type: boolean}
+        value_source: {type: string, enum: [CURRENT, INHERITED, DEFAULT, NONE]}
+        configuration: {type: object, additionalProperties: true}
+        visibility_rule: {type: object, additionalProperties: true}
+        validation_rule: {type: object, additionalProperties: true}
+
+    FormRenderSection:
+      type: object
+      required: [key, label, order, configuration, fields]
+      additionalProperties: false
+      properties:
+        key: {type: [string, 'null']}
+        label: {type: [string, 'null']}
+        order: {type: integer, minimum: 0}
+        configuration: {type: object, additionalProperties: true}
+        fields:
+          type: array
+          items: {$ref: '#/components/schemas/FormRenderField'}
+
+    FormRenderResponse:
+      type: object
+      required: [form, entity_id, sections]
+      additionalProperties: false
+      properties:
+        form: {$ref: '#/components/schemas/FormRenderSummary'}
+        entity_id: {type: [string, 'null'], format: uuid}
+        sections:
+          type: array
+          items: {$ref: '#/components/schemas/FormRenderSection'}
 
   responses:
     NotFound:

@@ -1361,6 +1361,66 @@ NEXT_TASK:
 FORM-BE-004 Render Contract.
 ```
 
+Form render contract implementation entry:
+
+```text
+DATE:
+2026-08-23
+
+MILESTONE:
+M3 Dynamic Forms and Structured Data
+
+TASKS_COMPLETED:
+FORM-BE-004 Render Contract
+
+TASKS_IN_PROGRESS:
+None
+
+TEST_RESULTS:
+Backend formatting, lint, strict mypy, all 136 tests, and canonical OpenAPI YAML
+parsing pass. Unit coverage verifies ordered/implicit sections, current value
+precedence, parent and referenced entity inheritance, editable/read-only defaults,
+conditional visibility/requirement, repeating table configuration, draft-preview
+permission, entity-type checks, and cross-workspace non-disclosure. Live API
+verification awaits a local backend process restart because the Windows execution
+approval service reached its usage limit; the existing backend remains healthy on
+its previous code version.
+
+SECURITY:
+Published/retired rendering requires effective ENTITY_READ; draft preview requires
+FORM_DESIGN. Form access is active-membership scoped. Entity, parent, attribute,
+and referenced records are resolved only inside the form workspace; foreign IDs
+produce non-disclosing not-found behavior. Stored rules continue through the
+bounded version-1 evaluator with no executable expression support.
+
+DATABASE_CHANGES:
+None.
+
+API_CHANGES:
+Implemented GET /forms/{form_id}/render with optional entity_id. The normalized
+contract returns form/version identity, ordered sections, all generic field types,
+evaluated visible/required/read-only state, current/inherited/default value and
+source, field configuration, and safe rule metadata. The canonical OpenAPI and API
+specification define the response and precedence rules.
+
+USER_VISIBLE_RESULT:
+The next frontend slice can render published dynamic forms directly from one stable,
+frontend-ready contract, including inherited values and repeating-table metadata.
+
+KNOWN_LIMITATIONS:
+Current values are sourced from canonical entity attributes until DATA-BE-001 adds
+draft form-instance values. Backend validation and persistence of submitted values
+remain DATA-BE-001/DATA-BE-002. The local server must be restarted before manual
+browser/API verification sees this endpoint.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+DATA-BE-001 Create/Save Form Instance, followed by FORM-FE-001 and FORM-FE-002 for
+the demo-critical dynamic-form vertical slice.
+```
+
 ---
 
 # 13. Recommended Immediate Implementation Sequence

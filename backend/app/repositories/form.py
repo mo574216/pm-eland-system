@@ -7,7 +7,7 @@ from uuid import UUID
 from sqlalchemy import func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.form import FormDefinition, FormField
+from app.models.form import FormDefinition, FormField, FormInstance
 from app.models.identity import AuditLog
 from app.models.metadata import AttributeDefinition, EntityType
 from app.models.workspace import WorkspaceMembership
@@ -15,6 +15,13 @@ from app.models.workspace import WorkspaceMembership
 
 @dataclass(frozen=True)
 class FormRecord:
+    form: FormDefinition
+    fields: tuple[FormField, ...]
+
+
+@dataclass(frozen=True)
+class FormInstanceRecord:
+    instance: FormInstance
     form: FormDefinition
     fields: tuple[FormField, ...]
 
@@ -27,6 +34,9 @@ class FormRepository:
         self.session.add(value)
 
     def add_field(self, value: FormField) -> None:
+        self.session.add(value)
+
+    def add_instance(self, value: FormInstance) -> None:
         self.session.add(value)
 
     def add_audit_log(self, value: AuditLog) -> None:
@@ -204,3 +214,67 @@ class FormRepository:
         )
         row = (await self.session.execute(statement)).one_or_none()
         return None if row is None else cast(tuple[AttributeDefinition, EntityType], tuple(row))
+
+    async def attributes_in_workspace(
+        self, attribute_ids: frozenset[UUID], workspace_id: UUID
+    ) -> dict[UUID, AttributeDefinition]:
+        if not attribute_ids:
+            return {}
+        statement = (
+            select(AttributeDefinition)
+            .join(EntityType, EntityType.id == AttributeDefinition.entity_type_id)
+            .where(
+                AttributeDefinition.id.in_(attribute_ids),
+                AttributeDefinition.deleted_at.is_(None),
+                AttributeDefinition.is_active.is_(True),
+                EntityType.workspace_id == workspace_id,
+                EntityType.deleted_at.is_(None),
+                EntityType.is_active.is_(True),
+            )
+        )
+        values = (await self.session.scalars(statement)).all()
+        return {value.id: value for value in values}
+
+    async def accessible_instance_record(
+        self, instance_id: UUID, user_id: UUID, *, for_update: bool = False
+    ) -> FormInstanceRecord | None:
+        statement = (
+            select(FormInstance, FormDefinition)
+            .join(FormDefinition, FormDefinition.id == FormInstance.form_definition_id)
+            .join(
+                WorkspaceMembership,
+                WorkspaceMembership.workspace_id == FormInstance.workspace_id,
+            )
+            .where(
+                FormInstance.id == instance_id,
+                FormDefinition.workspace_id == FormInstance.workspace_id,
+                WorkspaceMembership.user_id == user_id,
+                WorkspaceMembership.status == "ACTIVE",
+            )
+        )
+        if for_update:
+            statement = statement.with_for_update(of=FormInstance)
+        row = (await self.session.execute(statement)).one_or_none()
+        if row is None:
+            return None
+        instance, form = row
+        return FormInstanceRecord(instance, form, await self.list_fields(form.id))
+
+    async def update_draft_instance(
+        self, instance_id: UUID, expected_version: int, values: dict[str, object]
+    ) -> FormInstance | None:
+        statement = (
+            update(FormInstance)
+            .where(
+                FormInstance.id == instance_id,
+                FormInstance.status == "DRAFT",
+                FormInstance.version == expected_version,
+            )
+            .values(
+                values_json=values,
+                version=FormInstance.version + 1,
+                updated_at=func.now(),
+            )
+            .returning(FormInstance)
+        )
+        return cast(FormInstance | None, await self.session.scalar(statement))

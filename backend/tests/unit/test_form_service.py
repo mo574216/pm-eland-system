@@ -8,12 +8,19 @@ import pytest
 from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.exceptions import InvalidMetadataError, ResourceConflictError
+from app.core.exceptions import (
+    InvalidMetadataError,
+    PermissionDeniedError,
+    ResourceConflictError,
+    ResourceNotFoundError,
+)
 from app.core.permissions import PermissionCode
+from app.models.entity import EntityObject
 from app.models.form import FormDefinition, FormField
 from app.models.identity import AuditLog, User
 from app.models.metadata import AttributeDefinition, EntityType
 from app.models.workspace import Workspace
+from app.repositories.entity import EntityRepository
 from app.repositories.form import FormRecord, FormRepository
 from app.repositories.workspace import WorkspaceRepository
 from app.schemas.form import FormFieldCreate, FormUpdate
@@ -66,6 +73,7 @@ class FakeFormRepository:
         self.form: FormDefinition | None = None
         self.entity_type: EntityType | None = None
         self.attribute_record: tuple[AttributeDefinition, EntityType] | None = None
+        self.attribute_records: dict[UUID, AttributeDefinition] = {}
         self.forms: list[FormDefinition] = []
         self.fields: list[FormField] = []
         self.audit_logs: list[AuditLog] = []
@@ -137,6 +145,34 @@ class FakeFormRepository:
         self, _: UUID, __: UUID
     ) -> tuple[AttributeDefinition, EntityType] | None:
         return self.attribute_record
+
+    async def attributes_in_workspace(
+        self, attribute_ids: frozenset[UUID], _: UUID
+    ) -> dict[UUID, AttributeDefinition]:
+        return {
+            attribute_id: self.attribute_records[attribute_id]
+            for attribute_id in attribute_ids
+            if attribute_id in self.attribute_records
+        }
+
+
+class FakeEntityRepository:
+    def __init__(self, entities: tuple[EntityObject, ...] = ()) -> None:
+        self.entities = {entity.id: entity for entity in entities}
+
+    async def entity_in_workspace(self, entity_id: UUID, workspace_id: UUID) -> EntityObject | None:
+        entity = self.entities.get(entity_id)
+        return entity if entity is not None and entity.workspace_id == workspace_id else None
+
+    async def entities_in_workspace(
+        self, entity_ids: frozenset[UUID], workspace_id: UUID
+    ) -> dict[UUID, EntityObject]:
+        return {
+            entity_id: entity
+            for entity_id in entity_ids
+            if (entity := self.entities.get(entity_id)) is not None
+            and entity.workspace_id == workspace_id
+        }
 
 
 def build_service(
@@ -383,3 +419,196 @@ async def test_new_version_is_independent_draft_copy() -> None:
     copied.fields[0].configuration["multiline"] = False
     assert repository.form.schema_json["sections"] != []
     assert repository.fields[0].configuration["multiline"] is True
+
+
+def render_field(
+    form_id: UUID,
+    key: str,
+    *,
+    attribute_id: UUID | None = None,
+    section_key: str | None = "general",
+    field_type: str = "TEXT",
+    display_order: int = 10,
+    configuration: dict[str, object] | None = None,
+    visibility_rule: dict[str, object] | None = None,
+    validation_rule: dict[str, object] | None = None,
+    inheritance_rule: dict[str, object] | None = None,
+) -> FormField:
+    return FormField(
+        id=uuid4(),
+        form_definition_id=form_id,
+        attribute_definition_id=attribute_id,
+        key=key,
+        label=key.replace("_", " ").title(),
+        field_type=field_type,
+        section_key=section_key,
+        display_order=display_order,
+        is_required=False,
+        is_read_only=False,
+        configuration=configuration or {},
+        visibility_rule=visibility_rule or {},
+        validation_rule=validation_rule or {},
+        inheritance_rule=inheritance_rule or {},
+    )
+
+
+@pytest.mark.asyncio
+async def test_render_contract_normalizes_context_rules_values_and_sections() -> None:
+    actor = identity(PermissionCode.ENTITY_READ)
+    workspace = Workspace(id=uuid4(), name="A", slug="a", owner_id=actor.user.id)
+    service, repository = build_service(actor, workspace)
+    entity_type_id = uuid4()
+    parent = EntityObject(
+        id=uuid4(),
+        workspace_id=workspace.id,
+        entity_type_id=entity_type_id,
+        name="Parent Service",
+        status="ACTIVE",
+        attributes={},
+    )
+    reference = EntityObject(
+        id=uuid4(),
+        workspace_id=workspace.id,
+        entity_type_id=entity_type_id,
+        name="Referenced Owner",
+        status="ACTIVE",
+        attributes={},
+    )
+    entity = EntityObject(
+        id=uuid4(),
+        workspace_id=workspace.id,
+        entity_type_id=entity_type_id,
+        parent_id=parent.id,
+        name="Current Process",
+        status="ACTIVE",
+        attributes={"summary_attribute": "Existing summary", "owner_ref": str(reference.id)},
+    )
+    service.entity_repository = cast(
+        EntityRepository, FakeEntityRepository((entity, parent, reference))
+    )
+    repository.form = form(workspace.id, actor.user.id, entity_type_id)
+    repository.form.lifecycle_status = "PUBLISHED"
+    repository.form.schema_json = {
+        "sections": [
+            {"key": "details", "label": "Details", "display_order": 20},
+            {"key": "general", "label": "General", "display_order": 10},
+        ]
+    }
+    summary_attribute = AttributeDefinition(
+        id=uuid4(),
+        entity_type_id=entity_type_id,
+        key="summary_attribute",
+        label="Summary",
+        data_type="TEXT",
+        default_value="Attribute default",
+        is_active=True,
+    )
+    reference_attribute = AttributeDefinition(
+        id=uuid4(),
+        entity_type_id=entity_type_id,
+        key="owner_ref",
+        label="Owner",
+        data_type="ENTITY_REFERENCE",
+        is_active=True,
+    )
+    repository.attribute_records = {
+        summary_attribute.id: summary_attribute,
+        reference_attribute.id: reference_attribute,
+    }
+    repository.fields = [
+        render_field(repository.form.id, "summary", attribute_id=summary_attribute.id),
+        render_field(
+            repository.form.id,
+            "parent_name",
+            inheritance_rule={
+                "version": 1,
+                "source_path": "parent.name",
+                "mode": "READ_ONLY",
+            },
+            display_order=20,
+        ),
+        render_field(
+            repository.form.id,
+            "mitigation",
+            section_key="details",
+            visibility_rule={
+                "version": 1,
+                "condition": {"path": "current.summary", "operator": "exists"},
+            },
+            validation_rule={
+                "version": 1,
+                "required_when": {"path": "current.summary", "operator": "exists"},
+            },
+            inheritance_rule={
+                "version": 1,
+                "static_value": "Review required",
+                "mode": "EDITABLE_DEFAULT",
+            },
+        ),
+        render_field(
+            repository.form.id,
+            "owner_ref",
+            attribute_id=reference_attribute.id,
+            section_key="details",
+            field_type="ENTITY_REFERENCE",
+            display_order=20,
+        ),
+        render_field(
+            repository.form.id,
+            "owner_name",
+            section_key="details",
+            inheritance_rule={
+                "version": 1,
+                "source_path": "referenced.owner_ref.name",
+                "mode": "READ_ONLY",
+            },
+            display_order=30,
+        ),
+        render_field(
+            repository.form.id,
+            "rows",
+            section_key=None,
+            field_type="TABLE",
+            configuration={"columns": [{"key": "item", "type": "TEXT"}]},
+        ),
+    ]
+
+    rendered = await service.render_form(repository.form.id, entity_id=entity.id)
+
+    assert [section.key for section in rendered.sections] == ["general", "details", None]
+    assert rendered.entity_id == entity.id
+    fields = {field.key: field for section in rendered.sections for field in section.fields}
+    assert fields["summary"].value == "Existing summary"
+    assert fields["summary"].value_source == "CURRENT"
+    assert fields["parent_name"].value == "Parent Service"
+    assert fields["parent_name"].read_only is True
+    assert fields["mitigation"].visible is True
+    assert fields["mitigation"].required is True
+    assert fields["mitigation"].value_source == "INHERITED"
+    assert fields["owner_name"].value == "Referenced Owner"
+    assert fields["rows"].configuration["columns"] == [{"key": "item", "type": "TEXT"}]
+
+
+@pytest.mark.asyncio
+async def test_render_contract_requires_design_for_draft_and_hides_foreign_entities() -> None:
+    actor = identity(PermissionCode.ENTITY_READ)
+    workspace = Workspace(id=uuid4(), name="A", slug="a", owner_id=actor.user.id)
+    service, repository = build_service(actor, workspace)
+    repository.form = form(workspace.id, actor.user.id, uuid4())
+    repository.fields = [render_field(repository.form.id, "summary", section_key=None)]
+    foreign = EntityObject(
+        id=uuid4(),
+        workspace_id=uuid4(),
+        entity_type_id=repository.form.entity_type_id,
+        name="Foreign",
+        status="ACTIVE",
+        attributes={},
+    )
+    service.entity_repository = cast(EntityRepository, FakeEntityRepository((foreign,)))
+
+    with pytest.raises(PermissionDeniedError):
+        await service.render_form(repository.form.id, entity_id=None)
+
+    repository.form.lifecycle_status = "PUBLISHED"
+    with pytest.raises(ResourceNotFoundError):
+        await service.render_form(repository.form.id, entity_id=foreign.id)
