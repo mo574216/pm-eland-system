@@ -11,6 +11,7 @@ from app.models.identity import (
     user_roles,
 )
 from app.models.metadata import AttributeDefinition, EntityType
+from app.models.relationship import EntityRelationship, RelationshipType
 from app.models.workspace import Workspace, WorkspaceMembership
 
 __all__ = [
@@ -18,8 +19,10 @@ __all__ = [
     "AuditLog",
     "AuthSession",
     "EntityObject",
+    "EntityRelationship",
     "EntityType",
     "Permission",
+    "RelationshipType",
     "Role",
     "User",
     "Workspace",

@@ -957,6 +957,51 @@ NEXT_TASK:
 REL-DB-001 Relationship Schema.
 ```
 
+Relationship persistence implementation entry:
+
+```text
+DATE:
+2026-08-23
+
+MILESTONE:
+M2 Metadata and Generic Entity Platform
+
+TASKS_COMPLETED:
+REL-DB-001 Relationship Schema
+
+TASKS_IN_PROGRESS:
+None
+
+TEST_RESULTS:
+Backend formatting, lint, strict mypy, and 112 tests pass. Alembic upgraded the
+live PostgreSQL database from 0007 to 0008, downgraded cleanly to 0007, and upgraded
+again to head successfully.
+
+SECURITY:
+Both tables carry an explicit workspace scope. Relationship instances reference
+canonical generic entities and metadata-defined relationship types; active-row
+indexes support scoped lookup. Cross-workspace consistency remains enforced by the
+authoritative service in REL-BE-001 because the accepted schema uses independent UUID
+foreign keys rather than composite workspace foreign keys.
+
+DATABASE_CHANGES:
+Migration 0008 adds relationship_types and entity_relationships with directionality
+and self-link checks, configured source/target type references, JSONB configuration
+and attributes, soft deletion for relationship instances, and incoming/outgoing/type
+indexes. Conditional duplicate policy remains service-controlled, so the optional
+always-on active relationship unique index was intentionally not added.
+
+API_CHANGES:
+None.
+
+KNOWN_LIMITATIONS:
+The relationship API, permissions, auditing, configurable duplicate policy, and UI
+are delivered by REL-BE-001 and REL-FE-001.
+
+NEXT_TASK:
+REL-BE-001 Relationship API.
+```
+
 ---
 
 # 13. Recommended Immediate Implementation Sequence
