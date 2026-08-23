@@ -1203,6 +1203,78 @@ paths:
         '403': {$ref: '#/components/responses/Forbidden'}
         '404': {$ref: '#/components/responses/NotFound'}
 
+  /workspaces/{workspaceId}/import-profiles:
+    post:
+      tags: [Imports]
+      operationId: createImportProfile
+      summary: Create a reusable workspace import profile and mappings
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ImportProfileCreate'}
+      responses:
+        '201':
+          description: Import profile created
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SuccessEnvelope'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+    get:
+      tags: [Imports]
+      operationId: listImportProfiles
+      summary: List reusable import profiles in an authorized workspace
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: Import profiles
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SuccessEnvelope'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+
+  /import-profiles/{profileId}:
+    parameters:
+      - name: profileId
+        in: path
+        required: true
+        schema: {type: string, format: uuid}
+    get:
+      tags: [Imports]
+      operationId: getImportProfile
+      summary: Retrieve an authorized reusable import profile
+      responses:
+        '200':
+          description: Import profile and mappings
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SuccessEnvelope'}
+        '404': {$ref: '#/components/responses/NotFound'}
+    patch:
+      tags: [Imports]
+      operationId: updateImportProfile
+      summary: Update a reusable import profile or atomically replace mappings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ImportProfileUpdate'}
+      responses:
+        '200':
+          description: Import profile updated
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SuccessEnvelope'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+
   /workspaces/{workspaceId}/imports:
     post:
       tags: [Imports]
@@ -1383,6 +1455,49 @@ components:
         default: 50
 
   schemas:
+    ImportMappingInput:
+      type: object
+      additionalProperties: false
+      required: [source_column]
+      properties:
+        source_sheet: {type: [string, 'null'], minLength: 1, maxLength: 255}
+        source_column: {type: string, minLength: 1, maxLength: 255}
+        target_attribute_definition_id: {type: [string, 'null'], format: uuid}
+        target_system_field:
+          type: [string, 'null']
+          enum: [name, description, parent_id, null]
+        transformation_config: {type: object, additionalProperties: true}
+        display_order: {type: integer, minimum: 0, default: 0}
+      description: Exactly one target field must be supplied.
+
+    ImportProfileCreate:
+      type: object
+      additionalProperties: false
+      required: [entity_type_id, name, source_type]
+      properties:
+        entity_type_id: {type: string, format: uuid}
+        name: {type: string, minLength: 1, maxLength: 255}
+        description: {type: [string, 'null']}
+        source_type: {type: string, enum: [XLSX, CSV]}
+        configuration: {type: object, additionalProperties: true}
+        mappings:
+          type: array
+          maxItems: 1000
+          items: {$ref: '#/components/schemas/ImportMappingInput'}
+
+    ImportProfileUpdate:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        name: {type: string, minLength: 1, maxLength: 255}
+        description: {type: [string, 'null']}
+        configuration: {type: object, additionalProperties: true}
+        mappings:
+          type: array
+          maxItems: 1000
+          items: {$ref: '#/components/schemas/ImportMappingInput'}
+
     ErrorObject:
       type: object
       description: >

@@ -1586,6 +1586,23 @@ All ready preview URLs use the same bounded presigned-access policy as downloads
 
 The import API SHALL use a staged lifecycle.
 
+# 14.0 Import Profiles
+
+Reusable profiles and their mappings are managed through:
+
+```text
+POST /workspaces/{workspace_id}/import-profiles
+GET /workspaces/{workspace_id}/import-profiles
+GET /import-profiles/{profile_id}
+PATCH /import-profiles/{profile_id}
+```
+
+Creating a profile stores its mappings atomically. A mapping targets exactly one
+active attribute definition belonging to the profile entity type or one supported
+generic entity system field (`name`, `description`, or `parent_id`). Replacing a
+mapping set is atomic. Every operation requires active workspace membership and
+`IMPORT_EXECUTE`; mutations are audited.
+
 # 14.1 POST /workspaces/{workspace_id}/imports
 
 Upload import file and create import job.

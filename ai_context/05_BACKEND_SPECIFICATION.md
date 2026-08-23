@@ -1418,7 +1418,24 @@ ARCHITECTURE_DEVIATIONS
 
 ---
 
-# 63. Definition of Done
+# 63. Import Parser Resource Strategy
+
+`ImportParser` SHALL treat CSV and XLSX bytes as untrusted input. Synchronous
+inspection is bounded by configured input-byte, archive-entry, expanded-byte,
+compression-ratio, sheet, row, column, cell, and sample limits. XLSX inspection
+uses read-only/data-only mode, disables external-link preservation, and uses a
+defused XML parser; formulas are never evaluated. CSV input is decoded as UTF-8
+with optional BOM and inspected incrementally after the bounded read.
+
+Files above the synchronous byte/row limits SHALL be rejected from the request
+worker. A later background-job implementation MAY raise those limits only inside
+an isolated worker with equivalent archive safeguards, time/memory limits, and
+streaming row processing. Full workbook materialization and unbounded sample
+collection are prohibited.
+
+---
+
+# 64. Definition of Done
 
 A backend feature is complete only when:
 
@@ -1440,7 +1457,7 @@ A backend feature is complete only when:
 
 ---
 
-# 64. Requirement Traceability
+# 65. Requirement Traceability
 
 ```text
 AUTH-FR-*  → AuthService, AuthorizationService
@@ -1461,7 +1478,7 @@ AUD-FR-*   → AuditService
 
 ---
 
-# 65. Related Specifications
+# 66. Related Specifications
 
 ```text
 00_PROJECT_CONTEXT.md

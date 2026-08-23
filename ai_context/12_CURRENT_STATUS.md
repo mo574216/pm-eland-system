@@ -2622,6 +2622,197 @@ NEXT_TASK:
 IMP-BE-001 XLSX/CSV Parser.
 ```
 
+Import parser implementation entry:
+
+```text
+DATE:
+2026-08-23
+
+MILESTONE:
+M4 Documents and Import
+
+TASKS_COMPLETED:
+IMP-BE-001 XLSX/CSV Parser
+
+TASKS_IN_PROGRESS:
+None
+
+SUMMARY:
+Implemented a generic, bounded ImportParser that inspects UTF-8 CSV and XLSX
+workbooks and returns sheet names, data-row counts, column headers, and bounded
+sample values. XLSX formulas are read only as cached values and are never
+evaluated. Malformed inputs and deterministic resource-limit violations fail with
+safe reason codes that do not disclose imported content.
+
+FILES_CHANGED:
+Import parser service, focused parser tests, backend dependency manifest and lock,
+backend parser strategy documentation, and current status documentation.
+
+DATABASE_CHANGES:
+None.
+
+API_CHANGES:
+None. Import upload/analyze endpoints remain a later service/API task.
+
+TESTS_ADDED:
+Eight focused cases cover CSV inspection and bounded sampling, multi-sheet XLSX
+inspection, formula non-evaluation, malformed XLSX, invalid CSV encoding, duplicate
+headers, empty input, unsupported file types, input/row limits, and suspicious ZIP
+compression.
+
+TEST_RESULTS:
+Ruff formatting and lint pass; strict mypy passes; all eight parser tests pass;
+the combined import schema/parser suite passes all 11 tests. Runtime verification
+confirms openpyxl is using defusedxml.
+
+SECURITY_IMPACT:
+Untrusted input is bounded by compressed bytes, expanded archive bytes, archive
+entries, compression ratio, sheets, rows, columns, cell size, and sample count.
+XLSX uses read-only/data-only mode with external-link preservation disabled and
+defused XML parsing. Formulas are not executed and safe errors contain no cell
+content.
+
+KNOWN_LIMITATIONS:
+The synchronous parser intentionally rejects files above its limits. Larger files
+require a future isolated background worker with equivalent archive, time, and
+memory safeguards. CSV currently accepts UTF-8 with optional BOM; legacy encodings
+require an explicit future product decision. Upload persistence, workspace
+authorization, job state transitions, and asynchronous dispatch follow in later
+IMP-BE tasks.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+IMP-BE-002 Import Profiles and Mapping.
+```
+
+Import profile and mapping implementation entry:
+
+```text
+DATE:
+2026-08-23
+
+MILESTONE:
+M4 Documents and Import
+
+TASKS_COMPLETED:
+IMP-BE-002 Import Profiles and Mapping
+
+TASKS_IN_PROGRESS:
+None
+
+SUMMARY:
+Implemented reusable workspace-scoped import profiles with atomic mapping creation
+and replacement. Profiles target generic entity types; mappings target exactly one
+active attribute belonging to that type or an allowed generic entity system field.
+Create, list, retrieve, and update operations are exposed through authenticated API
+routes and material mutations are audited in the same transaction.
+
+FILES_CHANGED:
+Import profile schemas, repository, service, API router, API specification,
+canonical OpenAPI contract, focused service/OpenAPI tests, and status documentation.
+
+DATABASE_CHANGES:
+None. The implementation uses the IMP-DB-001 tables.
+
+API_CHANGES:
+Added POST/GET /workspaces/{workspace_id}/import-profiles and GET/PATCH
+/import-profiles/{profile_id}. The canonical and narrative API contracts were
+updated together.
+
+TESTS_ADDED:
+Six focused service/schema cases cover exclusive mapping targets, atomic audited
+creation, workspace-role permissions, missing permission rejection, foreign or
+wrong-type attribute rejection, and atomic audited mapping replacement. OpenAPI
+coverage asserts both route groups.
+
+TEST_RESULTS:
+Ruff formatting/lint and strict mypy pass for the implementation; all seven focused
+service/OpenAPI tests pass; canonical OpenAPI YAML parses successfully.
+
+SECURITY_IMPACT:
+Backend IMPORT_EXECUTE authorization and active workspace membership are required.
+Entity types and attribute targets are verified in the same workspace/type;
+cross-workspace references fail. Mapping replacement and audit writes are atomic,
+and request schemas reject unknown fields and multiple/no mapping targets.
+
+KNOWN_LIMITATIONS:
+Matching strategy configuration is intentionally deferred to IMP-BE-003. Parser
+upload/job orchestration and mapping execution follow in subsequent import tasks.
+The import-profile table has no optimistic version column in the accepted schema,
+so updates use transaction atomicity but not client version preconditions.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+Repository/CI stabilization for PR #6, as requested, before IMP-BE-003.
+```
+
+PR #6 CI stabilization entry:
+
+```text
+DATE:
+2026-08-23
+
+MILESTONE:
+Repository Quality / Required CI Gate
+
+TASKS_COMPLETED:
+PR #6 backend-quality and frontend-test failure repair
+
+TASKS_IN_PROGRESS:
+None
+
+SUMMARY:
+Reproduced and repaired both root failures from GitHub Actions run 32655400502.
+Strict backend mypy failed on a Literal-typed configuration factory plus import
+parser/schema test typing; the frontend test suite failed because the dashboard
+test retained the old three-available/four-planned counts after workspace settings
+became available. The Required CI Gate failure was consequential, and the build was
+skipped because it depends on all preceding jobs.
+
+FILES_CHANGED:
+Typed configuration default factory, import parser/schema test typing, workspace
+dashboard expectation, and current status documentation.
+
+DATABASE_CHANGES:
+None.
+
+API_CHANGES:
+None.
+
+TESTS_ADDED:
+None for the stabilization itself; stale and strict-typing coverage was corrected.
+
+TEST_RESULTS:
+Full backend format check, Ruff lint, strict mypy across app/scripts/tests, and all
+166 backend tests with warnings-as-errors pass. All 31 frontend tests, zero-warning
+ESLint, TypeScript checks, and production build pass. The referenced remote run
+confirms backend quality and frontend tests were the only root failures; frontend
+quality, backend tests, migration, secret scan, and Persian RTL E2E passed. A local
+Windows E2E rerun was stopped after hanging in the browser runner, but the same E2E
+job was green in the referenced GitHub run and its code was unchanged.
+
+SECURITY_IMPACT:
+No security controls were weakened. The secret scan and migration verification in
+the referenced run passed, and backend tests continue to run with warnings treated
+as errors.
+
+KNOWN_LIMITATIONS:
+GitHub will not rerun PR checks until these working-tree changes are committed and
+pushed to the PR branch. The build job will remain skipped in the old run because
+its dependencies already failed; a new run is required.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+Commit/push the repair and IMP-BE-001/002 slices, confirm a new Required CI Gate,
+then resume IMP-BE-003 Matching Strategy.
+```
+
 ---
 
 # 27. Related Specifications

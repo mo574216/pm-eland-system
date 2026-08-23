@@ -10,7 +10,7 @@ from app.models.import_job import ImportConflict, ImportJob, ImportMapping, Impo
 
 def check_names(table: Table) -> set[str | None]:
     return {
-        constraint.name
+        cast(str | None, constraint.name)
         for constraint in table.constraints
         if isinstance(constraint, CheckConstraint)
     }
@@ -39,7 +39,7 @@ def test_jobs_preserve_staged_status_summaries_and_idempotency() -> None:
     assert next(iter(table.c.workspace_id.foreign_keys)).ondelete == "CASCADE"
     assert next(iter(table.c.import_profile_id.foreign_keys)).ondelete == "SET NULL"
     assert check_names(table) == {"ck_import_jobs_status"}
-    indexes = {index.name: index for index in table.indexes}
+    indexes = {str(index.name): index for index in table.indexes if index.name is not None}
     assert set(indexes) == {
         "uq_import_jobs_idempotency",
     }

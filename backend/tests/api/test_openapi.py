@@ -44,6 +44,8 @@ def test_openapi_uses_version_31_and_exposes_health_routes(client: TestClient) -
     assert "get" in document["paths"]["/api/v1/entities/{entity_id}/documents"]
     assert "get" in document["paths"]["/api/v1/documents/{document_id}"]
     assert "get" in document["paths"]["/api/v1/documents/{document_id}/versions"]
+    assert "/api/v1/workspaces/{workspace_id}/import-profiles" in document["paths"]
+    assert "/api/v1/import-profiles/{profile_id}" in document["paths"]
     assert "/api/v1/forms/{form_id}/render" in document["paths"]
     assert "/api/v1/forms/{form_id}/instances" in document["paths"]
     assert "/api/v1/form-instances/{instance_id}" in document["paths"]

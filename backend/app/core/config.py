@@ -7,6 +7,10 @@ from pydantic import AnyHttpUrl, Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+def _default_download_scan_statuses() -> list[Literal["PENDING", "CLEAN"]]:
+    return ["CLEAN"]
+
+
 class Settings(BaseSettings):
     """Application settings loaded from environment variables or local dotenv files."""
 
@@ -63,7 +67,7 @@ class Settings(BaseSettings):
         }
     )
     document_download_allowed_scan_statuses: list[Literal["PENDING", "CLEAN"]] = Field(
-        default_factory=lambda: ["CLEAN"]
+        default_factory=_default_download_scan_statuses
     )
 
     @model_validator(mode="after")
