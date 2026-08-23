@@ -1129,6 +1129,25 @@ Retrieve full definition.
 
 Allowed only when form is DRAFT.
 
+Mutable fields are `name`, `entity_type_id`, `description`, and `schema_json`.
+For FORM-BE-001, `schema_json.sections` is an ordered list of generic section metadata:
+
+```json
+{
+  "sections": [
+    {
+      "key": "general",
+      "label": "General",
+      "display_order": 10,
+      "configuration": {}
+    }
+  ]
+}
+```
+
+Section keys SHALL be unique within a definition. A field with `section_key` SHALL
+reference one of these configured sections.
+
 Attempting to edit a published form SHALL fail or create a new version through the version endpoint.
 
 ---

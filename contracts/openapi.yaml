@@ -818,6 +818,99 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SuccessEnvelope'
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+    get:
+      tags: [Forms]
+      operationId: listForms
+      summary: List form definitions
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - name: entity_type_id
+          in: query
+          schema: {type: string, format: uuid}
+        - name: status
+          in: query
+          schema: {type: string, enum: [DRAFT, PUBLISHED, RETIRED]}
+        - name: search
+          in: query
+          schema: {type: string, minLength: 1, maxLength: 255}
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: Form definition page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessEnvelope'
+        '403': {$ref: '#/components/responses/Forbidden'}
+
+  /forms/{formId}:
+    get:
+      tags: [Forms]
+      operationId: getForm
+      summary: Retrieve a full form definition
+      parameters:
+        - $ref: '#/components/parameters/FormId'
+      responses:
+        '200':
+          description: Form definition with fields
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessEnvelope'
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+    patch:
+      tags: [Forms]
+      operationId: updateDraftForm
+      summary: Update draft form metadata and sections
+      parameters:
+        - $ref: '#/components/parameters/FormId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FormUpdate'
+      responses:
+        '200':
+          description: Draft form updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessEnvelope'
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+
+  /forms/{formId}/fields:
+    post:
+      tags: [Forms]
+      operationId: addDraftFormField
+      summary: Add metadata-defined field to a draft form
+      parameters:
+        - $ref: '#/components/parameters/FormId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FormFieldCreate'
+      responses:
+        '201':
+          description: Form field created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessEnvelope'
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '422': {$ref: '#/components/responses/ValidationError'}
 
   /forms/{formId}/render:
     get:
@@ -1401,11 +1494,79 @@ components:
     FormCreate:
       type: object
       required: [key, name]
+      additionalProperties: false
       properties:
-        key: {type: string}
-        name: {type: string}
+        key:
+          type: string
+          minLength: 1
+          maxLength: 120
+          pattern: '^[a-z][a-z0-9_]*$'
+        name: {type: string, minLength: 1, maxLength: 255}
         entity_type_id: {type: [string, 'null'], format: uuid}
-        description: {type: string}
+        description: {type: [string, 'null']}
+
+    FormSectionDefinition:
+      type: object
+      required: [key, label]
+      additionalProperties: false
+      properties:
+        key:
+          type: string
+          minLength: 1
+          maxLength: 120
+          pattern: '^[a-z][a-z0-9_]*$'
+        label: {type: string, minLength: 1, maxLength: 180}
+        display_order: {type: integer, minimum: 0, default: 0}
+        configuration: {type: object, additionalProperties: true}
+
+    FormSchemaDefinition:
+      type: object
+      additionalProperties: false
+      properties:
+        sections:
+          type: array
+          items: {$ref: '#/components/schemas/FormSectionDefinition'}
+
+    FormUpdate:
+      type: object
+      additionalProperties: false
+      anyOf:
+        - required: [name]
+        - required: [entity_type_id]
+        - required: [description]
+        - required: [schema_json]
+      properties:
+        name: {type: string, minLength: 1, maxLength: 255}
+        entity_type_id: {type: [string, 'null'], format: uuid}
+        description: {type: [string, 'null']}
+        schema_json: {$ref: '#/components/schemas/FormSchemaDefinition'}
+
+    FormFieldCreate:
+      type: object
+      required: [key, label, field_type]
+      additionalProperties: false
+      properties:
+        key:
+          type: string
+          minLength: 1
+          maxLength: 120
+          pattern: '^[a-z][a-z0-9_]*$'
+        label: {type: string, minLength: 1, maxLength: 180}
+        field_type:
+          type: string
+          enum: [TEXT, RICH_TEXT, INTEGER, DECIMAL, BOOLEAN, DATE, DATETIME, ENUM, MULTI_ENUM, USER_REFERENCE, ENTITY_REFERENCE, FILE_REFERENCE, TABLE]
+        attribute_definition_id: {type: [string, 'null'], format: uuid}
+        section_key:
+          type: [string, 'null']
+          maxLength: 120
+          pattern: '^[a-z][a-z0-9_]*$'
+        display_order: {type: integer, minimum: 0, default: 0}
+        is_required: {type: boolean, default: false}
+        is_read_only: {type: boolean, default: false}
+        configuration: {type: object, additionalProperties: true}
+        visibility_rule: {type: object, additionalProperties: true}
+        validation_rule: {type: object, additionalProperties: true}
+        inheritance_rule: {type: object, additionalProperties: true}
 
   responses:
     NotFound:

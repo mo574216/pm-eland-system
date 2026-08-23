@@ -1147,6 +1147,59 @@ NEXT_TASK:
 FORM-BE-001 Draft Form Definition API.
 ```
 
+Draft form API implementation entry:
+
+```text
+DATE:
+2026-08-23
+
+MILESTONE:
+M3 Dynamic Forms and Structured Data
+
+TASKS_COMPLETED:
+FORM-BE-001 Draft Form Definition API
+
+TASKS_IN_PROGRESS:
+None
+
+TEST_RESULTS:
+Backend formatting, lint, strict mypy, 125 tests, and YAML contract parsing pass.
+Live PostgreSQL/API verification created a version-1 DRAFT, configured a section,
+added a generic field, retrieved/listed the full definition, rejected a missing
+section with 422, and rejected a duplicate field key with 409.
+
+SECURITY:
+All design mutations require effective FORM_DESIGN and active workspace membership;
+definition reads require ENTITY_READ. Entity-type and attribute references are
+validated in the same workspace, and metadata changes are audited transactionally.
+Every draft mutation explicitly rejects non-DRAFT definitions.
+
+DATABASE_CHANGES:
+None beyond migration 0009.
+
+API_CHANGES:
+Implemented POST/GET /workspaces/{workspace_id}/forms, GET/PATCH /forms/{form_id},
+and POST /forms/{form_id}/fields. Expanded openapi.yaml for all published draft-form
+paths and payloads. PATCH supports generic ordered section metadata in schema_json;
+section keys are unique and field section references must resolve.
+
+USER_VISIBLE_RESULT:
+Demo Workspace contains a Demo Specification draft with a General section and
+required Summary TEXT field for subsequent designer, publish, and render tasks.
+
+KNOWN_LIMITATIONS:
+Field update/removal endpoints are not defined by the authoritative API specification.
+Publish/new-version lifecycle is FORM-BE-002; stored rule interpretation is
+FORM-BE-003; render contracts are FORM-BE-004.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+FORM-BE-002 Form Publish and Versioning, while FORM-BE-003 becomes independently
+dependency-ready after FORM-BE-001.
+```
+
 ---
 
 # 13. Recommended Immediate Implementation Sequence

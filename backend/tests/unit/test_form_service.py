@@ -150,10 +150,10 @@ def test_form_payloads_reject_unknown_types_and_empty_updates() -> None:
         FormUpdate.model_validate(
             {
                 "schema_json": {
-                "sections": [
-                    {"key": "general", "label": "General"},
-                    {"key": "general", "label": "Duplicate"},
-                ]
+                    "sections": [
+                        {"key": "general", "label": "General"},
+                        {"key": "general", "label": "Duplicate"},
+                    ]
                 }
             }
         )
