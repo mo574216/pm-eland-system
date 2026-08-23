@@ -1421,6 +1421,121 @@ DATA-BE-001 Create/Save Form Instance, followed by FORM-FE-001 and FORM-FE-002 f
 the demo-critical dynamic-form vertical slice.
 ```
 
+Draft form instance implementation entry:
+
+```text
+DATE:
+2026-08-23
+
+MILESTONE:
+M3 Dynamic Forms and Structured Data
+
+TASKS_COMPLETED:
+DATA-BE-001 Create/Save Form Instance
+
+TASKS_IN_PROGRESS:
+None
+
+TEST_RESULTS:
+Quota-conscious focused verification passes: Ruff formatting/lint, strict mypy for
+the affected modules, 12 form-service/OpenAPI tests, and canonical OpenAPI YAML
+parsing. Broader regression gates are intentionally deferred to the next demo
+release checkpoint rather than repeated after every feature.
+
+SECURITY:
+Creation and draft saving require FORM_SUBMIT plus active workspace membership.
+Definitions must be published, entities must be active and in the same workspace,
+and configured entity types must match. Retrieval requires ENTITY_READ. Reference
+values are resolved only in the instance workspace. Unknown, hidden, and read-only
+fields are rejected by the backend.
+
+DATABASE_CHANGES:
+None beyond the existing form_instances table from migration 0009.
+
+API_CHANGES:
+Implemented POST /forms/{form_id}/instances, GET /form-instances/{instance_id}, and
+PATCH /form-instances/{instance_id}. Responses retain exact form-definition/version
+identity. Draft saves validate generic scalar/reference/table values, return stable
+field error paths/codes, increment the instance version, reject stale edits, and
+write transactional audit records. Canonical OpenAPI and API specifications updated.
+
+TESTS_ADDED:
+Service coverage for published-form instance creation, validation detail, audited
+save, optimistic concurrency, draft-form rejection, and foreign-workspace entity
+non-disclosure; API route discovery assertions extended.
+
+USER_VISIBLE_RESULT:
+The frontend can now create and persist an editable draft for a published dynamic
+form, which unlocks the demo-critical generic form renderer.
+
+KNOWN_LIMITATIONS:
+Final required-field validation, phase locking, submission, and synchronization to
+canonical entity attributes belong to DATA-BE-002. A backend restart is still needed
+before the running local API exposes the newly implemented routes.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+FORM-FE-001 Dynamic Field Renderer as the next single demo-visible feature.
+```
+
+Dynamic field renderer implementation entry:
+
+```text
+DATE:
+2026-08-23
+
+MILESTONE:
+M3 Dynamic Forms and Structured Data
+
+TASKS_COMPLETED:
+FORM-FE-001 Dynamic Field Renderer
+
+TASKS_IN_PROGRESS:
+None
+
+TEST_RESULTS:
+Quota-conscious focused frontend verification passes: zero-warning ESLint for the
+affected files, strict application TypeScript, and 2 targeted component tests. The
+test assertions execute in under one second; Windows/jsdom process startup accounts
+for almost all of the approximately 70-second focused test duration. Full frontend
+regression and production build are deferred to the demo release checkpoint.
+
+SECURITY:
+The component treats backend visible/read_only/required results as rendering input
+and provides UX enforcement only. Backend validation and authorization remain
+authoritative. It renders text safely through React/MUI without raw HTML injection.
+
+DATABASE_CHANGES:
+None.
+
+API_CHANGES:
+None. The component consumes the FORM-BE-004 normalized field contract.
+
+TESTS_ADDED:
+Focused coverage verifies visible scalar editing, hidden fields, inherited read-only
+presentation, and metadata-defined repeating-row add/edit/remove behavior.
+
+USER_VISIBLE_RESULT:
+A single generic component can now render TEXT, RICH_TEXT, INTEGER, DECIMAL, BOOLEAN,
+DATE, DATETIME, ENUM, MULTI_ENUM, USER_REFERENCE, ENTITY_REFERENCE, FILE_REFERENCE,
+and TABLE fields. It supports Persian labels/errors, required/read-only/visibility
+state, inherited-value decoration, enum option metadata, and dynamic table columns.
+
+KNOWN_LIMITATIONS:
+Reference fields use generic text input unless metadata supplies selector behavior;
+specialized workspace reference pickers require their corresponding list contracts.
+The component is not yet mounted in an entity form—the form-level fetch/save layout
+is FORM-FE-002.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+FORM-FE-002 Dynamic Form Renderer, as the next single demo-visible feature.
+```
+
 ---
 
 # 13. Recommended Immediate Implementation Sequence

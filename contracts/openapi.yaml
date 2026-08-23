@@ -970,6 +970,66 @@ paths:
         '404': {$ref: '#/components/responses/NotFound'}
         '422': {$ref: '#/components/responses/ValidationError'}
 
+  /forms/{formId}/instances:
+    post:
+      tags: [Forms]
+      operationId: createFormInstance
+      summary: Create a draft instance tied to a published form version
+      parameters:
+        - $ref: '#/components/parameters/FormId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/FormInstanceCreate'}
+      responses:
+        '201':
+          description: Draft form instance created
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SuccessEnvelope'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+
+  /form-instances/{instanceId}:
+    get:
+      tags: [Forms]
+      operationId: getFormInstance
+      summary: Retrieve a form instance and its immutable form version identity
+      parameters:
+        - $ref: '#/components/parameters/InstanceId'
+      responses:
+        '200':
+          description: Form instance
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SuccessEnvelope'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+    patch:
+      tags: [Forms]
+      operationId: updateDraftFormInstance
+      summary: Validate and save draft form values
+      parameters:
+        - $ref: '#/components/parameters/InstanceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/FormInstanceUpdate'}
+      responses:
+        '200':
+          description: Draft saved
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SuccessEnvelope'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+
   /entities/{entityId}/documents:
     post:
       tags: [Documents]
@@ -1142,6 +1202,11 @@ components:
       schema: {type: string, format: uuid}
     FormId:
       name: formId
+      in: path
+      required: true
+      schema: {type: string, format: uuid}
+    InstanceId:
+      name: instanceId
       in: path
       required: true
       schema: {type: string, format: uuid}
@@ -1662,6 +1727,39 @@ components:
         sections:
           type: array
           items: {$ref: '#/components/schemas/FormRenderSection'}
+
+    FormInstanceCreate:
+      type: object
+      required: [entity_id]
+      additionalProperties: false
+      properties:
+        entity_id: {type: string, format: uuid}
+
+    FormInstanceUpdate:
+      type: object
+      required: [values, version]
+      additionalProperties: false
+      properties:
+        values: {type: object, additionalProperties: true}
+        version: {type: integer, minimum: 1}
+
+    FormInstanceResponse:
+      type: object
+      required: [id, workspace_id, form_definition_id, entity_id, status, values, version, created_at, updated_at, submitted_by, submitted_at, form]
+      additionalProperties: false
+      properties:
+        id: {type: string, format: uuid}
+        workspace_id: {type: string, format: uuid}
+        form_definition_id: {type: string, format: uuid}
+        entity_id: {type: string, format: uuid}
+        status: {type: string, enum: [DRAFT, SUBMITTED, APPROVED, REVISION_REQUESTED]}
+        values: {type: object, additionalProperties: true}
+        version: {type: integer, minimum: 1}
+        created_at: {type: string, format: date-time}
+        updated_at: {type: string, format: date-time}
+        submitted_by: {type: [string, 'null'], format: uuid}
+        submitted_at: {type: [string, 'null'], format: date-time}
+        form: {$ref: '#/components/schemas/FormRenderSummary'}
 
   responses:
     NotFound:

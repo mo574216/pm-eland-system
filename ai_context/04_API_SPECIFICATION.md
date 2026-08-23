@@ -1321,6 +1321,10 @@ whose `key` and `label` are `null`; clients SHALL render it without a heading.
 
 Create draft form instance for entity.
 
+The form definition MUST be `PUBLISHED`. The caller requires `FORM_SUBMIT`, and
+the entity MUST be active, in the same workspace, and match the form's optional
+entity type. The created instance retains the exact immutable form-definition ID.
+
 ### Request
 
 ```json
@@ -1335,11 +1339,21 @@ Create draft form instance for entity.
 
 Retrieve instance and associated form version.
 
+The response includes instance status, values, optimistic-concurrency version,
+and the immutable form key/name/version identity. Access requires active workspace
+membership and `ENTITY_READ`.
+
 ---
 
 # 12.3 PATCH /form-instances/{instance_id}
 
 Save draft values.
+
+The caller requires `FORM_SUBMIT`. Values are validated generically against field
+types, configuration, evaluated visibility/read-only state, enum options,
+references, and dynamic table columns. Unknown fields are rejected. Validation
+errors use `VALIDATION_ERROR` with `details.fields` entries containing stable
+`field` paths and `code` values. Concurrent edits return `STALE_VERSION`.
 
 ### Request
 

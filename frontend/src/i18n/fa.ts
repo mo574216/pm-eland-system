@@ -166,4 +166,13 @@ export const fa = {
     target: 'موجودیت مقصد',
     type: 'نوع رابطه',
   },
+  forms: {
+    addRow: 'افزودن ردیف',
+    emptyTable: 'هنوز ردیفی ثبت نشده است.',
+    inherited: 'مقدار به‌ارث‌رسیده',
+    invalidTable: 'پیکربندی جدول پویا معتبر نیست.',
+    removeRow: 'حذف ردیف',
+    required: 'الزامی',
+    unsupportedField: 'نوع این فیلد پشتیبانی نمی‌شود.',
+  },
 } as const

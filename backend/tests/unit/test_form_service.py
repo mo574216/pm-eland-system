@@ -9,19 +9,21 @@ from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import (
+    FormValidationError,
     InvalidMetadataError,
     PermissionDeniedError,
     ResourceConflictError,
     ResourceNotFoundError,
+    StaleVersionError,
 )
 from app.core.permissions import PermissionCode
 from app.models.entity import EntityObject
-from app.models.form import FormDefinition, FormField
+from app.models.form import FormDefinition, FormField, FormInstance
 from app.models.identity import AuditLog, User
 from app.models.metadata import AttributeDefinition, EntityType
 from app.models.workspace import Workspace
 from app.repositories.entity import EntityRepository
-from app.repositories.form import FormRecord, FormRepository
+from app.repositories.form import FormInstanceRecord, FormRecord, FormRepository
 from app.repositories.workspace import WorkspaceRepository
 from app.schemas.form import FormFieldCreate, FormUpdate
 from app.services.auth import AuthenticatedIdentity
@@ -76,6 +78,7 @@ class FakeFormRepository:
         self.attribute_records: dict[UUID, AttributeDefinition] = {}
         self.forms: list[FormDefinition] = []
         self.fields: list[FormField] = []
+        self.instances: list[FormInstance] = []
         self.audit_logs: list[AuditLog] = []
         self.existing_field: FormField | None = None
         self.workspace_locks: list[UUID] = []
@@ -86,6 +89,9 @@ class FakeFormRepository:
     def add_field(self, value: FormField) -> None:
         self.fields.append(value)
 
+    def add_instance(self, value: FormInstance) -> None:
+        self.instances.append(value)
+
     def add_audit_log(self, value: AuditLog) -> None:
         self.audit_logs.append(value)
 
@@ -93,6 +99,9 @@ class FakeFormRepository:
         now = datetime.now(UTC)
         for form_value in self.forms:
             form_value.created_at = now
+        for instance in self.instances:
+            instance.created_at = now
+            instance.updated_at = now
 
     async def form_by_key(self, _: UUID, __: str) -> FormDefinition | None:
         return self.form
@@ -154,6 +163,26 @@ class FakeFormRepository:
             for attribute_id in attribute_ids
             if attribute_id in self.attribute_records
         }
+
+    async def accessible_instance_record(
+        self, instance_id: UUID, _: UUID, *, for_update: bool = False
+    ) -> FormInstanceRecord | None:
+        del for_update
+        instance = next((item for item in self.instances if item.id == instance_id), None)
+        if instance is None or self.form is None:
+            return None
+        return FormInstanceRecord(instance, self.form, tuple(self.fields))
+
+    async def update_draft_instance(
+        self, instance_id: UUID, expected_version: int, values: dict[str, object]
+    ) -> FormInstance | None:
+        instance = next((item for item in self.instances if item.id == instance_id), None)
+        if instance is None or instance.status != "DRAFT" or instance.version != expected_version:
+            return None
+        instance.values_json = values
+        instance.version += 1
+        instance.updated_at = datetime.now(UTC)
+        return instance
 
 
 class FakeEntityRepository:
@@ -612,3 +641,99 @@ async def test_render_contract_requires_design_for_draft_and_hides_foreign_entit
     repository.form.lifecycle_status = "PUBLISHED"
     with pytest.raises(ResourceNotFoundError):
         await service.render_form(repository.form.id, entity_id=foreign.id)
+
+
+@pytest.mark.asyncio
+async def test_create_and_save_draft_instance_is_versioned_validated_and_audited() -> None:
+    actor = identity(PermissionCode.ENTITY_READ, PermissionCode.FORM_SUBMIT)
+    workspace = Workspace(id=uuid4(), name="A", slug="a", owner_id=actor.user.id)
+    service, repository = build_service(actor, workspace)
+    entity_type_id = uuid4()
+    entity = EntityObject(
+        id=uuid4(),
+        workspace_id=workspace.id,
+        entity_type_id=entity_type_id,
+        name="Current Process",
+        status="ACTIVE",
+        attributes={},
+    )
+    service.entity_repository = cast(EntityRepository, FakeEntityRepository((entity,)))
+    repository.form = form(workspace.id, actor.user.id, entity_type_id)
+    repository.form.lifecycle_status = "PUBLISHED"
+    repository.form.schema_json = {
+        "sections": [{"key": "general", "label": "General", "display_order": 10}]
+    }
+    repository.fields = [
+        render_field(
+            repository.form.id,
+            "summary",
+            configuration={"min_length": 3},
+        )
+    ]
+
+    created = await service.create_instance(
+        repository.form.id, entity_id=entity.id, audit=audit_context()
+    )
+    assert created.instance.status == "DRAFT"
+    assert created.instance.version == 1
+    assert created.instance.form_definition_id == repository.form.id
+    assert repository.audit_logs[-1].action == "FORM_INSTANCE_CREATED"
+
+    with pytest.raises(FormValidationError) as invalid:
+        await service.update_draft_instance(
+            created.instance.id,
+            values={"summary": "x", "unknown": True},
+            expected_version=1,
+            audit=audit_context(),
+        )
+    assert invalid.value.details == {
+        "fields": [
+            {"field": "unknown", "code": "UNKNOWN_FIELD"},
+            {"field": "summary", "code": "MIN_LENGTH"},
+        ]
+    }
+
+    saved = await service.update_draft_instance(
+        created.instance.id,
+        values={"summary": "Valid draft"},
+        expected_version=1,
+        audit=audit_context(),
+    )
+    assert saved.instance.values_json == {"summary": "Valid draft"}
+    assert saved.instance.version == 2
+    assert repository.audit_logs[-1].action == "FORM_INSTANCE_SAVED"
+
+    with pytest.raises(StaleVersionError):
+        await service.update_draft_instance(
+            created.instance.id,
+            values={"summary": "Stale edit"},
+            expected_version=1,
+            audit=audit_context(),
+        )
+
+
+@pytest.mark.asyncio
+async def test_instance_creation_rejects_draft_form_and_foreign_entity() -> None:
+    actor = identity(PermissionCode.FORM_SUBMIT)
+    workspace = Workspace(id=uuid4(), name="A", slug="a", owner_id=actor.user.id)
+    service, repository = build_service(actor, workspace)
+    repository.form = form(workspace.id, actor.user.id, uuid4())
+    foreign = EntityObject(
+        id=uuid4(),
+        workspace_id=uuid4(),
+        entity_type_id=repository.form.entity_type_id,
+        name="Foreign",
+        status="ACTIVE",
+        attributes={},
+    )
+    service.entity_repository = cast(EntityRepository, FakeEntityRepository((foreign,)))
+
+    with pytest.raises(ResourceConflictError):
+        await service.create_instance(
+            repository.form.id, entity_id=foreign.id, audit=audit_context()
+        )
+    repository.form.lifecycle_status = "PUBLISHED"
+    with pytest.raises(ResourceNotFoundError):
+        await service.create_instance(
+            repository.form.id, entity_id=foreign.id, audit=audit_context()
+        )

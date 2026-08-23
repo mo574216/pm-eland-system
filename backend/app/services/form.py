@@ -7,19 +7,21 @@ from uuid import UUID, uuid4
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import (
+    FormValidationError,
     InvalidMetadataError,
     PermissionDeniedError,
     ResourceConflictError,
     ResourceNotFoundError,
+    StaleVersionError,
     WorkspaceAccessDeniedError,
 )
 from app.core.permissions import PermissionCode
 from app.models.entity import EntityObject
-from app.models.form import FormDefinition, FormField
+from app.models.form import FormDefinition, FormField, FormInstance
 from app.models.identity import AuditLog
 from app.models.metadata import AttributeDefinition
 from app.repositories.entity import EntityRepository
-from app.repositories.form import FormRecord, FormRepository
+from app.repositories.form import FormInstanceRecord, FormRecord, FormRepository
 from app.repositories.workspace import WorkspaceRepository
 from app.schemas.form import (
     FormFieldType,
@@ -32,7 +34,9 @@ from app.schemas.form import (
 )
 from app.services.auth import AuthenticatedIdentity
 from app.services.authorization import AuditContext, AuthorizationService
+from app.services.entity import EntityReferenceResolver
 from app.services.form_rules import FormRuleEvaluator, InvalidFormRuleError
+from app.services.form_validation import FormValueValidator
 
 
 class FormService:
@@ -44,6 +48,7 @@ class FormService:
         self.repository = FormRepository(session)
         self.entity_repository = EntityRepository(session)
         self.rule_evaluator = FormRuleEvaluator()
+        self.value_validator = FormValueValidator(EntityReferenceResolver(self.entity_repository))
 
     async def _require_permission(self, workspace_id: UUID, permission: PermissionCode) -> None:
         workspace = await self.workspace_repository.accessible_workspace(
@@ -175,6 +180,112 @@ class FormService:
             entity_id=entity_id,
             sections=sections,
         )
+
+    async def create_instance(
+        self,
+        form_id: UUID,
+        *,
+        entity_id: UUID,
+        audit: AuditContext,
+    ) -> FormInstanceRecord:
+        async with self.session.begin():
+            record = await self.repository.accessible_form_record(form_id, self.actor.user.id)
+            if record is None:
+                raise ResourceNotFoundError
+            form = record.form
+            await self._require_permission(form.workspace_id, PermissionCode.FORM_SUBMIT)
+            if form.lifecycle_status != "PUBLISHED":
+                raise ResourceConflictError
+            entity = await self.entity_repository.entity_in_workspace(entity_id, form.workspace_id)
+            if entity is None or entity.status != "ACTIVE":
+                raise ResourceNotFoundError
+            if form.entity_type_id is not None and entity.entity_type_id != form.entity_type_id:
+                raise InvalidMetadataError({"field": "entity_id", "reason": "wrong_entity_type"})
+            instance = FormInstance(
+                id=uuid4(),
+                workspace_id=form.workspace_id,
+                form_definition_id=form.id,
+                entity_id=entity.id,
+                status="DRAFT",
+                values_json={},
+                version=1,
+            )
+            self.repository.add_instance(instance)
+            self.repository.add_audit_log(
+                self._audit_log(
+                    audit,
+                    form.workspace_id,
+                    "FORM_INSTANCE_CREATED",
+                    "form_instance",
+                    instance.id,
+                    None,
+                    self._instance_state(instance),
+                )
+            )
+            await self.repository.flush()
+        return FormInstanceRecord(instance, form, record.fields)
+
+    async def get_instance(self, instance_id: UUID) -> FormInstanceRecord:
+        record = await self.repository.accessible_instance_record(instance_id, self.actor.user.id)
+        if record is None:
+            raise ResourceNotFoundError
+        await self._require_permission(record.instance.workspace_id, PermissionCode.ENTITY_READ)
+        return record
+
+    async def update_draft_instance(
+        self,
+        instance_id: UUID,
+        *,
+        values: dict[str, object],
+        expected_version: int,
+        audit: AuditContext,
+    ) -> FormInstanceRecord:
+        async with self.session.begin():
+            record = await self.repository.accessible_instance_record(
+                instance_id, self.actor.user.id, for_update=True
+            )
+            if record is None:
+                raise ResourceNotFoundError
+            instance = record.instance
+            await self._require_permission(instance.workspace_id, PermissionCode.FORM_SUBMIT)
+            if instance.status != "DRAFT":
+                raise ResourceConflictError
+            entity = await self.entity_repository.entity_in_workspace(
+                instance.entity_id, instance.workspace_id
+            )
+            if entity is None or entity.status != "ACTIVE":
+                raise ResourceNotFoundError
+            render = await self.render_form(
+                record.form.id,
+                entity_id=entity.id,
+                draft_values=values,
+            )
+            fields = tuple(field for section in render.sections for field in section.fields)
+            errors = await self.value_validator.validate_draft(
+                fields, values, instance.workspace_id
+            )
+            if errors:
+                raise FormValidationError(
+                    {"fields": [{"field": error.field, "code": error.code} for error in errors]}
+                )
+            before_state = self._instance_state(instance)
+            updated = await self.repository.update_draft_instance(
+                instance.id, expected_version, values
+            )
+            if updated is None:
+                raise StaleVersionError
+            self.repository.add_audit_log(
+                self._audit_log(
+                    audit,
+                    updated.workspace_id,
+                    "FORM_INSTANCE_SAVED",
+                    "form_instance",
+                    updated.id,
+                    before_state,
+                    self._instance_state(updated),
+                )
+            )
+        return FormInstanceRecord(updated, record.form, record.fields)
 
     async def update_draft_form(
         self,
@@ -664,6 +775,17 @@ class FormService:
             "visibility_rule": field.visibility_rule,
             "validation_rule": field.validation_rule,
             "inheritance_rule": field.inheritance_rule,
+        }
+
+    @staticmethod
+    def _instance_state(instance: FormInstance) -> dict[str, object]:
+        return {
+            "workspace_id": str(instance.workspace_id),
+            "form_definition_id": str(instance.form_definition_id),
+            "entity_id": str(instance.entity_id),
+            "status": instance.status,
+            "values": instance.values_json,
+            "version": instance.version,
         }
 
     def _audit_log(

@@ -10,12 +10,15 @@ from app.api.dependencies.authentication import get_current_identity
 from app.api.envelopes import success_envelope
 from app.core.database import get_database_session
 from app.core.request_context import get_request_id
-from app.repositories.form import FormRecord
+from app.repositories.form import FormInstanceRecord, FormRecord
 from app.schemas.form import (
     FormCreate,
     FormDefinitionResponse,
     FormFieldCreate,
     FormFieldResponse,
+    FormInstanceCreate,
+    FormInstanceResponse,
+    FormInstanceUpdate,
     FormLifecycleStatus,
     FormListResponse,
     FormRenderResponse,
@@ -43,6 +46,30 @@ def _form_response(record: FormRecord) -> FormDefinitionResponse:
         **summary.model_dump(),
         schema_definition=record.form.schema_json,
         fields=tuple(FormFieldResponse.model_validate(field) for field in record.fields),
+    )
+
+
+def _instance_response(record: FormInstanceRecord) -> FormInstanceResponse:
+    instance = record.instance
+    return FormInstanceResponse(
+        id=instance.id,
+        workspace_id=instance.workspace_id,
+        form_definition_id=instance.form_definition_id,
+        entity_id=instance.entity_id,
+        status=instance.status,
+        values=instance.values_json,
+        version=instance.version,
+        created_at=instance.created_at,
+        updated_at=instance.updated_at,
+        submitted_by=instance.submitted_by,
+        submitted_at=instance.submitted_at,
+        form={
+            "id": record.form.id,
+            "key": record.form.key,
+            "name": record.form.name,
+            "version_number": record.form.version_number,
+            "lifecycle_status": record.form.lifecycle_status,
+        },
     )
 
 
@@ -163,3 +190,44 @@ async def create_new_form_version(
         form_id, audit=_audit_context(request)
     )
     return success_envelope(_form_response(record).model_dump(mode="json", by_alias=True))
+
+
+@router.post("/forms/{form_id}/instances", status_code=status.HTTP_201_CREATED)
+async def create_form_instance(
+    form_id: UUID,
+    payload: FormInstanceCreate,
+    request: Request,
+    actor: Annotated[AuthenticatedIdentity, Depends(get_current_identity)],
+    session: Annotated[AsyncSession, Depends(get_database_session)],
+) -> dict[str, object]:
+    record = await FormService(session, actor).create_instance(
+        form_id, entity_id=payload.entity_id, audit=_audit_context(request)
+    )
+    return success_envelope(_instance_response(record).model_dump(mode="json", by_alias=True))
+
+
+@router.get("/form-instances/{instance_id}")
+async def get_form_instance(
+    instance_id: UUID,
+    actor: Annotated[AuthenticatedIdentity, Depends(get_current_identity)],
+    session: Annotated[AsyncSession, Depends(get_database_session)],
+) -> dict[str, object]:
+    record = await FormService(session, actor).get_instance(instance_id)
+    return success_envelope(_instance_response(record).model_dump(mode="json", by_alias=True))
+
+
+@router.patch("/form-instances/{instance_id}")
+async def update_form_instance(
+    instance_id: UUID,
+    payload: FormInstanceUpdate,
+    request: Request,
+    actor: Annotated[AuthenticatedIdentity, Depends(get_current_identity)],
+    session: Annotated[AsyncSession, Depends(get_database_session)],
+) -> dict[str, object]:
+    record = await FormService(session, actor).update_draft_instance(
+        instance_id,
+        values=payload.values,
+        expected_version=payload.version,
+        audit=_audit_context(request),
+    )
+    return success_envelope(_instance_response(record).model_dump(mode="json", by_alias=True))
