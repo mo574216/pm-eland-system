@@ -146,4 +146,8 @@ test('restores an authenticated session and lists accessible workspaces', async 
   await expect(page.getByRole('heading', { name: 'نمای یکپارچه فضای کاری شما' })).toBeVisible()
   await expect(page.getByRole('navigation', { name: 'راهبری اصلی' })).toBeVisible()
   await expect(page.getByText('اعلان جدیدی برای نمایش وجود ندارد.')).toBeVisible()
+  const drawerBounds = await page.locator('.MuiDrawer-paper').boundingBox()
+  const viewportWidth = page.viewportSize()?.width ?? 0
+  expect(drawerBounds).not.toBeNull()
+  expect(drawerBounds?.x ?? 0).toBeGreaterThan(viewportWidth / 2)
 })
