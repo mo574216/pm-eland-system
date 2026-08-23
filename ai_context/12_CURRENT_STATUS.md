@@ -1002,6 +1002,60 @@ NEXT_TASK:
 REL-BE-001 Relationship API.
 ```
 
+Relationship API implementation entry:
+
+```text
+DATE:
+2026-08-23
+
+MILESTONE:
+M2 Metadata and Generic Entity Platform
+
+TASKS_COMPLETED:
+REL-BE-001 Relationship API (published MVP endpoints)
+
+TASKS_IN_PROGRESS:
+None
+
+TEST_RESULTS:
+Backend formatting, lint, strict mypy, 118 tests, and YAML contract parsing pass.
+Live PostgreSQL/API verification created relationship metadata, created and listed
+outgoing/incoming relationships, logically deleted and recreated a relationship,
+and rejected a configured duplicate with INVALID_RELATIONSHIP/422.
+
+SECURITY:
+Relationship metadata creation requires METADATA_MANAGE; relationship creation and
+deletion require RELATIONSHIP_MANAGE; reads require ENTITY_READ. Every operation
+validates active workspace membership. Both endpoint entities and optional metadata
+type constraints are checked in the same workspace without leaking inaccessible data.
+Material creation/deletion operations are audited transactionally.
+
+DATABASE_CHANGES:
+None beyond REL-DB-001 migration 0008. Duplicate checks are serialized under a
+workspace transaction advisory lock and ignore logically deleted relationships.
+
+API_CHANGES:
+Implemented the specified relationship-type create/list, relationship create,
+incoming/outgoing/both list, and logical delete endpoints. Expanded openapi.yaml with
+the previously textual relationship paths and schemas. Documented the generic
+configuration.allow_duplicates policy; false rejects ordered duplicates and also
+reversed duplicates for UNDIRECTED types.
+
+KNOWN_LIMITATIONS:
+The backlog uses the phrase relationship type CRUD, but the authoritative API and
+database specifications define only create/list and provide no update payload,
+version column, or relationship-type delete endpoint. Those unspecified lifecycle
+mutations were not invented; they require a future contract/schema decision.
+Cardinality configuration is P1 and remains deferred.
+
+USER_VISIBLE_RESULT:
+Demo Workspace now contains a Depends On relationship type and one relationship
+between its two root demo entities for the frontend relationship panel.
+
+NEXT_TASK:
+REL-FE-001 Relationship Panel.
+```
+
 ---
 
 # 13. Recommended Immediate Implementation Sequence

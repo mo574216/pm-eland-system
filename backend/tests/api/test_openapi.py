@@ -22,3 +22,7 @@ def test_openapi_uses_version_31_and_exposes_health_routes(client: TestClient) -
     assert "/api/v1/workspaces/{workspace_id}/entities/tree" in document["paths"]
     assert "/api/v1/entities/{entity_id}" in document["paths"]
     assert "/api/v1/entities/{entity_id}/parent" in document["paths"]
+    assert "/api/v1/workspaces/{workspace_id}/relationship-types" in document["paths"]
+    assert "/api/v1/workspaces/{workspace_id}/relationships" in document["paths"]
+    assert "/api/v1/entities/{entity_id}/relationships" in document["paths"]
+    assert "/api/v1/relationships/{relationship_id}" in document["paths"]

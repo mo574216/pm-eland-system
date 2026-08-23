@@ -694,6 +694,46 @@ paths:
         '423':
           $ref: '#/components/responses/Locked'
 
+  /workspaces/{workspaceId}/relationship-types:
+    post:
+      tags: [Relationships]
+      operationId: createRelationshipType
+      summary: Create relationship metadata
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RelationshipTypeCreate'
+      responses:
+        '201':
+          description: Relationship type created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessEnvelope'
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+    get:
+      tags: [Relationships]
+      operationId: listRelationshipTypes
+      summary: List active relationship types
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: Relationship type page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessEnvelope'
+        '403': {$ref: '#/components/responses/Forbidden'}
+
   /workspaces/{workspaceId}/relationships:
     post:
       tags: [Relationships]
@@ -714,6 +754,49 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SuccessEnvelope'
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+
+  /entities/{entityId}/relationships:
+    get:
+      tags: [Relationships]
+      operationId: listEntityRelationships
+      summary: List incoming and outgoing relationships for an entity
+      parameters:
+        - $ref: '#/components/parameters/EntityId'
+        - name: direction
+          in: query
+          schema: {type: string, enum: [incoming, outgoing, both], default: both}
+        - name: relationship_type_id
+          in: query
+          schema: {type: string, format: uuid}
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: Relationship page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessEnvelope'
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+
+  /relationships/{relationshipId}:
+    delete:
+      tags: [Relationships]
+      operationId: deleteRelationship
+      summary: Logically delete an entity relationship
+      parameters:
+        - name: relationshipId
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+      responses:
+        '204': {description: Relationship deleted}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
 
   /workspaces/{workspaceId}/forms:
     post:
@@ -1247,9 +1330,46 @@ components:
         parent_id: {type: [string, 'null'], format: uuid}
         version: {type: integer, minimum: 1}
 
+    RelationshipTypeCreate:
+      type: object
+      required: [key, name]
+      additionalProperties: false
+      properties:
+        key:
+          type: string
+          minLength: 1
+          maxLength: 120
+          pattern: '^[a-z][a-z0-9_]*$'
+        name: {type: string, minLength: 1, maxLength: 180}
+        description: {type: [string, 'null']}
+        directionality: {type: string, enum: [DIRECTED, UNDIRECTED], default: DIRECTED}
+        source_type_id: {type: [string, 'null'], format: uuid}
+        target_type_id: {type: [string, 'null'], format: uuid}
+        configuration:
+          type: object
+          description: Set allow_duplicates to false to reject active duplicate endpoint pairs.
+          additionalProperties: true
+
+    RelationshipTypeResponse:
+      type: object
+      required: [id, workspace_id, key, name, directionality, configuration, is_active, created_at]
+      properties:
+        id: {type: string, format: uuid}
+        workspace_id: {type: string, format: uuid}
+        key: {type: string}
+        name: {type: string}
+        description: {type: [string, 'null']}
+        directionality: {type: string, enum: [DIRECTED, UNDIRECTED]}
+        source_type_id: {type: [string, 'null'], format: uuid}
+        target_type_id: {type: [string, 'null'], format: uuid}
+        configuration: {type: object, additionalProperties: true}
+        is_active: {type: boolean}
+        created_at: {type: string, format: date-time}
+
     RelationshipCreate:
       type: object
       required: [relationship_type_id, source_entity_id, target_entity_id]
+      additionalProperties: false
       properties:
         relationship_type_id: {type: string, format: uuid}
         source_entity_id: {type: string, format: uuid}
@@ -1257,6 +1377,26 @@ components:
         attributes:
           type: object
           additionalProperties: true
+
+    RelationshipResponse:
+      type: object
+      required:
+        - id
+        - workspace_id
+        - relationship_type_id
+        - source_entity_id
+        - target_entity_id
+        - attributes
+        - created_at
+      properties:
+        id: {type: string, format: uuid}
+        workspace_id: {type: string, format: uuid}
+        relationship_type_id: {type: string, format: uuid}
+        source_entity_id: {type: string, format: uuid}
+        target_entity_id: {type: string, format: uuid}
+        attributes: {type: object, additionalProperties: true}
+        created_by: {type: [string, 'null'], format: uuid}
+        created_at: {type: string, format: date-time}
 
     FormCreate:
       type: object

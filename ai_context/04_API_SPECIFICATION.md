@@ -1009,9 +1009,16 @@ Create relationship metadata.
   "name": "Uses",
   "directionality": "DIRECTED",
   "source_type_id": null,
-  "target_type_id": null
+  "target_type_id": null,
+  "configuration": {
+    "allow_duplicates": false
+  }
 }
 ```
+
+`configuration.allow_duplicates` defaults to `true`. When explicitly `false`,
+creation SHALL reject an active relationship with the same type and ordered endpoints.
+For undirected relationship types, reversed endpoints are the same duplicate pair.
 
 ---
 
