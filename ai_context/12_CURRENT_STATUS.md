@@ -1101,6 +1101,52 @@ NEXT_TASK:
 FORM-DB-001 Form Schema.
 ```
 
+Form persistence implementation entry:
+
+```text
+DATE:
+2026-08-23
+
+MILESTONE:
+M3 Dynamic Forms and Structured Data
+
+TASKS_COMPLETED:
+FORM-DB-001 Form Schema
+
+TASKS_IN_PROGRESS:
+None
+
+TEST_RESULTS:
+Backend formatting, lint, strict mypy, and 121 tests pass. Alembic migration 0009
+upgraded the live PostgreSQL database, downgraded cleanly to 0008, and upgraded again
+to head successfully.
+
+SECURITY:
+Form definitions and instances carry explicit workspace scope. Instance rows retain
+the exact form-definition version and canonical entity reference. Workspace and
+cross-resource consistency remain authoritative service checks in subsequent tasks.
+
+DATABASE_CHANGES:
+Migration 0009 adds form_definitions, form_fields, and form_instances. It enforces
+workspace/key/version and definition/field-key uniqueness, lifecycle/status/version
+checks, immutable historical definition references, JSONB metadata/rules/values, and
+workspace/entity/form/value lookup indexes.
+
+API_CHANGES:
+None.
+
+KNOWN_LIMITATIONS:
+Published-form immutability, draft editing, publish/new-version behavior, rule
+validation, and instance submission are service-layer responsibilities delivered by
+the following M3 tasks.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+FORM-BE-001 Draft Form Definition API.
+```
+
 ---
 
 # 13. Recommended Immediate Implementation Sequence
