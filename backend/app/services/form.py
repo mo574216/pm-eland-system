@@ -1,5 +1,6 @@
 """Draft form definition authorization, validation, and audit service."""
 
+from copy import deepcopy
 from uuid import UUID, uuid4
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -16,6 +17,7 @@ from app.models.form import FormDefinition, FormField
 from app.models.identity import AuditLog
 from app.repositories.form import FormRecord, FormRepository
 from app.repositories.workspace import WorkspaceRepository
+from app.schemas.form import FormSchemaDefinition
 from app.services.auth import AuthenticatedIdentity
 from app.services.authorization import AuditContext, AuthorizationService
 from app.services.form_rules import FormRuleEvaluator, InvalidFormRuleError
@@ -208,6 +210,133 @@ class FormService:
             )
             await self.repository.flush()
         return field
+
+    async def publish_form(self, form_id: UUID, *, audit: AuditContext) -> FormRecord:
+        async with self.session.begin():
+            form = await self.repository.lock_accessible_form(form_id, self.actor.user.id)
+            if form is None:
+                raise ResourceNotFoundError
+            await self._require_permission(form.workspace_id, PermissionCode.FORM_DESIGN)
+            if form.lifecycle_status != "DRAFT":
+                raise ResourceConflictError
+            fields = await self.repository.list_fields(form.id)
+            await self._validate_publishable(form, fields)
+            before_state = self._form_state(form)
+            published = await self.repository.publish_draft(form.id)
+            if published is None:
+                raise ResourceConflictError
+            self.repository.add_audit_log(
+                self._audit_log(
+                    audit,
+                    published.workspace_id,
+                    "FORM_PUBLISHED",
+                    "form_definition",
+                    published.id,
+                    before_state,
+                    self._form_state(published),
+                )
+            )
+        return FormRecord(published, fields)
+
+    async def create_new_version(self, form_id: UUID, *, audit: AuditContext) -> FormRecord:
+        async with self.session.begin():
+            source = await self.repository.lock_accessible_form(form_id, self.actor.user.id)
+            if source is None:
+                raise ResourceNotFoundError
+            await self._require_permission(source.workspace_id, PermissionCode.FORM_DESIGN)
+            if source.lifecycle_status != "PUBLISHED":
+                raise ResourceConflictError
+            source_fields = await self.repository.list_fields(source.id)
+            await self.repository.acquire_workspace_lock(source.workspace_id)
+            next_version = await self.repository.next_version_number(
+                source.workspace_id, source.key
+            )
+            draft = FormDefinition(
+                id=uuid4(),
+                workspace_id=source.workspace_id,
+                entity_type_id=source.entity_type_id,
+                key=source.key,
+                name=source.name,
+                description=source.description,
+                version_number=next_version,
+                lifecycle_status="DRAFT",
+                schema_json=deepcopy(source.schema_json),
+                created_by=self.actor.user.id,
+            )
+            self.repository.add_form(draft)
+            copied_fields = tuple(
+                FormField(
+                    id=uuid4(),
+                    form_definition_id=draft.id,
+                    attribute_definition_id=field.attribute_definition_id,
+                    key=field.key,
+                    label=field.label,
+                    field_type=field.field_type,
+                    section_key=field.section_key,
+                    display_order=field.display_order,
+                    is_required=field.is_required,
+                    is_read_only=field.is_read_only,
+                    configuration=deepcopy(field.configuration),
+                    visibility_rule=deepcopy(field.visibility_rule),
+                    validation_rule=deepcopy(field.validation_rule),
+                    inheritance_rule=deepcopy(field.inheritance_rule),
+                )
+                for field in source_fields
+            )
+            for field in copied_fields:
+                self.repository.add_field(field)
+            self.repository.add_audit_log(
+                self._audit_log(
+                    audit,
+                    draft.workspace_id,
+                    "FORM_VERSION_CREATED",
+                    "form_definition",
+                    draft.id,
+                    {"source_form_id": str(source.id), **self._form_state(source)},
+                    self._form_state(draft),
+                )
+            )
+            await self.repository.flush()
+        return FormRecord(draft, copied_fields)
+
+    async def _validate_publishable(
+        self, form: FormDefinition, fields: tuple[FormField, ...]
+    ) -> None:
+        try:
+            schema = FormSchemaDefinition.model_validate(form.schema_json)
+        except ValueError as error:
+            raise InvalidMetadataError(
+                {"field": "schema_json", "reason": "invalid_schema"}
+            ) from error
+        if not fields:
+            raise InvalidMetadataError({"field": "fields", "reason": "required"})
+        section_keys = {section.key for section in schema.sections}
+        for field in fields:
+            if field.section_key is not None and field.section_key not in section_keys:
+                raise InvalidMetadataError({"field": field.key, "reason": "invalid_section"})
+            try:
+                self.rule_evaluator.validate_rules(
+                    visibility_rule=field.visibility_rule,
+                    validation_rule=field.validation_rule,
+                    inheritance_rule=field.inheritance_rule,
+                )
+            except InvalidFormRuleError as error:
+                raise InvalidMetadataError(
+                    {"field": field.key, "reason": "invalid_rule"}
+                ) from error
+            if field.attribute_definition_id is not None:
+                record = await self.repository.attribute_in_workspace(
+                    field.attribute_definition_id, form.workspace_id
+                )
+                if record is None:
+                    raise InvalidMetadataError({"field": field.key, "reason": "invalid_attribute"})
+                attribute, entity_type = record
+                if form.entity_type_id is not None and entity_type.id != form.entity_type_id:
+                    raise InvalidMetadataError({"field": field.key, "reason": "wrong_entity_type"})
+                if attribute.data_type != field.field_type:
+                    raise InvalidMetadataError(
+                        {"field": field.key, "reason": "attribute_type_mismatch"}
+                    )
 
     async def _validate_entity_type(self, workspace_id: UUID, entity_type_id: object) -> None:
         if entity_type_id is None:

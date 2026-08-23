@@ -912,6 +912,43 @@ paths:
         '409': {$ref: '#/components/responses/Conflict'}
         '422': {$ref: '#/components/responses/ValidationError'}
 
+  /forms/{formId}/publish:
+    post:
+      tags: [Forms]
+      operationId: publishForm
+      summary: Validate and publish an immutable form definition
+      parameters:
+        - $ref: '#/components/parameters/FormId'
+      responses:
+        '200':
+          description: Form published
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessEnvelope'
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+
+  /forms/{formId}/new-version:
+    post:
+      tags: [Forms]
+      operationId: createNewFormVersion
+      summary: Copy a published definition and fields into a new draft version
+      parameters:
+        - $ref: '#/components/parameters/FormId'
+      responses:
+        '201':
+          description: New draft version created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessEnvelope'
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+
   /forms/{formId}/render:
     get:
       tags: [Forms]

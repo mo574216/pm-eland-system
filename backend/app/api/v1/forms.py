@@ -125,3 +125,27 @@ async def add_form_field(
         form_id, values=payload.model_dump(), audit=_audit_context(request)
     )
     return success_envelope(FormFieldResponse.model_validate(field).model_dump(mode="json"))
+
+
+@router.post("/forms/{form_id}/publish")
+async def publish_form(
+    form_id: UUID,
+    request: Request,
+    actor: Annotated[AuthenticatedIdentity, Depends(get_current_identity)],
+    session: Annotated[AsyncSession, Depends(get_database_session)],
+) -> dict[str, object]:
+    record = await FormService(session, actor).publish_form(form_id, audit=_audit_context(request))
+    return success_envelope(_form_response(record).model_dump(mode="json", by_alias=True))
+
+
+@router.post("/forms/{form_id}/new-version", status_code=status.HTTP_201_CREATED)
+async def create_new_form_version(
+    form_id: UUID,
+    request: Request,
+    actor: Annotated[AuthenticatedIdentity, Depends(get_current_identity)],
+    session: Annotated[AsyncSession, Depends(get_database_session)],
+) -> dict[str, object]:
+    record = await FormService(session, actor).create_new_version(
+        form_id, audit=_audit_context(request)
+    )
+    return success_envelope(_form_response(record).model_dump(mode="json", by_alias=True))

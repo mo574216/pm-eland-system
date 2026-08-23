@@ -113,6 +113,26 @@ class FormRepository:
         )
         return cast(FormDefinition | None, await self.session.scalar(statement))
 
+    async def lock_accessible_form(self, form_id: UUID, user_id: UUID) -> FormDefinition | None:
+        statement = (
+            select(FormDefinition)
+            .join(
+                WorkspaceMembership,
+                WorkspaceMembership.workspace_id == FormDefinition.workspace_id,
+            )
+            .where(
+                FormDefinition.id == form_id,
+                WorkspaceMembership.user_id == user_id,
+                WorkspaceMembership.status == "ACTIVE",
+            )
+            .with_for_update()
+        )
+        return cast(FormDefinition | None, await self.session.scalar(statement))
+
+    async def acquire_workspace_lock(self, workspace_id: UUID) -> None:
+        lock_key = int.from_bytes(workspace_id.bytes[:8], byteorder="big", signed=True)
+        await self.session.execute(select(func.pg_advisory_xact_lock(lock_key)))
+
     async def list_fields(self, form_id: UUID) -> tuple[FormField, ...]:
         statement = (
             select(FormField)
@@ -140,6 +160,25 @@ class FormRepository:
             .returning(FormDefinition)
         )
         return cast(FormDefinition | None, await self.session.scalar(statement))
+
+    async def publish_draft(self, form_id: UUID) -> FormDefinition | None:
+        statement = (
+            update(FormDefinition)
+            .where(
+                FormDefinition.id == form_id,
+                FormDefinition.lifecycle_status == "DRAFT",
+            )
+            .values(lifecycle_status="PUBLISHED", published_at=func.now())
+            .returning(FormDefinition)
+        )
+        return cast(FormDefinition | None, await self.session.scalar(statement))
+
+    async def next_version_number(self, workspace_id: UUID, key: str) -> int:
+        statement = select(func.max(FormDefinition.version_number)).where(
+            FormDefinition.workspace_id == workspace_id,
+            FormDefinition.key == key,
+        )
+        return int((await self.session.scalar(statement)) or 0) + 1
 
     async def field_by_key(self, form_id: UUID, key: str) -> FormField | None:
         statement = select(FormField).where(

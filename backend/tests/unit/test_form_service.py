@@ -70,6 +70,7 @@ class FakeFormRepository:
         self.fields: list[FormField] = []
         self.audit_logs: list[AuditLog] = []
         self.existing_field: FormField | None = None
+        self.workspace_locks: list[UUID] = []
 
     def add_form(self, value: FormDefinition) -> None:
         self.forms.append(value)
@@ -97,6 +98,12 @@ class FakeFormRepository:
     async def accessible_form_record(self, _: UUID, __: UUID) -> FormRecord | None:
         return None if self.form is None else FormRecord(self.form, tuple(self.fields))
 
+    async def lock_accessible_form(self, _: UUID, __: UUID) -> FormDefinition | None:
+        return self.form
+
+    async def list_fields(self, _: UUID) -> tuple[FormField, ...]:
+        return tuple(self.fields)
+
     async def update_draft_form(self, _: UUID, values: dict[str, object]) -> FormDefinition | None:
         if self.form is None or self.form.lifecycle_status != "DRAFT":
             return None
@@ -106,6 +113,25 @@ class FakeFormRepository:
 
     async def field_by_key(self, _: UUID, __: str) -> FormField | None:
         return self.existing_field
+
+    async def publish_draft(self, _: UUID) -> FormDefinition | None:
+        if self.form is None or self.form.lifecycle_status != "DRAFT":
+            return None
+        self.form.lifecycle_status = "PUBLISHED"
+        self.form.published_at = datetime.now(UTC)
+        return self.form
+
+    async def acquire_workspace_lock(self, workspace_id: UUID) -> None:
+        self.workspace_locks.append(workspace_id)
+
+    async def next_version_number(self, _: UUID, __: str) -> int:
+        return (
+            max(
+                [value.version_number for value in [self.form, *self.forms] if value is not None],
+                default=0,
+            )
+            + 1
+        )
 
     async def attribute_in_workspace(
         self, _: UUID, __: UUID
@@ -274,3 +300,86 @@ async def test_add_field_validates_attribute_type_and_audits() -> None:
     created = await service.add_field(repository.form.id, values=values, audit=audit_context())
     assert created.attribute_definition_id == attribute.id
     assert repository.audit_logs[0].action == "FORM_FIELD_CREATED"
+
+
+def form_field(form_id: UUID) -> FormField:
+    return FormField(
+        id=uuid4(),
+        form_definition_id=form_id,
+        attribute_definition_id=None,
+        key="summary",
+        label="Summary",
+        field_type="TEXT",
+        section_key="general",
+        display_order=10,
+        is_required=True,
+        is_read_only=False,
+        configuration={"multiline": True},
+        visibility_rule={},
+        validation_rule={},
+        inheritance_rule={},
+    )
+
+
+@pytest.mark.asyncio
+async def test_publish_validates_definition_and_makes_it_immutable() -> None:
+    actor = identity(PermissionCode.FORM_DESIGN)
+    workspace = Workspace(id=uuid4(), name="A", slug="a", owner_id=actor.user.id)
+    service, repository = build_service(actor, workspace)
+    repository.form = form(workspace.id, actor.user.id)
+    repository.form.schema_json = {
+        "sections": [{"key": "general", "label": "General", "display_order": 10}]
+    }
+    repository.fields = [form_field(repository.form.id)]
+
+    published = await service.publish_form(repository.form.id, audit=audit_context())
+
+    assert published.form.lifecycle_status == "PUBLISHED"
+    assert published.form.published_at is not None
+    assert repository.audit_logs[0].action == "FORM_PUBLISHED"
+    with pytest.raises(ResourceConflictError):
+        await service.update_draft_form(
+            repository.form.id,
+            values={"name": "Silent reinterpretation"},
+            audit=audit_context(),
+        )
+
+
+@pytest.mark.asyncio
+async def test_publish_rejects_definition_without_fields() -> None:
+    actor = identity(PermissionCode.FORM_DESIGN)
+    workspace = Workspace(id=uuid4(), name="A", slug="a", owner_id=actor.user.id)
+    service, repository = build_service(actor, workspace)
+    repository.form = form(workspace.id, actor.user.id)
+
+    with pytest.raises(InvalidMetadataError) as captured:
+        await service.publish_form(repository.form.id, audit=audit_context())
+    assert captured.value.details == {"field": "fields", "reason": "required"}
+
+
+@pytest.mark.asyncio
+async def test_new_version_is_independent_draft_copy() -> None:
+    actor = identity(PermissionCode.FORM_DESIGN)
+    workspace = Workspace(id=uuid4(), name="A", slug="a", owner_id=actor.user.id)
+    service, repository = build_service(actor, workspace)
+    repository.form = form(workspace.id, actor.user.id)
+    repository.form.lifecycle_status = "PUBLISHED"
+    repository.form.schema_json = {
+        "sections": [{"key": "general", "label": "General", "display_order": 10}]
+    }
+    repository.fields = [form_field(repository.form.id)]
+
+    copied = await service.create_new_version(repository.form.id, audit=audit_context())
+
+    assert copied.form.id != repository.form.id
+    assert copied.form.version_number == 2
+    assert copied.form.lifecycle_status == "DRAFT"
+    assert copied.fields[0].id != repository.fields[0].id
+    assert copied.fields[0].form_definition_id == copied.form.id
+    assert repository.workspace_locks == [workspace.id]
+    assert repository.audit_logs[0].action == "FORM_VERSION_CREATED"
+
+    copied.form.schema_json["sections"] = []
+    copied.fields[0].configuration["multiline"] = False
+    assert repository.form.schema_json["sections"] != []
+    assert repository.fields[0].configuration["multiline"] is True

@@ -1251,6 +1251,62 @@ NEXT_TASK:
 FORM-BE-002 Form Publish and Versioning.
 ```
 
+Form lifecycle implementation entry:
+
+```text
+DATE:
+2026-08-23
+
+MILESTONE:
+M3 Dynamic Forms and Structured Data
+
+TASKS_COMPLETED:
+FORM-BE-002 Form Publish and Versioning
+
+TASKS_IN_PROGRESS:
+None
+
+TEST_RESULTS:
+Backend formatting, lint, strict mypy, 134 tests, and YAML contract parsing pass.
+Live PostgreSQL/API verification published Demo Specification version 1, rejected
+metadata and field mutations with 409, created version 2 as a DRAFT with two copied
+fields, and confirmed version 1 remained PUBLISHED with its original fields.
+
+SECURITY:
+Publish and new-version operations require effective FORM_DESIGN and active workspace
+membership, lock the source row, validate all metadata/rules before publishing, and
+audit lifecycle changes transactionally. Version allocation is serialized with a
+workspace advisory lock. Published definitions remain inaccessible to draft mutation
+queries, preventing silent reinterpretation of historical submissions.
+
+DATABASE_CHANGES:
+None beyond migration 0009. Existing unique workspace/key/version constraints and
+form-instance RESTRICT references preserve version identity.
+
+API_CHANGES:
+Implemented POST /forms/{form_id}/publish and POST /forms/{form_id}/new-version and
+added both to openapi.yaml. Publish validates schema sections, non-empty fields,
+active attribute references, entity-type compatibility, field types, and all bounded
+JSON rules. New-version performs independent deep copies of schema and field JSON.
+
+USER_VISIBLE_RESULT:
+Demo Specification version 1 is now PUBLISHED and immutable; version 2 is an editable
+DRAFT containing the same General section, Summary field, and conditional Mitigation
+field.
+
+KNOWN_LIMITATIONS:
+Retirement is modeled but no retirement endpoint is specified. Historical form
+instance behavior is structurally guaranteed now and exercised end to end when the
+instance API is implemented.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+FORM-BE-004 Render Contract. Work intentionally stopped before starting it at the
+user's request.
+```
+
 ---
 
 # 13. Recommended Immediate Implementation Sequence
