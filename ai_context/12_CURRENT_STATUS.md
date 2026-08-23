@@ -1599,6 +1599,38 @@ instance lookup/resume API remains an open product-contract decision and is not
 invented inside this task.
 ```
 
+Submission dependency audit:
+
+```text
+DATE:
+2026-08-23
+
+MILESTONE:
+M3 Dynamic Forms and Structured Data
+
+TASKS_COMPLETED:
+None (dependency correction only)
+
+TASKS_IN_PROGRESS:
+None
+
+BLOCKER:
+DATA-BE-002 requires DATA-FR-005 backend lock enforcement. The canonical lock state
+is phases.is_locked and association is phase_deliverables. PHASE-DB-001/PHASE-BE-002
+are not implemented, and phase_deliverables also depends on DOC-DB-001 for its
+document foreign key. Implementing submission now would silently omit a mandatory
+security control; creating a partial phase schema would violate the database spec.
+
+DECISION:
+Corrected the DATA-BE-002 backlog dependency to include PHASE-BE-002. Submission is
+deferred until its lock-policy prerequisite exists. No placeholder/no-op lock policy
+and no noncanonical generic lock table will be introduced.
+
+NEXT_TASK:
+FORM-FE-004 Form Designer MVP is dependency-ready and provides the next strongest
+demo-visible capability. DATA-BE-002 resumes after document and phase lock foundations.
+```
+
 ---
 
 # 13. Recommended Immediate Implementation Sequence

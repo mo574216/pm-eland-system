@@ -791,7 +791,11 @@ GET /forms/{form_id}/render
 **Priority:** P0  
 **Owner:** Backend Agent  
 **Requirements:** DATA-FR-004, DATA-FR-005  
-**Dependencies:** DATA-BE-001
+**Dependencies:** DATA-BE-001, PHASE-BE-002
+
+`PHASE-BE-002` transitively requires document persistence because the canonical
+`phase_deliverables` schema supports entity, document, and form-instance targets.
+This dependency prevents submission from silently omitting mandatory lock checks.
 
 ## Acceptance Criteria
 
