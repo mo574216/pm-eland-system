@@ -44,8 +44,21 @@ export interface Entity {
   version: number
 }
 
+export interface EntityList {
+  items: Entity[]
+  page: number
+  page_size: number
+  total: number
+}
+
 export function getEntity(entityId: string): Promise<Entity> {
   return apiRequest<Entity>(`/entities/${entityId}`)
+}
+
+export function listEntities(workspaceId: string): Promise<EntityList> {
+  return apiRequest<EntityList>(
+    `/workspaces/${workspaceId}/entities?page=1&page_size=200&status=ACTIVE`,
+  )
 }
 
 export function getEntityTree(

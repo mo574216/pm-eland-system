@@ -1002,6 +1002,635 @@ NEXT_TASK:
 REL-BE-001 Relationship API.
 ```
 
+Relationship API implementation entry:
+
+```text
+DATE:
+2026-08-23
+
+MILESTONE:
+M2 Metadata and Generic Entity Platform
+
+TASKS_COMPLETED:
+REL-BE-001 Relationship API (published MVP endpoints)
+
+TASKS_IN_PROGRESS:
+None
+
+TEST_RESULTS:
+Backend formatting, lint, strict mypy, 118 tests, and YAML contract parsing pass.
+Live PostgreSQL/API verification created relationship metadata, created and listed
+outgoing/incoming relationships, logically deleted and recreated a relationship,
+and rejected a configured duplicate with INVALID_RELATIONSHIP/422.
+
+SECURITY:
+Relationship metadata creation requires METADATA_MANAGE; relationship creation and
+deletion require RELATIONSHIP_MANAGE; reads require ENTITY_READ. Every operation
+validates active workspace membership. Both endpoint entities and optional metadata
+type constraints are checked in the same workspace without leaking inaccessible data.
+Material creation/deletion operations are audited transactionally.
+
+DATABASE_CHANGES:
+None beyond REL-DB-001 migration 0008. Duplicate checks are serialized under a
+workspace transaction advisory lock and ignore logically deleted relationships.
+
+API_CHANGES:
+Implemented the specified relationship-type create/list, relationship create,
+incoming/outgoing/both list, and logical delete endpoints. Expanded openapi.yaml with
+the previously textual relationship paths and schemas. Documented the generic
+configuration.allow_duplicates policy; false rejects ordered duplicates and also
+reversed duplicates for UNDIRECTED types.
+
+KNOWN_LIMITATIONS:
+The backlog uses the phrase relationship type CRUD, but the authoritative API and
+database specifications define only create/list and provide no update payload,
+version column, or relationship-type delete endpoint. Those unspecified lifecycle
+mutations were not invented; they require a future contract/schema decision.
+Cardinality configuration is P1 and remains deferred.
+
+USER_VISIBLE_RESULT:
+Demo Workspace now contains a Depends On relationship type and one relationship
+between its two root demo entities for the frontend relationship panel.
+
+NEXT_TASK:
+REL-FE-001 Relationship Panel.
+```
+
+Relationship frontend implementation entry:
+
+```text
+DATE:
+2026-08-23
+
+MILESTONE:
+M2 Metadata and Generic Entity Platform
+
+TASKS_COMPLETED:
+REL-FE-001 Relationship Panel
+
+TASKS_IN_PROGRESS:
+None
+
+TEST_RESULTS:
+Frontend zero-warning ESLint, strict TypeScript, 12 test files with 22 tests, and
+the production build pass. Component coverage verifies metadata/type and entity-name
+resolution plus generic relationship creation and deletion.
+
+SECURITY:
+The frontend uses RELATIONSHIP_MANAGE only to hide mutation controls as a UX guard.
+The backend remains authoritative for workspace access and all relationship reads and
+mutations. No relationship data is inferred or retained across workspace scopes.
+
+DATABASE_CHANGES:
+None.
+
+API_CHANGES:
+None. The panel consumes the REL-BE-001 contract.
+
+USER_VISIBLE_RESULT:
+The Relationships tab on every generic entity detail page now lists named incoming
+and outgoing relationships. Authorized users can select any metadata-defined active
+relationship type and target entity, create the link, and logically delete links.
+
+KNOWN_LIMITATIONS:
+The first panel creates outgoing links with empty relationship attributes. Editing
+relationship attributes and richer metadata administration are not specified MVP UI
+capabilities. The production bundle reports a non-blocking chunk-size warning.
+
+NEXT_TASK:
+FORM-DB-001 Form Schema.
+```
+
+Form persistence implementation entry:
+
+```text
+DATE:
+2026-08-23
+
+MILESTONE:
+M3 Dynamic Forms and Structured Data
+
+TASKS_COMPLETED:
+FORM-DB-001 Form Schema
+
+TASKS_IN_PROGRESS:
+None
+
+TEST_RESULTS:
+Backend formatting, lint, strict mypy, and 121 tests pass. Alembic migration 0009
+upgraded the live PostgreSQL database, downgraded cleanly to 0008, and upgraded again
+to head successfully.
+
+SECURITY:
+Form definitions and instances carry explicit workspace scope. Instance rows retain
+the exact form-definition version and canonical entity reference. Workspace and
+cross-resource consistency remain authoritative service checks in subsequent tasks.
+
+DATABASE_CHANGES:
+Migration 0009 adds form_definitions, form_fields, and form_instances. It enforces
+workspace/key/version and definition/field-key uniqueness, lifecycle/status/version
+checks, immutable historical definition references, JSONB metadata/rules/values, and
+workspace/entity/form/value lookup indexes.
+
+API_CHANGES:
+None.
+
+KNOWN_LIMITATIONS:
+Published-form immutability, draft editing, publish/new-version behavior, rule
+validation, and instance submission are service-layer responsibilities delivered by
+the following M3 tasks.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+FORM-BE-001 Draft Form Definition API.
+```
+
+Draft form API implementation entry:
+
+```text
+DATE:
+2026-08-23
+
+MILESTONE:
+M3 Dynamic Forms and Structured Data
+
+TASKS_COMPLETED:
+FORM-BE-001 Draft Form Definition API
+
+TASKS_IN_PROGRESS:
+None
+
+TEST_RESULTS:
+Backend formatting, lint, strict mypy, 125 tests, and YAML contract parsing pass.
+Live PostgreSQL/API verification created a version-1 DRAFT, configured a section,
+added a generic field, retrieved/listed the full definition, rejected a missing
+section with 422, and rejected a duplicate field key with 409.
+
+SECURITY:
+All design mutations require effective FORM_DESIGN and active workspace membership;
+definition reads require ENTITY_READ. Entity-type and attribute references are
+validated in the same workspace, and metadata changes are audited transactionally.
+Every draft mutation explicitly rejects non-DRAFT definitions.
+
+DATABASE_CHANGES:
+None beyond migration 0009.
+
+API_CHANGES:
+Implemented POST/GET /workspaces/{workspace_id}/forms, GET/PATCH /forms/{form_id},
+and POST /forms/{form_id}/fields. Expanded openapi.yaml for all published draft-form
+paths and payloads. PATCH supports generic ordered section metadata in schema_json;
+section keys are unique and field section references must resolve.
+
+USER_VISIBLE_RESULT:
+Demo Workspace contains a Demo Specification draft with a General section and
+required Summary TEXT field for subsequent designer, publish, and render tasks.
+
+KNOWN_LIMITATIONS:
+Field update/removal endpoints are not defined by the authoritative API specification.
+Publish/new-version lifecycle is FORM-BE-002; stored rule interpretation is
+FORM-BE-003; render contracts are FORM-BE-004.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+FORM-BE-002 Form Publish and Versioning, while FORM-BE-003 becomes independently
+dependency-ready after FORM-BE-001.
+```
+
+Form rule evaluator implementation entry:
+
+```text
+DATE:
+2026-08-23
+
+MILESTONE:
+M3 Dynamic Forms and Structured Data
+
+TASKS_COMPLETED:
+FORM-BE-003 Form Rule Evaluator
+
+TASKS_IN_PROGRESS:
+None
+
+TEST_RESULTS:
+Backend formatting, lint, strict mypy, and 131 tests pass. Unit tests cover nested
+visibility, conditional requirement, parent/static inheritance modes, missing values,
+invalid versions/operators/paths, and depth/clause bounds. The live API rejected an
+unknown executable-style operator with INVALID_METADATA/422 and accepted a valid
+version-1 rule set.
+
+SECURITY:
+Rules are interpreted only by a bounded JSON AST; no eval, exec, dynamic import,
+attribute access, templates, or stored code execution is used. Paths traverse only
+explicit dictionary context, operators are allowlisted, nesting is capped at 10, and
+total clauses are capped at 100. Draft field creation invokes the shared validator.
+
+DATABASE_CHANGES:
+None.
+
+API_CHANGES:
+Documented the version-1 conditional and inheritance rule grammar in the API
+specification. Existing JSON payload fields are unchanged.
+
+USER_VISIBLE_RESULT:
+Demo Specification now also has a Mitigation field with conditional visibility and
+requirement plus an editable static default, ready for render-contract testing.
+
+KNOWN_LIMITATIONS:
+The evaluator returns deterministic field state and inherited candidates; loading
+entity/parent/reference/user context and producing the normalized client contract are
+implemented by FORM-BE-004. Publish consumes this validator in FORM-BE-002.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+FORM-BE-002 Form Publish and Versioning.
+```
+
+Form lifecycle implementation entry:
+
+```text
+DATE:
+2026-08-23
+
+MILESTONE:
+M3 Dynamic Forms and Structured Data
+
+TASKS_COMPLETED:
+FORM-BE-002 Form Publish and Versioning
+
+TASKS_IN_PROGRESS:
+None
+
+TEST_RESULTS:
+Backend formatting, lint, strict mypy, 134 tests, and YAML contract parsing pass.
+Live PostgreSQL/API verification published Demo Specification version 1, rejected
+metadata and field mutations with 409, created version 2 as a DRAFT with two copied
+fields, and confirmed version 1 remained PUBLISHED with its original fields.
+
+SECURITY:
+Publish and new-version operations require effective FORM_DESIGN and active workspace
+membership, lock the source row, validate all metadata/rules before publishing, and
+audit lifecycle changes transactionally. Version allocation is serialized with a
+workspace advisory lock. Published definitions remain inaccessible to draft mutation
+queries, preventing silent reinterpretation of historical submissions.
+
+DATABASE_CHANGES:
+None beyond migration 0009. Existing unique workspace/key/version constraints and
+form-instance RESTRICT references preserve version identity.
+
+API_CHANGES:
+Implemented POST /forms/{form_id}/publish and POST /forms/{form_id}/new-version and
+added both to openapi.yaml. Publish validates schema sections, non-empty fields,
+active attribute references, entity-type compatibility, field types, and all bounded
+JSON rules. New-version performs independent deep copies of schema and field JSON.
+
+USER_VISIBLE_RESULT:
+Demo Specification version 1 is now PUBLISHED and immutable; version 2 is an editable
+DRAFT containing the same General section, Summary field, and conditional Mitigation
+field.
+
+KNOWN_LIMITATIONS:
+Retirement is modeled but no retirement endpoint is specified. Historical form
+instance behavior is structurally guaranteed now and exercised end to end when the
+instance API is implemented.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+FORM-BE-004 Render Contract. Work intentionally stopped before starting it at the
+user's request.
+```
+
+RTL portal experience implementation entry:
+
+```text
+DATE:
+2026-08-23
+
+MILESTONE:
+Cross-cutting UX convergence before continuing M3
+
+TASKS_COMPLETED:
+UX-FE-001 RTL Portal Shell and Workspace Dashboard
+
+TASKS_IN_PROGRESS:
+None
+
+TEST_RESULTS:
+Frontend zero-warning ESLint and strict TypeScript pass. All 13 component test
+files with 23 tests pass, the production build passes, and all 3 Playwright
+browser scenarios pass in Microsoft Edge. The Chrome browser process was stale
+on the Windows host; the application itself remained responsive on port 5173.
+
+SECURITY:
+The portal shell adds no authorization semantics. Protected routes and backend
+workspace membership/permission checks remain authoritative. Workspace context
+is loaded by route-scoped API keys, and planned capabilities expose no dead or
+working-looking actions.
+
+DATABASE_CHANGES:
+None.
+
+API_CHANGES:
+None.
+
+USER_VISIBLE_RESULT:
+Opening a workspace now displays a Persian RTL portal dashboard with a persistent
+right navigation rail on desktop, responsive mobile drawer, contextual header,
+workspace identity, quick access to implemented capabilities, and an honest
+empty announcement state. Future forms, documents, imports, and reports are
+clearly marked as planned rather than presented as functional links.
+
+KNOWN_LIMITATIONS:
+Approved organization brand assets have not been provided, so the shell uses a
+generic repository-owned mark and palette. The production bundle retains the
+existing non-blocking chunk-size warning; route-level code splitting remains a
+later performance task. Chrome on the current Windows host may need a process
+restart before it can run Playwright reliably.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+FORM-BE-004 Render Contract.
+```
+
+Form render contract implementation entry:
+
+```text
+DATE:
+2026-08-23
+
+MILESTONE:
+M3 Dynamic Forms and Structured Data
+
+TASKS_COMPLETED:
+FORM-BE-004 Render Contract
+
+TASKS_IN_PROGRESS:
+None
+
+TEST_RESULTS:
+Backend formatting, lint, strict mypy, all 136 tests, and canonical OpenAPI YAML
+parsing pass. Unit coverage verifies ordered/implicit sections, current value
+precedence, parent and referenced entity inheritance, editable/read-only defaults,
+conditional visibility/requirement, repeating table configuration, draft-preview
+permission, entity-type checks, and cross-workspace non-disclosure. Live API
+verification awaits a local backend process restart because the Windows execution
+approval service reached its usage limit; the existing backend remains healthy on
+its previous code version.
+
+SECURITY:
+Published/retired rendering requires effective ENTITY_READ; draft preview requires
+FORM_DESIGN. Form access is active-membership scoped. Entity, parent, attribute,
+and referenced records are resolved only inside the form workspace; foreign IDs
+produce non-disclosing not-found behavior. Stored rules continue through the
+bounded version-1 evaluator with no executable expression support.
+
+DATABASE_CHANGES:
+None.
+
+API_CHANGES:
+Implemented GET /forms/{form_id}/render with optional entity_id. The normalized
+contract returns form/version identity, ordered sections, all generic field types,
+evaluated visible/required/read-only state, current/inherited/default value and
+source, field configuration, and safe rule metadata. The canonical OpenAPI and API
+specification define the response and precedence rules.
+
+USER_VISIBLE_RESULT:
+The next frontend slice can render published dynamic forms directly from one stable,
+frontend-ready contract, including inherited values and repeating-table metadata.
+
+KNOWN_LIMITATIONS:
+Current values are sourced from canonical entity attributes until DATA-BE-001 adds
+draft form-instance values. Backend validation and persistence of submitted values
+remain DATA-BE-001/DATA-BE-002. The local server must be restarted before manual
+browser/API verification sees this endpoint.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+DATA-BE-001 Create/Save Form Instance, followed by FORM-FE-001 and FORM-FE-002 for
+the demo-critical dynamic-form vertical slice.
+```
+
+Draft form instance implementation entry:
+
+```text
+DATE:
+2026-08-23
+
+MILESTONE:
+M3 Dynamic Forms and Structured Data
+
+TASKS_COMPLETED:
+DATA-BE-001 Create/Save Form Instance
+
+TASKS_IN_PROGRESS:
+None
+
+TEST_RESULTS:
+Quota-conscious focused verification passes: Ruff formatting/lint, strict mypy for
+the affected modules, 12 form-service/OpenAPI tests, and canonical OpenAPI YAML
+parsing. Broader regression gates are intentionally deferred to the next demo
+release checkpoint rather than repeated after every feature.
+
+SECURITY:
+Creation and draft saving require FORM_SUBMIT plus active workspace membership.
+Definitions must be published, entities must be active and in the same workspace,
+and configured entity types must match. Retrieval requires ENTITY_READ. Reference
+values are resolved only in the instance workspace. Unknown, hidden, and read-only
+fields are rejected by the backend.
+
+DATABASE_CHANGES:
+None beyond the existing form_instances table from migration 0009.
+
+API_CHANGES:
+Implemented POST /forms/{form_id}/instances, GET /form-instances/{instance_id}, and
+PATCH /form-instances/{instance_id}. Responses retain exact form-definition/version
+identity. Draft saves validate generic scalar/reference/table values, return stable
+field error paths/codes, increment the instance version, reject stale edits, and
+write transactional audit records. Canonical OpenAPI and API specifications updated.
+
+TESTS_ADDED:
+Service coverage for published-form instance creation, validation detail, audited
+save, optimistic concurrency, draft-form rejection, and foreign-workspace entity
+non-disclosure; API route discovery assertions extended.
+
+USER_VISIBLE_RESULT:
+The frontend can now create and persist an editable draft for a published dynamic
+form, which unlocks the demo-critical generic form renderer.
+
+KNOWN_LIMITATIONS:
+Final required-field validation, phase locking, submission, and synchronization to
+canonical entity attributes belong to DATA-BE-002. A backend restart is still needed
+before the running local API exposes the newly implemented routes.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+FORM-FE-001 Dynamic Field Renderer as the next single demo-visible feature.
+```
+
+Dynamic field renderer implementation entry:
+
+```text
+DATE:
+2026-08-23
+
+MILESTONE:
+M3 Dynamic Forms and Structured Data
+
+TASKS_COMPLETED:
+FORM-FE-001 Dynamic Field Renderer
+
+TASKS_IN_PROGRESS:
+None
+
+TEST_RESULTS:
+Quota-conscious focused frontend verification passes: zero-warning ESLint for the
+affected files, strict application TypeScript, and 2 targeted component tests. The
+test assertions execute in under one second; Windows/jsdom process startup accounts
+for almost all of the approximately 70-second focused test duration. Full frontend
+regression and production build are deferred to the demo release checkpoint.
+
+SECURITY:
+The component treats backend visible/read_only/required results as rendering input
+and provides UX enforcement only. Backend validation and authorization remain
+authoritative. It renders text safely through React/MUI without raw HTML injection.
+
+DATABASE_CHANGES:
+None.
+
+API_CHANGES:
+None. The component consumes the FORM-BE-004 normalized field contract.
+
+TESTS_ADDED:
+Focused coverage verifies visible scalar editing, hidden fields, inherited read-only
+presentation, and metadata-defined repeating-row add/edit/remove behavior.
+
+USER_VISIBLE_RESULT:
+A single generic component can now render TEXT, RICH_TEXT, INTEGER, DECIMAL, BOOLEAN,
+DATE, DATETIME, ENUM, MULTI_ENUM, USER_REFERENCE, ENTITY_REFERENCE, FILE_REFERENCE,
+and TABLE fields. It supports Persian labels/errors, required/read-only/visibility
+state, inherited-value decoration, enum option metadata, and dynamic table columns.
+
+KNOWN_LIMITATIONS:
+Reference fields use generic text input unless metadata supplies selector behavior;
+specialized workspace reference pickers require their corresponding list contracts.
+The component is not yet mounted in an entity form—the form-level fetch/save layout
+is FORM-FE-002.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+FORM-FE-002 Dynamic Form Renderer, as the next single demo-visible feature.
+```
+
+Dynamic form renderer implementation entry:
+
+```text
+DATE:
+2026-08-23
+
+MILESTONE:
+M3 Dynamic Forms and Structured Data
+
+TASKS_COMPLETED:
+FORM-FE-002 Dynamic Form Renderer
+
+TASKS_IN_PROGRESS:
+None
+
+TEST_RESULTS:
+Quota-conscious focused frontend verification passes: zero-warning ESLint across
+the forms module and entity integration, strict application TypeScript, and 2
+targeted form-level interaction tests. The test assertions cover the critical
+fetch/render/create/save/error flow and complete in under one second after module
+loading. Full frontend regression, production build, and browser E2E remain deferred
+to the demo release checkpoint.
+
+SECURITY:
+The frontend shows save controls only with FORM_SUBMIT as a UX guard. Backend
+membership, FORM_SUBMIT/ENTITY_READ authorization, workspace isolation, validation,
+and optimistic concurrency remain authoritative. Backend errors are mapped using
+stable codes and field paths rather than displaying server diagnostics.
+
+DATABASE_CHANGES:
+None.
+
+API_CHANGES:
+None. The feature consumes FORM-BE-004 and DATA-BE-001 contracts.
+
+TESTS_ADDED:
+Focused coverage verifies ordered section rendering, current-value population,
+first-save instance creation, versioned draft persistence, success feedback, and
+authoritative backend validation mapping to the correct field.
+
+USER_VISIBLE_RESULT:
+The generic entity detail Forms tab now lists published forms for the entity type,
+opens the selected form, renders all metadata-defined sections/fields, visually
+preserves inherited/read-only values, creates a draft on first save, and persists
+later edits using optimistic concurrency. No domain-specific entity/form branches
+were introduced.
+
+KNOWN_LIMITATIONS:
+There is no instance-by-entity/form lookup endpoint, so reopening the page cannot yet
+rediscover a previously created draft; the current browser session keeps and updates
+the created instance. Final submit/required validation and canonical entity-value
+synchronization remain DATA-BE-002. The local backend must be restarted before the
+running website exposes the supporting APIs.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+DATA-BE-002 Submit Form Instance as the next single important feature. A durable
+instance lookup/resume API remains an open product-contract decision and is not
+invented inside this task.
+```
+
+Submission dependency audit:
+
+```text
+DATE:
+2026-08-23
+
+MILESTONE:
+M3 Dynamic Forms and Structured Data
+
+TASKS_COMPLETED:
+None (dependency correction only)
+
+TASKS_IN_PROGRESS:
+None
+
+BLOCKER:
+DATA-BE-002 requires DATA-FR-005 backend lock enforcement. The canonical lock state
+is phases.is_locked and association is phase_deliverables. PHASE-DB-001/PHASE-BE-002
+are not implemented, and phase_deliverables also depends on DOC-DB-001 for its
+document foreign key. Implementing submission now would silently omit a mandatory
+security control; creating a partial phase schema would violate the database spec.
+
+DECISION:
+Corrected the DATA-BE-002 backlog dependency to include PHASE-BE-002. Submission is
+deferred until its lock-policy prerequisite exists. No placeholder/no-op lock policy
+and no noncanonical generic lock table will be introduced.
+
+NEXT_TASK:
+FORM-FE-004 Form Designer MVP is dependency-ready and provides the next strongest
+demo-visible capability. DATA-BE-002 resumes after document and phase lock foundations.
+```
+
 ---
 
 # 13. Recommended Immediate Implementation Sequence

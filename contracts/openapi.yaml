@@ -694,6 +694,46 @@ paths:
         '423':
           $ref: '#/components/responses/Locked'
 
+  /workspaces/{workspaceId}/relationship-types:
+    post:
+      tags: [Relationships]
+      operationId: createRelationshipType
+      summary: Create relationship metadata
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RelationshipTypeCreate'
+      responses:
+        '201':
+          description: Relationship type created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessEnvelope'
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+    get:
+      tags: [Relationships]
+      operationId: listRelationshipTypes
+      summary: List active relationship types
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: Relationship type page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessEnvelope'
+        '403': {$ref: '#/components/responses/Forbidden'}
+
   /workspaces/{workspaceId}/relationships:
     post:
       tags: [Relationships]
@@ -714,6 +754,49 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SuccessEnvelope'
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+
+  /entities/{entityId}/relationships:
+    get:
+      tags: [Relationships]
+      operationId: listEntityRelationships
+      summary: List incoming and outgoing relationships for an entity
+      parameters:
+        - $ref: '#/components/parameters/EntityId'
+        - name: direction
+          in: query
+          schema: {type: string, enum: [incoming, outgoing, both], default: both}
+        - name: relationship_type_id
+          in: query
+          schema: {type: string, format: uuid}
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: Relationship page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessEnvelope'
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+
+  /relationships/{relationshipId}:
+    delete:
+      tags: [Relationships]
+      operationId: deleteRelationship
+      summary: Logically delete an entity relationship
+      parameters:
+        - name: relationshipId
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+      responses:
+        '204': {description: Relationship deleted}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
 
   /workspaces/{workspaceId}/forms:
     post:
@@ -735,6 +818,136 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SuccessEnvelope'
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+    get:
+      tags: [Forms]
+      operationId: listForms
+      summary: List form definitions
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - name: entity_type_id
+          in: query
+          schema: {type: string, format: uuid}
+        - name: status
+          in: query
+          schema: {type: string, enum: [DRAFT, PUBLISHED, RETIRED]}
+        - name: search
+          in: query
+          schema: {type: string, minLength: 1, maxLength: 255}
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: Form definition page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessEnvelope'
+        '403': {$ref: '#/components/responses/Forbidden'}
+
+  /forms/{formId}:
+    get:
+      tags: [Forms]
+      operationId: getForm
+      summary: Retrieve a full form definition
+      parameters:
+        - $ref: '#/components/parameters/FormId'
+      responses:
+        '200':
+          description: Form definition with fields
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessEnvelope'
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+    patch:
+      tags: [Forms]
+      operationId: updateDraftForm
+      summary: Update draft form metadata and sections
+      parameters:
+        - $ref: '#/components/parameters/FormId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FormUpdate'
+      responses:
+        '200':
+          description: Draft form updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessEnvelope'
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+
+  /forms/{formId}/fields:
+    post:
+      tags: [Forms]
+      operationId: addDraftFormField
+      summary: Add metadata-defined field to a draft form
+      parameters:
+        - $ref: '#/components/parameters/FormId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FormFieldCreate'
+      responses:
+        '201':
+          description: Form field created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessEnvelope'
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+
+  /forms/{formId}/publish:
+    post:
+      tags: [Forms]
+      operationId: publishForm
+      summary: Validate and publish an immutable form definition
+      parameters:
+        - $ref: '#/components/parameters/FormId'
+      responses:
+        '200':
+          description: Form published
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessEnvelope'
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+
+  /forms/{formId}/new-version:
+    post:
+      tags: [Forms]
+      operationId: createNewFormVersion
+      summary: Copy a published definition and fields into a new draft version
+      parameters:
+        - $ref: '#/components/parameters/FormId'
+      responses:
+        '201':
+          description: New draft version created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessEnvelope'
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
 
   /forms/{formId}/render:
     get:
@@ -753,6 +966,69 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SuccessEnvelope'
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+
+  /forms/{formId}/instances:
+    post:
+      tags: [Forms]
+      operationId: createFormInstance
+      summary: Create a draft instance tied to a published form version
+      parameters:
+        - $ref: '#/components/parameters/FormId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/FormInstanceCreate'}
+      responses:
+        '201':
+          description: Draft form instance created
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SuccessEnvelope'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+
+  /form-instances/{instanceId}:
+    get:
+      tags: [Forms]
+      operationId: getFormInstance
+      summary: Retrieve a form instance and its immutable form version identity
+      parameters:
+        - $ref: '#/components/parameters/InstanceId'
+      responses:
+        '200':
+          description: Form instance
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SuccessEnvelope'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+    patch:
+      tags: [Forms]
+      operationId: updateDraftFormInstance
+      summary: Validate and save draft form values
+      parameters:
+        - $ref: '#/components/parameters/InstanceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/FormInstanceUpdate'}
+      responses:
+        '200':
+          description: Draft saved
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SuccessEnvelope'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '422': {$ref: '#/components/responses/ValidationError'}
 
   /entities/{entityId}/documents:
     post:
@@ -926,6 +1202,11 @@ components:
       schema: {type: string, format: uuid}
     FormId:
       name: formId
+      in: path
+      required: true
+      schema: {type: string, format: uuid}
+    InstanceId:
+      name: instanceId
       in: path
       required: true
       schema: {type: string, format: uuid}
@@ -1247,9 +1528,46 @@ components:
         parent_id: {type: [string, 'null'], format: uuid}
         version: {type: integer, minimum: 1}
 
+    RelationshipTypeCreate:
+      type: object
+      required: [key, name]
+      additionalProperties: false
+      properties:
+        key:
+          type: string
+          minLength: 1
+          maxLength: 120
+          pattern: '^[a-z][a-z0-9_]*$'
+        name: {type: string, minLength: 1, maxLength: 180}
+        description: {type: [string, 'null']}
+        directionality: {type: string, enum: [DIRECTED, UNDIRECTED], default: DIRECTED}
+        source_type_id: {type: [string, 'null'], format: uuid}
+        target_type_id: {type: [string, 'null'], format: uuid}
+        configuration:
+          type: object
+          description: Set allow_duplicates to false to reject active duplicate endpoint pairs.
+          additionalProperties: true
+
+    RelationshipTypeResponse:
+      type: object
+      required: [id, workspace_id, key, name, directionality, configuration, is_active, created_at]
+      properties:
+        id: {type: string, format: uuid}
+        workspace_id: {type: string, format: uuid}
+        key: {type: string}
+        name: {type: string}
+        description: {type: [string, 'null']}
+        directionality: {type: string, enum: [DIRECTED, UNDIRECTED]}
+        source_type_id: {type: [string, 'null'], format: uuid}
+        target_type_id: {type: [string, 'null'], format: uuid}
+        configuration: {type: object, additionalProperties: true}
+        is_active: {type: boolean}
+        created_at: {type: string, format: date-time}
+
     RelationshipCreate:
       type: object
       required: [relationship_type_id, source_entity_id, target_entity_id]
+      additionalProperties: false
       properties:
         relationship_type_id: {type: string, format: uuid}
         source_entity_id: {type: string, format: uuid}
@@ -1258,14 +1576,190 @@ components:
           type: object
           additionalProperties: true
 
+    RelationshipResponse:
+      type: object
+      required:
+        - id
+        - workspace_id
+        - relationship_type_id
+        - source_entity_id
+        - target_entity_id
+        - attributes
+        - created_at
+      properties:
+        id: {type: string, format: uuid}
+        workspace_id: {type: string, format: uuid}
+        relationship_type_id: {type: string, format: uuid}
+        source_entity_id: {type: string, format: uuid}
+        target_entity_id: {type: string, format: uuid}
+        attributes: {type: object, additionalProperties: true}
+        created_by: {type: [string, 'null'], format: uuid}
+        created_at: {type: string, format: date-time}
+
     FormCreate:
       type: object
       required: [key, name]
+      additionalProperties: false
       properties:
+        key:
+          type: string
+          minLength: 1
+          maxLength: 120
+          pattern: '^[a-z][a-z0-9_]*$'
+        name: {type: string, minLength: 1, maxLength: 255}
+        entity_type_id: {type: [string, 'null'], format: uuid}
+        description: {type: [string, 'null']}
+
+    FormSectionDefinition:
+      type: object
+      required: [key, label]
+      additionalProperties: false
+      properties:
+        key:
+          type: string
+          minLength: 1
+          maxLength: 120
+          pattern: '^[a-z][a-z0-9_]*$'
+        label: {type: string, minLength: 1, maxLength: 180}
+        display_order: {type: integer, minimum: 0, default: 0}
+        configuration: {type: object, additionalProperties: true}
+
+    FormSchemaDefinition:
+      type: object
+      additionalProperties: false
+      properties:
+        sections:
+          type: array
+          items: {$ref: '#/components/schemas/FormSectionDefinition'}
+
+    FormUpdate:
+      type: object
+      additionalProperties: false
+      anyOf:
+        - required: [name]
+        - required: [entity_type_id]
+        - required: [description]
+        - required: [schema_json]
+      properties:
+        name: {type: string, minLength: 1, maxLength: 255}
+        entity_type_id: {type: [string, 'null'], format: uuid}
+        description: {type: [string, 'null']}
+        schema_json: {$ref: '#/components/schemas/FormSchemaDefinition'}
+
+    FormFieldCreate:
+      type: object
+      required: [key, label, field_type]
+      additionalProperties: false
+      properties:
+        key:
+          type: string
+          minLength: 1
+          maxLength: 120
+          pattern: '^[a-z][a-z0-9_]*$'
+        label: {type: string, minLength: 1, maxLength: 180}
+        field_type:
+          type: string
+          enum: [TEXT, RICH_TEXT, INTEGER, DECIMAL, BOOLEAN, DATE, DATETIME, ENUM, MULTI_ENUM, USER_REFERENCE, ENTITY_REFERENCE, FILE_REFERENCE, TABLE]
+        attribute_definition_id: {type: [string, 'null'], format: uuid}
+        section_key:
+          type: [string, 'null']
+          maxLength: 120
+          pattern: '^[a-z][a-z0-9_]*$'
+        display_order: {type: integer, minimum: 0, default: 0}
+        is_required: {type: boolean, default: false}
+        is_read_only: {type: boolean, default: false}
+        configuration: {type: object, additionalProperties: true}
+        visibility_rule: {type: object, additionalProperties: true}
+        validation_rule: {type: object, additionalProperties: true}
+        inheritance_rule: {type: object, additionalProperties: true}
+
+    FormRenderSummary:
+      type: object
+      required: [id, key, name, version_number, lifecycle_status]
+      additionalProperties: false
+      properties:
+        id: {type: string, format: uuid}
         key: {type: string}
         name: {type: string}
-        entity_type_id: {type: [string, 'null'], format: uuid}
-        description: {type: string}
+        version_number: {type: integer, minimum: 1}
+        lifecycle_status: {type: string, enum: [DRAFT, PUBLISHED, RETIRED]}
+
+    FormRenderField:
+      type: object
+      required: [key, label, type, required, read_only, visible, value, has_value, value_source, configuration, visibility_rule, validation_rule]
+      additionalProperties: false
+      properties:
+        key: {type: string}
+        label: {type: string}
+        type:
+          type: string
+          enum: [TEXT, RICH_TEXT, INTEGER, DECIMAL, BOOLEAN, DATE, DATETIME, ENUM, MULTI_ENUM, USER_REFERENCE, ENTITY_REFERENCE, FILE_REFERENCE, TABLE]
+        required: {type: boolean}
+        read_only: {type: boolean}
+        visible: {type: boolean}
+        value: {}
+        has_value: {type: boolean}
+        value_source: {type: string, enum: [CURRENT, INHERITED, DEFAULT, NONE]}
+        configuration: {type: object, additionalProperties: true}
+        visibility_rule: {type: object, additionalProperties: true}
+        validation_rule: {type: object, additionalProperties: true}
+
+    FormRenderSection:
+      type: object
+      required: [key, label, order, configuration, fields]
+      additionalProperties: false
+      properties:
+        key: {type: [string, 'null']}
+        label: {type: [string, 'null']}
+        order: {type: integer, minimum: 0}
+        configuration: {type: object, additionalProperties: true}
+        fields:
+          type: array
+          items: {$ref: '#/components/schemas/FormRenderField'}
+
+    FormRenderResponse:
+      type: object
+      required: [form, entity_id, sections]
+      additionalProperties: false
+      properties:
+        form: {$ref: '#/components/schemas/FormRenderSummary'}
+        entity_id: {type: [string, 'null'], format: uuid}
+        sections:
+          type: array
+          items: {$ref: '#/components/schemas/FormRenderSection'}
+
+    FormInstanceCreate:
+      type: object
+      required: [entity_id]
+      additionalProperties: false
+      properties:
+        entity_id: {type: string, format: uuid}
+
+    FormInstanceUpdate:
+      type: object
+      required: [values, version]
+      additionalProperties: false
+      properties:
+        values: {type: object, additionalProperties: true}
+        version: {type: integer, minimum: 1}
+
+    FormInstanceResponse:
+      type: object
+      required: [id, workspace_id, form_definition_id, entity_id, status, values, version, created_at, updated_at, submitted_by, submitted_at, form]
+      additionalProperties: false
+      properties:
+        id: {type: string, format: uuid}
+        workspace_id: {type: string, format: uuid}
+        form_definition_id: {type: string, format: uuid}
+        entity_id: {type: string, format: uuid}
+        status: {type: string, enum: [DRAFT, SUBMITTED, APPROVED, REVISION_REQUESTED]}
+        values: {type: object, additionalProperties: true}
+        version: {type: integer, minimum: 1}
+        created_at: {type: string, format: date-time}
+        updated_at: {type: string, format: date-time}
+        submitted_by: {type: [string, 'null'], format: uuid}
+        submitted_at: {type: [string, 'null'], format: date-time}
+        form: {$ref: '#/components/schemas/FormRenderSummary'}
 
   responses:
     NotFound:

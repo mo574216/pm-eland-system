@@ -108,6 +108,29 @@ test('restores an authenticated session and lists accessible workspaces', async 
       }),
     })
   })
+  await page.route(`**/api/v1/workspaces/${workspaceId}`, async (route) => {
+    await route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify({
+        success: true,
+        data: {
+          id: workspaceId,
+          name: 'معماری سازمانی',
+          slug: 'enterprise-architecture',
+          description: 'فضای کاری نمونه',
+          owner_id: userId,
+          status: 'ACTIVE',
+          configuration: {},
+          created_at: '2026-08-22T00:00:00Z',
+          updated_at: '2026-08-22T00:00:00Z',
+          archived_at: null,
+          version: 1,
+        },
+        error: null,
+        meta: {},
+      }),
+    })
+  })
 
   await page.goto('/')
 
@@ -117,4 +140,14 @@ test('restores an authenticated session and lists accessible workspaces', async 
   await expect(page.getByRole('button', { name: 'منوی کاربر' })).toBeVisible()
   await expect(page.getByLabel('انتخاب فضای کاری')).toBeVisible()
   expect(await page.locator('body').innerText()).not.toMatch(/[A-Za-z]/)
+
+  await page.getByRole('button', { name: 'باز کردن' }).click()
+  await expect(page).toHaveURL(new RegExp(`/workspaces/${workspaceId}$`))
+  await expect(page.getByRole('heading', { name: 'نمای یکپارچه فضای کاری شما' })).toBeVisible()
+  await expect(page.getByRole('navigation', { name: 'راهبری اصلی' })).toBeVisible()
+  await expect(page.getByText('اعلان جدیدی برای نمایش وجود ندارد.')).toBeVisible()
+  const drawerBounds = await page.locator('.MuiDrawer-paper').boundingBox()
+  const viewportWidth = page.viewportSize()?.width ?? 0
+  expect(drawerBounds).not.toBeNull()
+  expect(drawerBounds?.x ?? 0).toBeGreaterThan(viewportWidth / 2)
 })

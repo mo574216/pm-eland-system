@@ -1,6 +1,7 @@
 """Stable platform persistence models."""
 
 from app.models.entity import EntityObject
+from app.models.form import FormDefinition, FormField, FormInstance
 from app.models.identity import (
     AuditLog,
     AuthSession,
@@ -21,6 +22,9 @@ __all__ = [
     "EntityObject",
     "EntityRelationship",
     "EntityType",
+    "FormDefinition",
+    "FormField",
+    "FormInstance",
     "Permission",
     "RelationshipType",
     "Role",

@@ -1009,9 +1009,16 @@ Create relationship metadata.
   "name": "Uses",
   "directionality": "DIRECTED",
   "source_type_id": null,
-  "target_type_id": null
+  "target_type_id": null,
+  "configuration": {
+    "allow_duplicates": false
+  }
 }
 ```
+
+`configuration.allow_duplicates` defaults to `true`. When explicitly `false`,
+creation SHALL reject an active relationship with the same type and ordered endpoints.
+For undirected relationship types, reversed endpoints are the same duplicate pair.
 
 ---
 
@@ -1122,6 +1129,25 @@ Retrieve full definition.
 
 Allowed only when form is DRAFT.
 
+Mutable fields are `name`, `entity_type_id`, `description`, and `schema_json`.
+For FORM-BE-001, `schema_json.sections` is an ordered list of generic section metadata:
+
+```json
+{
+  "sections": [
+    {
+      "key": "general",
+      "label": "General",
+      "display_order": 10,
+      "configuration": {}
+    }
+  ]
+}
+```
+
+Section keys SHALL be unique within a definition. A field with `section_key` SHALL
+reference one of these configured sections.
+
 Attempting to edit a published form SHALL fail or create a new version through the version endpoint.
 
 ---
@@ -1147,6 +1173,39 @@ Add field to draft form.
   "inheritance_rule": {}
 }
 ```
+
+Rule objects use a bounded, versioned JSON grammar. Empty objects mean no rule.
+Conditional rules use `version: 1` plus `condition` (visibility) or `required_when`
+(conditional requirement). Expressions support `all`, `any`, `not`, and comparisons:
+
+```json
+{
+  "version": 1,
+  "condition": {
+    "path": "current.risk_level",
+    "operator": "eq",
+    "value": "HIGH"
+  }
+}
+```
+
+Comparison operators are `eq`, `neq`, `in`, `not_in`, `exists`, `gt`, `gte`, `lt`,
+and `lte`. Paths resolve only through supplied metadata contexts such as `current`,
+`parent`, `referenced`, and `user`.
+
+Inheritance rules use exactly one of `source_path` or `static_value` and an explicit
+mode of `READ_ONLY` or `EDITABLE_DEFAULT`:
+
+```json
+{
+  "version": 1,
+  "source_path": "parent.name",
+  "mode": "READ_ONLY"
+}
+```
+
+Unknown versions/operators/keys, invalid paths, more than 100 clauses, or nesting
+deeper than 10 levels SHALL be rejected. Stored rules SHALL never execute code.
 
 ---
 
@@ -1197,6 +1256,27 @@ If `entity_id` is supplied, response MAY include:
 - read-only evaluation,
 - visibility evaluation context.
 
+Draft definitions are renderable only by users with `FORM_DESIGN`; published
+and retired definitions require `ENTITY_READ`. When supplied, `entity_id` MUST
+resolve inside the form workspace and MUST match the configured entity type.
+
+Each normalized field also returns:
+
+- `visible` — the evaluated version-1 visibility result,
+- `has_value` — distinguishes a present `null` from no candidate value,
+- `value_source` — `CURRENT`, `INHERITED`, `DEFAULT`, or `NONE`,
+- `visibility_rule` and `validation_rule` — the bounded JSON metadata needed for
+  responsive client-side UX; backend submission validation remains authoritative.
+
+Value precedence is current entity value, evaluated inheritance, attribute
+default, then form-field `configuration.default_value`. Rule context exposes
+`current`, `parent`, `referenced`, and `user`. Referenced context is keyed by the
+stable entity-reference attribute/form-field key and contains only entities
+resolved inside the same workspace.
+
+Fields with no configured section are preserved in one final normalized section
+whose `key` and `label` are `null`; clients SHALL render it without a heading.
+
 ### Response Example
 
 ```json
@@ -1241,6 +1321,10 @@ If `entity_id` is supplied, response MAY include:
 
 Create draft form instance for entity.
 
+The form definition MUST be `PUBLISHED`. The caller requires `FORM_SUBMIT`, and
+the entity MUST be active, in the same workspace, and match the form's optional
+entity type. The created instance retains the exact immutable form-definition ID.
+
 ### Request
 
 ```json
@@ -1255,11 +1339,21 @@ Create draft form instance for entity.
 
 Retrieve instance and associated form version.
 
+The response includes instance status, values, optimistic-concurrency version,
+and the immutable form key/name/version identity. Access requires active workspace
+membership and `ENTITY_READ`.
+
 ---
 
 # 12.3 PATCH /form-instances/{instance_id}
 
 Save draft values.
+
+The caller requires `FORM_SUBMIT`. Values are validated generically against field
+types, configuration, evaluated visibility/read-only state, enum options,
+references, and dynamic table columns. Unknown fields are rejected. Validation
+errors use `VALIDATION_ERROR` with `details.fields` entries containing stable
+`field` paths and `code` values. Concurrent edits return `STALE_VERSION`.
 
 ### Request
 
