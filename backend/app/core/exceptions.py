@@ -72,3 +72,13 @@ class ResourceConflictError(ApplicationError):
 class StaleVersionError(ApplicationError):
     def __init__(self) -> None:
         super().__init__(code="STALE_VERSION", status_code=409)
+
+
+class HierarchyCycleError(ApplicationError):
+    def __init__(self) -> None:
+        super().__init__(code="HIERARCHY_CYCLE", status_code=409)
+
+
+class InvalidMetadataError(ApplicationError):
+    def __init__(self, details: dict[str, Any] | None = None) -> None:
+        super().__init__(code="INVALID_METADATA", status_code=422, details=details)

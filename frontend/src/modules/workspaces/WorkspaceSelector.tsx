@@ -28,7 +28,7 @@ export function WorkspaceSelector() {
         onChange={(event) => {
           const workspaceId = event.target.value
           dispatch(workspaceSelected(workspaceId))
-          void navigate(`/workspaces/${workspaceId}/settings`)
+          void navigate(`/workspaces/${workspaceId}/entities`)
         }}
         value={selectedWorkspaceId ?? ''}
       >

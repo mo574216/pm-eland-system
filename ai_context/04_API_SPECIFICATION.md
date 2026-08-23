@@ -680,6 +680,17 @@ Update entity type.
 
 Stable keys SHOULD NOT be changed after persistent usage unless explicitly supported.
 
+The MVP treats `key` as immutable. Updates require the current `version`; stale writes
+return `STALE_VERSION`.
+
+---
+
+# 8.4.1 DELETE /entity-types/{entity_type_id}?version={version}
+
+Logically archive an entity type. The operation requires `METADATA_MANAGE`, an active
+membership in the owning workspace, the current resource version, and writes an audit
+record in the same transaction. Archived types are excluded from normal lookup.
+
 ---
 
 # 8.5 POST /entity-types/{entity_type_id}/attributes
@@ -719,11 +730,22 @@ Update attribute metadata.
 
 Changes SHALL be validated against existing data where necessary.
 
+The MVP keeps `key` and `data_type` immutable. Mutable fields require the current
+`version`; all changes require `METADATA_MANAGE` and are audited atomically.
+
 ---
 
 # 8.8 DELETE /attributes/{attribute_id}
 
 Logical deactivation is preferred if persistent values exist.
+
+The MVP uses `DELETE /attributes/{attribute_id}?version={version}` as a logical
+deactivation and excludes deactivated definitions from the active ordered list.
+
+For ENUM and MULTI_ENUM, `display_config.options` is a required non-empty list of
+unique `{value, label}` objects. MVP inheritance uses a `source` object with `scope`,
+stable `attribute`, and optional `entity_type_id`, plus `mode` (`prefill` or
+`read_only`). Referenced metadata must exist in the same workspace.
 
 ---
 
@@ -810,6 +832,30 @@ include=attributes,relationships,documents,forms
 
 Server MAY restrict costly include combinations.
 
+The MVP response includes the entity type summary (`id`, stable `key`, and display
+`name`) alongside `entity_type_id`. Access requires active workspace membership and
+effective `ENTITY_READ`.
+
+---
+
+# 9.2.1 GET /workspaces/{workspace_id}/entities
+
+Return a bounded workspace-scoped entity collection. Supported query parameters are:
+
+```text
+page
+page_size (maximum 200)
+search
+status
+entity_type_id
+parent_id
+```
+
+Search preserves canonical names and compares a separately normalized expression so
+the specified Arabic/Persian Yeh, Kaf, joining-mark, diacritic, whitespace, and numeral
+variants match consistently. Both item and count queries require active membership;
+effective `ENTITY_READ` is enforced by the service.
+
 ---
 
 # 9.3 PATCH /entities/{entity_id}
@@ -834,13 +880,20 @@ Update entity.
 - `STALE_VERSION`
 - `VALIDATION_ERROR`
 
+The MVP treats `attributes` as a partial dynamic-field update: validated supplied
+keys are merged with existing attributes, while unknown and read-only keys are
+rejected. `name`, `description`, and attributes are updated with the current
+`version`; successful mutation increments the version and atomically audits before
+and after state. Reparenting is handled by the hierarchy API rather than this patch.
+
 ---
 
-# 9.4 DELETE /entities/{entity_id}
+# 9.4 DELETE /entities/{entity_id}?version={version}
 
-Default semantic:
-
-soft delete/archive where configured.
+Logically archive an active entity. The operation requires active membership,
+effective `ENTITY_ARCHIVE`, and the current version. It sets status to `ARCHIVED`,
+preserves the row and dynamic values, increments the version, and writes an audit
+record in the same transaction.
 
 ### Permission
 
@@ -896,6 +949,15 @@ include_type
 
 The server SHALL use database-level hierarchy traversal.
 
+The response is a flat, path-ordered node collection so clients can render the
+hierarchy without backend-specific nesting assumptions. Each node includes `depth`,
+its complete `path`, and `has_children`. When `root_id` is omitted, traversal starts
+at every non-deleted root in the workspace; when supplied, depth zero is that root.
+`depth` is relative to the selected root(s), and `include_type=false` omits the
+optional entity-type summary while retaining `entity_type_id`. Access requires an
+active workspace membership and effective `ENTITY_READ`; a root outside the scoped
+workspace is returned as `RESOURCE_NOT_FOUND`.
+
 ---
 
 # 9.7 PATCH /entities/{entity_id}/parent
@@ -906,7 +968,7 @@ Reparent entity.
 
 ```json
 {
-  "parent_id": "...",
+  "parent_id": "... or null to move to a root",
   "version": 5
 }
 ```
@@ -917,6 +979,13 @@ Reparent entity.
 - no cycle,
 - permission,
 - lock policy.
+
+Hierarchy mutations are serialized per workspace before the recursive ancestor
+check, then applied with optimistic concurrency. A successful move preserves the
+entity identifier, increments `version`, and atomically audits before/after state.
+An invisible, cross-workspace, archived, or deleted proposed parent is reported as
+`RESOURCE_NOT_FOUND`; self-parenting and descendant-parenting both return
+`HIERARCHY_CYCLE`.
 
 ### Error
 

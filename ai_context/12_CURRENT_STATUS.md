@@ -649,7 +649,7 @@ Mitigation:
 ```text
 M0 Repository/Foundation        COMPLETE (FND-001 through FND-007 COMPLETE)
 M1 Identity/Workspace           COMPLETE (identity, auth, workspace schema/API/UI and current test matrix)
-M2 Metadata/Entity Platform     NOT STARTED
+M2 Metadata/Entity Platform     IN PROGRESS (metadata schema/API/validation/UI complete)
 M3 Dynamic Forms                NOT STARTED
 M4 Documents/Import             NOT STARTED
 M5 Workflow/Reporting           NOT STARTED
@@ -722,6 +722,284 @@ NEXT_TASK:
 Begin META-DB-001 Metadata Schema while extending TEST-WS-001 with every new
 workspace-scoped resource.
 Resolve OD-015 before implementing date- or number-intensive frontend workflows.
+```
+
+Metadata platform implementation entry:
+
+```text
+DATE:
+2026-08-22
+
+MILESTONE:
+M2 Metadata and Generic Entity Platform
+
+TASKS_COMPLETED:
+META-DB-001 Metadata Schema
+META-BE-001 Entity Type API
+META-BE-002 Attribute Definition API
+META-BE-003 Metadata Validation Engine
+META-FE-001 Metadata Administration
+
+TASKS_IN_PROGRESS:
+ENT-DB-001 Generic Entity Schema
+
+TEST_RESULTS:
+Backend formatting, lint, strict mypy, 87 tests, and Alembic 0005/0006 offline
+upgrade/downgrade validation pass. Frontend strict TypeScript, zero-warning ESLint,
+18 tests, and production build pass.
+
+SECURITY:
+Metadata mutations require effective METADATA_MANAGE after active workspace membership
+is verified. Reads are membership-scoped. Mutations use optimistic concurrency and
+transactional audit logs. Configurable regex is restricted to a bounded safe subset.
+
+LIMITATIONS:
+Live PostgreSQL migration verification still requires local database credentials.
+The metadata UI currently exposes the core create/edit flow; advanced JSON configuration
+editing is intentionally deferred to later form/rule tooling.
+
+NEXT_TASK:
+ENT-DB-001 Generic Entity Schema, followed by ENT-BE-001 through ENT-BE-003.
+```
+
+Generic entity platform implementation entry:
+
+```text
+DATE:
+2026-08-23
+
+MILESTONE:
+M2 Metadata and Generic Entity Platform
+
+TASKS_COMPLETED:
+ENT-DB-001 Generic Entity Schema
+ENT-BE-001 Create Entity
+ENT-BE-002 Read/List/Search Entities
+ENT-BE-003 Update/Archive Entity
+
+TASKS_IN_PROGRESS:
+None
+
+TEST_RESULTS:
+Backend formatting, lint, strict mypy, 103 tests, OpenAPI YAML validation, and
+Compose configuration validation pass. Alembic revisions 0001 through 0007 were
+applied successfully to live PostgreSQL. Frontend strict TypeScript, zero-warning
+ESLint, 18 tests, and the production build pass. Live readiness, login, workspace
+creation, and authenticated workspace listing were verified locally.
+
+SECURITY:
+Entity reads and mutations require active workspace access plus effective canonical
+permissions. Dynamic values are server-validated against metadata; mutations use
+optimistic concurrency and transactional before/after audit records. Authentication
+identity reads use an isolated request session so authorization cannot contaminate
+service-owned mutation transactions. Local administrator bootstrap is explicitly
+development-only, requires supplied strong credentials, is idempotent, and never
+overwrites an existing password.
+
+LIMITATIONS:
+Phase/resource locking cannot be enforced until the phase schema and lock-policy
+tasks are implemented. The generic entity frontend tasks remain outstanding.
+
+NEXT_TASK:
+HIER-BE-001 Hierarchy Retrieval, followed by HIER-BE-002 and entity frontend tasks.
+```
+
+Hierarchy retrieval implementation entry:
+
+```text
+DATE:
+2026-08-23
+
+MILESTONE:
+M2 Metadata and Generic Entity Platform
+
+TASKS_COMPLETED:
+HIER-BE-001 Hierarchy Retrieval
+
+TASKS_IN_PROGRESS:
+None
+
+TEST_RESULTS:
+Backend formatting, lint, strict mypy, and 106 tests pass. The recursive CTE was
+also exercised through the live API against PostgreSQL using a root and child; it
+returned one path-ordered result set with depths 0/1, has_children=true on the root,
+and the requested metadata type summary.
+
+SECURITY:
+Hierarchy traversal requires active workspace membership and effective ENTITY_READ.
+The CTE anchor and recursive member both enforce workspace scope, deleted rows are
+excluded, and a cross-workspace or invisible root is reported as not found.
+
+DATABASE_CHANGES:
+None. The accepted entity_objects.parent_id adjacency model and existing partial
+parent index are used directly.
+
+NEXT_TASK:
+HIER-BE-002 Reparent and Cycle Prevention.
+```
+
+Hierarchy mutation implementation entry:
+
+```text
+DATE:
+2026-08-23
+
+MILESTONE:
+M2 Metadata and Generic Entity Platform
+
+TASKS_COMPLETED:
+HIER-BE-002 Reparent and Cycle Prevention
+
+TASKS_IN_PROGRESS:
+None
+
+TEST_RESULTS:
+Backend formatting, lint, strict mypy, 110 tests, and the OpenAPI contract check
+pass. Live PostgreSQL/API verification moved a child to another root with a version
+increment, rejected moving that root beneath the child with HIERARCHY_CYCLE, and
+successfully restored the original hierarchy.
+
+SECURITY:
+Reparenting requires active workspace access and effective ENTITY_UPDATE. Candidate
+parents must be active and in the same workspace. Hierarchy writes are serialized by
+a transaction-scoped workspace advisory lock, cycle checks use a recursive CTE, the
+row update is optimistic, and before/after audit state is committed atomically.
+
+DATABASE_CHANGES:
+None.
+
+KNOWN_LIMITATIONS:
+Phase/resource lock enforcement remains deferred until the phase lock-policy schema
+and service exist.
+
+NEXT_TASK:
+ENT-FE-001 Entity Tree Viewer, then ENT-FE-002 Generic Entity Detail Page.
+```
+
+Entity tree frontend implementation entry:
+
+```text
+DATE:
+2026-08-23
+
+MILESTONE:
+M2 Metadata and Generic Entity Platform
+
+TASKS_COMPLETED:
+ENT-FE-001 Entity Tree Viewer
+
+TASKS_IN_PROGRESS:
+None
+
+TEST_RESULTS:
+Frontend zero-warning ESLint, strict TypeScript, 10 test files with 20 tests, and
+the production build pass. Component tests cover cached root expansion, lazy deeper
+child loading, node selection, initial failure, and retry.
+
+SECURITY:
+The viewer consumes only the backend-authorized workspace hierarchy response and
+does not infer access locally. Optional node actions are injected through a generic
+render hook so callers can gate them using effective permissions without embedding
+domain-specific behavior.
+
+USER_VISIBLE_RESULT:
+Opening a workspace now navigates to the generic entity explorer. The live Demo
+Workspace contains Demo Root, Demo Child, Second Root, and the Demo Node metadata
+type for previewing hierarchy expansion.
+
+KNOWN_LIMITATIONS:
+Entity creation/editing and detail tabs are delivered by subsequent frontend tasks.
+
+NEXT_TASK:
+ENT-FE-002 Generic Entity Detail Page.
+```
+
+Entity detail frontend implementation entry:
+
+```text
+DATE:
+2026-08-23
+
+MILESTONE:
+M2 Metadata and Generic Entity Platform
+
+TASKS_COMPLETED:
+ENT-FE-002 Generic Entity Detail Page
+
+TASKS_IN_PROGRESS:
+None
+
+TEST_RESULTS:
+Frontend zero-warning ESLint, strict TypeScript, 11 test files with 21 tests, and
+the production build pass. The component test covers shared detail routing, all six
+tabs, metadata-defined labels, values, and safe display of unknown legacy attributes.
+
+SECURITY:
+The page relies on the backend-authorized entity and attribute-definition endpoints.
+It does not infer permissions or expose mutation actions, and the workspace identifier
+is used only for navigation while backend entity lookup remains authoritative.
+
+API_CHANGES:
+None. The frontend consumes the existing GET /entities/{entity_id} and attribute
+definition contracts.
+
+USER_VISIBLE_RESULT:
+Selecting any node in the entity explorer opens the same generic detail page with
+Overview, Information, Forms, Documents, Relationships, and History tabs. Overview
+and Information use live entity and metadata data; later feature tabs identify their
+pending implementation without inventing domain-specific screens.
+
+KNOWN_LIMITATIONS:
+Forms, Documents, Relationships, and History tab content is delivered by their
+respective later backlog tasks. Editing is also deferred.
+
+NEXT_TASK:
+REL-DB-001 Relationship Schema.
+```
+
+Relationship persistence implementation entry:
+
+```text
+DATE:
+2026-08-23
+
+MILESTONE:
+M2 Metadata and Generic Entity Platform
+
+TASKS_COMPLETED:
+REL-DB-001 Relationship Schema
+
+TASKS_IN_PROGRESS:
+None
+
+TEST_RESULTS:
+Backend formatting, lint, strict mypy, and 112 tests pass. Alembic upgraded the
+live PostgreSQL database from 0007 to 0008, downgraded cleanly to 0007, and upgraded
+again to head successfully.
+
+SECURITY:
+Both tables carry an explicit workspace scope. Relationship instances reference
+canonical generic entities and metadata-defined relationship types; active-row
+indexes support scoped lookup. Cross-workspace consistency remains enforced by the
+authoritative service in REL-BE-001 because the accepted schema uses independent UUID
+foreign keys rather than composite workspace foreign keys.
+
+DATABASE_CHANGES:
+Migration 0008 adds relationship_types and entity_relationships with directionality
+and self-link checks, configured source/target type references, JSONB configuration
+and attributes, soft deletion for relationship instances, and incoming/outgoing/type
+indexes. Conditional duplicate policy remains service-controlled, so the optional
+always-on active relationship unique index was intentionally not added.
+
+API_CHANGES:
+None.
+
+KNOWN_LIMITATIONS:
+The relationship API, permissions, auditing, configurable duplicate policy, and UI
+are delivered by REL-BE-001 and REL-FE-001.
+
+NEXT_TASK:
+REL-BE-001 Relationship API.
 ```
 
 ---

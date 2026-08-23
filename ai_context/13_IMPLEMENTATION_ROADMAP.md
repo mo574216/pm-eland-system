@@ -252,11 +252,12 @@ Each slice must preserve the API envelope, permission registry, workspace scope,
 
 ## 8. Immediate Next Actions
 
-1. Begin META-DB-001 with the generic metadata schema.
+1. Begin ENT-DB-001 with the generic entity-object schema.
 2. Continue TEST-WS-001 with each new workspace-scoped resource.
 3. Resolve DG-08 before date- or number-intensive frontend workflows.
 
-The next implementation handoff should begin `META-DB-001`; the M1 identity, authentication, and workspace slice is complete.
+The next implementation handoff should begin `ENT-DB-001`; the generic metadata
+schema, APIs, validator, and administration UI are complete.
 
 ## 9. Roadmap Maintenance
 

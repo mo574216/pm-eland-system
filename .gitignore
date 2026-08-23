@@ -12,6 +12,7 @@ frontend/coverage/
 frontend/playwright-report/
 frontend/test-results/
 frontend/*.tsbuildinfo
+frontend/.vite-dev*.log
 
 # Python/backend generated files
 __pycache__/
