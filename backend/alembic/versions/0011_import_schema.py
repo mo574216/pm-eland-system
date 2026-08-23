@@ -95,7 +95,7 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(
             ["target_attribute_definition_id"],
             ["attribute_definitions.id"],
-            name="fk_import_mappings_target_attribute_definition_id_attribute_definitions",
+            name="fk_import_mappings_attribute_definition",
             ondelete="RESTRICT",
         ),
         sa.PrimaryKeyConstraint("id", name="pk_import_mappings"),

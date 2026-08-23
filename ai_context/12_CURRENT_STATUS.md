@@ -2556,6 +2556,72 @@ IMP-DB-001 Import Schema, the next dependency-ready P0 backlog task. DOC-BE-006
 Malware Scan Workflow remains P1 security hardening.
 ```
 
+Import schema implementation entry:
+
+```text
+DATE:
+2026-08-23
+
+MILESTONE:
+M4 Documents and Import
+
+TASKS_COMPLETED:
+IMP-DB-001 Import Schema
+
+TASKS_IN_PROGRESS:
+None
+
+SUMMARY:
+Added the generic, metadata-driven persistence foundation for reusable import
+profiles, column mappings, staged import jobs, and explicit conflict resolution.
+The schema follows the documented safe lifecycle and does not introduce any
+domain-specific concepts.
+
+FILES_CHANGED:
+Import ORM models and exports, Alembic revision 0011, focused schema contract
+tests, and current status documentation.
+
+DATABASE_CHANGES:
+Revision 0011 creates import_profiles, import_mappings, import_jobs, and
+import_conflicts with the specified foreign keys, JSONB configuration/value
+fields, lifecycle and resolution checks, conflict lookup index, and optional
+workspace-scoped idempotency uniqueness. The local database was upgraded from
+0010 to 0011 successfully.
+
+API_CHANGES:
+None.
+
+TESTS_ADDED:
+Three focused contract tests cover generic profile/mapping metadata, staged job
+summaries and idempotency, and preservation of both conflict values with explicit
+resolution.
+
+TEST_RESULTS:
+Ruff formatting and lint pass for the changed files; strict mypy passes for the
+new model; all three focused schema tests pass; migration upgrade to 0011 and head
+verification pass. The repository-wide Alembic drift check still reports older
+identity/audit ORM-to-migration differences outside this task.
+
+SECURITY_IMPACT:
+Profiles and jobs are workspace-scoped, import source objects remain private
+storage references, job retries can be made idempotent per workspace, and conflict
+records retain both canonical and imported values so later services cannot silently
+overwrite data.
+
+KNOWN_LIMITATIONS:
+Service-layer work must validate that profiles, entity types, attributes, jobs,
+and users belong to the same workspace. Parser limits, mapping validation, dry-run,
+transactional commit, authorization, and audit behavior are implemented by the
+following IMP-BE tasks rather than this persistence-only task. Pre-existing
+identity/audit Alembic drift remains to be reconciled during housekeeping.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+IMP-BE-001 XLSX/CSV Parser.
+```
+
 ---
 
 # 27. Related Specifications
