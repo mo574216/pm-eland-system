@@ -1,5 +1,4 @@
 import { Button, Stack, Typography } from '@mui/material'
-import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
 
@@ -9,7 +8,6 @@ export function EntityExplorerPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { workspaceId } = useParams()
-  const [selectedEntityId, setSelectedEntityId] = useState<string>()
 
   if (workspaceId === undefined) return <Navigate replace to="/workspaces" />
 
@@ -29,8 +27,9 @@ export function EntityExplorerPage() {
         </Stack>
       </Stack>
       <EntityTreeViewer
-        onSelect={setSelectedEntityId}
-        selectedEntityId={selectedEntityId}
+        onSelect={(entityId) =>
+          void navigate(`/workspaces/${workspaceId}/entities/${entityId}`)
+        }
         workspaceId={workspaceId}
       />
     </Stack>

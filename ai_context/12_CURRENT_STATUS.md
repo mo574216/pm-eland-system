@@ -914,6 +914,49 @@ NEXT_TASK:
 ENT-FE-002 Generic Entity Detail Page.
 ```
 
+Entity detail frontend implementation entry:
+
+```text
+DATE:
+2026-08-23
+
+MILESTONE:
+M2 Metadata and Generic Entity Platform
+
+TASKS_COMPLETED:
+ENT-FE-002 Generic Entity Detail Page
+
+TASKS_IN_PROGRESS:
+None
+
+TEST_RESULTS:
+Frontend zero-warning ESLint, strict TypeScript, 11 test files with 21 tests, and
+the production build pass. The component test covers shared detail routing, all six
+tabs, metadata-defined labels, values, and safe display of unknown legacy attributes.
+
+SECURITY:
+The page relies on the backend-authorized entity and attribute-definition endpoints.
+It does not infer permissions or expose mutation actions, and the workspace identifier
+is used only for navigation while backend entity lookup remains authoritative.
+
+API_CHANGES:
+None. The frontend consumes the existing GET /entities/{entity_id} and attribute
+definition contracts.
+
+USER_VISIBLE_RESULT:
+Selecting any node in the entity explorer opens the same generic detail page with
+Overview, Information, Forms, Documents, Relationships, and History tabs. Overview
+and Information use live entity and metadata data; later feature tabs identify their
+pending implementation without inventing domain-specific screens.
+
+KNOWN_LIMITATIONS:
+Forms, Documents, Relationships, and History tab content is delivered by their
+respective later backlog tasks. Editing is also deferred.
+
+NEXT_TASK:
+REL-DB-001 Relationship Schema.
+```
+
 ---
 
 # 13. Recommended Immediate Implementation Sequence

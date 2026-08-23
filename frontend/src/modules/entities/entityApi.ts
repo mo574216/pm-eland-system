@@ -26,6 +26,28 @@ export interface EntityTreeData {
   depth: number | null
 }
 
+export interface Entity {
+  id: string
+  workspace_id: string
+  entity_type_id: string
+  entity_type: EntityTreeTypeSummary
+  parent_id: string | null
+  name: string
+  description: string | null
+  status: 'ACTIVE' | 'ARCHIVED'
+  attributes: Record<string, unknown>
+  created_by: string | null
+  updated_by: string | null
+  created_at: string
+  updated_at: string
+  archived_at: string | null
+  version: number
+}
+
+export function getEntity(entityId: string): Promise<Entity> {
+  return apiRequest<Entity>(`/entities/${entityId}`)
+}
+
 export function getEntityTree(
   workspaceId: string,
   options: { rootId?: string; depth?: number; includeType?: boolean } = {},
