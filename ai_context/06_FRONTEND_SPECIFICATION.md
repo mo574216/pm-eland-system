@@ -250,6 +250,24 @@ The main authenticated layout SHOULD include:
 
 The shell SHALL support responsive behavior.
 
+## 7.1 Approved RTL Portal Composition
+
+The authenticated workspace experience SHALL follow ADR-0005. At desktop
+widths it uses a persistent navigation drawer on the right and a contextual
+header above the main content. At smaller widths the drawer becomes temporary
+and is opened by an accessible menu control.
+
+The workspace root route is a capability dashboard. It SHALL provide quick
+access only to implemented generic platform capabilities. Planned capabilities
+MAY be identified as roadmap items, but SHALL NOT appear as working links or
+controls. The shell and dashboard MUST NOT contain organization-specific
+business concepts, customer branding, fabricated metrics, or fabricated
+notifications.
+
+Visual styling SHALL use centralized theme tokens, Persian localized copy,
+strong focus indication, deliberate empty/loading/error states, and code-native
+decoration that preserves contrast and content legibility.
+
 ---
 
 # 8. Authentication UI

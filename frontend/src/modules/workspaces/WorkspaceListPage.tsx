@@ -16,7 +16,7 @@ export function WorkspaceListPage() {
 
   const openWorkspace = (workspaceId: string) => {
     dispatch(workspaceSelected(workspaceId))
-    void navigate(`/workspaces/${workspaceId}/entities`)
+    void navigate(`/workspaces/${workspaceId}`)
   }
 
   return (

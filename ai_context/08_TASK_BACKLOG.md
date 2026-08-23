@@ -243,6 +243,30 @@ build
 
 # 5. M1 — Identity, Workspace, and Security Foundation
 
+# TASK UX-FE-001 — RTL Portal Shell and Workspace Dashboard
+
+**Priority:** P0
+**Owner:** Frontend Agent
+**Dependencies:** FND-007, AUTH-FE-001, WS-FE-001
+
+## Deliverables
+
+- approved portal UX decision and shell contract,
+- persistent responsive right-side navigation,
+- contextual workspace header and user controls,
+- workspace dashboard with implemented capability shortcuts,
+- explicit non-interactive roadmap states,
+- centralized visual tokens and responsive/component tests.
+
+## Acceptance Criteria
+
+- [ ] workspace entry opens a Persian RTL dashboard,
+- [ ] implemented routes are reachable through the shell without dead links,
+- [ ] unavailable modules are not represented as working actions,
+- [ ] navigation highlights the current route,
+- [ ] desktop and mobile navigation remain accessible,
+- [ ] frontend lint, type checking, tests, E2E, and build pass.
+
 # TASK AUTH-DB-001 — Identity Schema
 
 **Priority:** P0  

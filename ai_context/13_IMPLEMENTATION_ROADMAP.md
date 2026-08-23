@@ -24,6 +24,7 @@ Repository foundation task FND-001 is complete:
 - FND-005 is complete: one health-gated Docker Compose command starts the frontend, backend, PostgreSQL, MinIO, and Redis; migrations and cross-service connectivity are verified.
 - FND-006 is complete: its Linux portability fix is merged, hosted CI is green, and the active `main` branch ruleset requires `Required CI Gate`.
 - FND-007 is complete: the current shell is Persian/RTL, platform copy uses i18n resources, MUI and Emotion are RTL-configured, Vazirmatn is bundled, public API errors are localized centrally, and Persian search normalization is tested.
+- UX-FE-001 is complete: the approved ADR-0005 portal composition provides a responsive right-side navigation shell, contextual workspace header, honest capability dashboard, and browser-tested Persian RTL flow.
 - Local-only state: `.vscode/` is untracked and is outside this roadmap unless explicitly added.
 
 The repository uses `ai_context/`. Canonical repository guidance now references that path; do not duplicate the specification set.

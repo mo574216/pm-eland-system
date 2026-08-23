@@ -8,6 +8,7 @@ import { EntityDetailPage } from '../modules/entities/EntityDetailPage'
 import { EntityTypeEditor } from '../modules/metadata/EntityTypeEditor'
 import { EntityTypeList } from '../modules/metadata/EntityTypeList'
 import { WorkspaceListPage } from '../modules/workspaces/WorkspaceListPage'
+import { WorkspaceDashboardPage } from '../modules/workspaces/WorkspaceDashboardPage'
 import { WorkspaceSettingsPage } from '../modules/workspaces/WorkspaceSettingsPage'
 import { NotFoundPage } from '../pages/NotFoundPage'
 
@@ -21,6 +22,7 @@ export const router = createBrowserRouter([
         element: <AppShell />,
         children: [
           { path: '/workspaces', element: <WorkspaceListPage /> },
+          { path: '/workspaces/:workspaceId', element: <WorkspaceDashboardPage /> },
           { path: '/workspaces/:workspaceId/entities', element: <EntityExplorerPage /> },
           {
             path: '/workspaces/:workspaceId/entities/:entityId',

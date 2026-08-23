@@ -1307,6 +1307,60 @@ FORM-BE-004 Render Contract. Work intentionally stopped before starting it at th
 user's request.
 ```
 
+RTL portal experience implementation entry:
+
+```text
+DATE:
+2026-08-23
+
+MILESTONE:
+Cross-cutting UX convergence before continuing M3
+
+TASKS_COMPLETED:
+UX-FE-001 RTL Portal Shell and Workspace Dashboard
+
+TASKS_IN_PROGRESS:
+None
+
+TEST_RESULTS:
+Frontend zero-warning ESLint and strict TypeScript pass. All 13 component test
+files with 23 tests pass, the production build passes, and all 3 Playwright
+browser scenarios pass in Microsoft Edge. The Chrome browser process was stale
+on the Windows host; the application itself remained responsive on port 5173.
+
+SECURITY:
+The portal shell adds no authorization semantics. Protected routes and backend
+workspace membership/permission checks remain authoritative. Workspace context
+is loaded by route-scoped API keys, and planned capabilities expose no dead or
+working-looking actions.
+
+DATABASE_CHANGES:
+None.
+
+API_CHANGES:
+None.
+
+USER_VISIBLE_RESULT:
+Opening a workspace now displays a Persian RTL portal dashboard with a persistent
+right navigation rail on desktop, responsive mobile drawer, contextual header,
+workspace identity, quick access to implemented capabilities, and an honest
+empty announcement state. Future forms, documents, imports, and reports are
+clearly marked as planned rather than presented as functional links.
+
+KNOWN_LIMITATIONS:
+Approved organization brand assets have not been provided, so the shell uses a
+generic repository-owned mark and palette. The production bundle retains the
+existing non-blocking chunk-size warning; route-level code splitting remains a
+later performance task. Chrome on the current Windows host may need a process
+restart before it can run Playwright reliably.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+FORM-BE-004 Render Contract.
+```
+
 ---
 
 # 13. Recommended Immediate Implementation Sequence
