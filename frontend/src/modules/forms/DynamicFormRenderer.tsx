@@ -21,7 +21,7 @@ import type { FormInstance, FormRenderContract } from './types'
 
 interface DynamicFormRendererProps {
   formId: string
-  entityId: string
+  entityId?: string
   canEdit: boolean
 }
 
@@ -48,7 +48,7 @@ function fieldErrors(error: ApiError): { field: string; code: string }[] {
   })
 }
 
-function FormEditor({ contract, entityId, canEdit }: { contract: FormRenderContract; entityId: string; canEdit: boolean }) {
+function FormEditor({ contract, entityId, canEdit }: { contract: FormRenderContract; entityId?: string; canEdit: boolean }) {
   const { t } = useTranslation()
   const [instance, setInstance] = useState<FormInstance | null>(null)
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
@@ -58,6 +58,7 @@ function FormEditor({ contract, entityId, canEdit }: { contract: FormRenderContr
   })
 
   const save = async (values: Record<string, unknown>) => {
+    if (entityId === undefined) return
     setSaveState('saving')
     setFormError(null)
     try {
@@ -89,7 +90,7 @@ function FormEditor({ contract, entityId, canEdit }: { contract: FormRenderContr
           <Typography component="h2" variant="h2">{contract.form.name}</Typography>
           <Chip label={t('forms.version', { version: contract.form.version_number })} size="small" variant="outlined" />
         </Stack>
-        {canEdit ? (
+        {canEdit && entityId !== undefined ? (
           <Button disabled={saveState === 'saving'} startIcon={<SaveOutlined />} type="submit" variant="contained">
             {saveState === 'saving' ? t('forms.saving') : t('forms.saveDraft')}
           </Button>

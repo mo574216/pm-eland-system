@@ -1969,6 +1969,62 @@ After these, implementation should begin rather than continuing architecture doc
 
 ---
 
+Form designer MVP implementation entry:
+
+```text
+DATE:
+2026-08-23
+
+MILESTONE:
+M3 Dynamic Forms and Structured Data
+
+TASKS_COMPLETED:
+FORM-FE-004 Form Designer MVP
+
+TASKS_IN_PROGRESS:
+None
+
+SUMMARY:
+Added a Persian RTL workspace form designer for creating generic draft forms,
+adding ordered sections and fields, configuring options, required/read-only
+behavior and inheritance metadata, and previewing the backend render contract.
+
+FILES_CHANGED:
+Frontend form types/API, form designer page and focused test, dynamic form preview,
+workspace route/navigation/dashboard, and Persian localization.
+
+DATABASE_CHANGES:
+None.
+
+API_CHANGES:
+None. The UI consumes the existing FORM-BE-001 and FORM-BE-004 contracts.
+
+TESTS_ADDED:
+One focused interaction test proving an administrator can select a draft and add
+a metadata-defined ordered section through the authoritative form API.
+
+TEST_RESULTS:
+Quota-conscious focused gates pass: zero-warning ESLint for all affected frontend
+modules, strict application TypeScript, and the focused FormDesignerPage test
+(1 test passed). Broad regression/build gates remain deferred to the demo checkpoint.
+
+SECURITY_IMPACT:
+No authorization authority moved to the frontend. The designer only invokes the
+existing backend-authorized, workspace-isolated form and metadata endpoints.
+
+KNOWN_LIMITATIONS:
+Field editing/removal and drag-and-drop ordering are not exposed by the current
+draft-form contract. Publishing and creating a new version remain FORM-FE-005.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+FORM-FE-005 Publish/New Version UI, the next dependency-ready demo-visible feature.
+```
+
+---
+
 # 27. Related Specifications
 
 ```text

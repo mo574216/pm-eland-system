@@ -64,6 +64,33 @@ export interface FormSummary {
   lifecycle_status: 'DRAFT' | 'PUBLISHED' | 'RETIRED'
 }
 
+export interface FormSectionDefinition {
+  key: string
+  label: string
+  display_order: number
+  configuration: Record<string, unknown>
+}
+
+export interface FormDefinition extends FormSummary {
+  schema_json: { sections: FormSectionDefinition[] }
+  fields: Array<{
+    id: string
+    form_definition_id: string
+    attribute_definition_id: string | null
+    key: string
+    label: string
+    field_type: FormFieldType
+    section_key: string | null
+    display_order: number
+    is_required: boolean
+    is_read_only: boolean
+    configuration: Record<string, unknown>
+    visibility_rule: Record<string, unknown>
+    validation_rule: Record<string, unknown>
+    inheritance_rule: Record<string, unknown>
+  }>
+}
+
 export interface FormInstance {
   id: string
   workspace_id: string
