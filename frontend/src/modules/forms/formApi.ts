@@ -66,6 +66,14 @@ export function addFormField(
   })
 }
 
+export function publishForm(formId: string): Promise<FormDefinition> {
+  return apiRequest<FormDefinition>(`/forms/${formId}/publish`, { method: 'POST' })
+}
+
+export function createNewFormVersion(formId: string): Promise<FormDefinition> {
+  return apiRequest<FormDefinition>(`/forms/${formId}/new-version`, { method: 'POST' })
+}
+
 export function listPublishedForms(workspaceId: string, entityTypeId: string): Promise<FormList> {
   const query = new URLSearchParams({
     entity_type_id: entityTypeId,

@@ -7,6 +7,11 @@ import {
   Checkbox,
   Chip,
   CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
   FormControl,
   FormControlLabel,
   InputLabel,
@@ -25,7 +30,15 @@ import { Navigate, useParams } from 'react-router-dom'
 import { ApiError } from '../../api/client'
 import { listAttributes, listEntityTypes } from '../metadata/metadataApi'
 import { DynamicFormRenderer } from './DynamicFormRenderer'
-import { addFormField, createForm, getForm, listForms, updateFormSections } from './formApi'
+import {
+  addFormField,
+  createForm,
+  createNewFormVersion,
+  getForm,
+  listForms,
+  publishForm,
+  updateFormSections,
+} from './formApi'
 import type { FormFieldType } from './types'
 
 const fieldTypes: FormFieldType[] = [
@@ -65,6 +78,7 @@ function DraftDesigner({ formId }: { formId: string }) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
   const [showPreview, setShowPreview] = useState(false)
+  const [publishOpen, setPublishOpen] = useState(false)
   const [mutationError, setMutationError] = useState<string | null>(null)
   const definition = useQuery({ queryKey: ['form-definition', formId], queryFn: () => getForm(formId) })
   const attributes = useQuery({
@@ -118,6 +132,14 @@ function DraftDesigner({ formId }: { formId: string }) {
     },
     onSuccess: async () => { fieldForm.reset(); await refresh() },
   })
+  const publish = useMutation({
+    mutationFn: () => publishForm(formId),
+    onSuccess: async () => {
+      setPublishOpen(false)
+      await refresh()
+      await queryClient.invalidateQueries({ queryKey: ['forms'] })
+    },
+  })
   const runMutation = async (action: () => Promise<unknown>) => {
     setMutationError(null)
     try { await action() } catch (error) {
@@ -134,9 +156,14 @@ function DraftDesigner({ formId }: { formId: string }) {
     <Stack spacing={3}>
       <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
         <Typography component="h2" variant="h2">{definition.data.name}</Typography>
-        <Button onClick={() => setShowPreview((value) => !value)} variant="outlined">
-          {showPreview ? t('formDesigner.closePreview') : t('formDesigner.preview')}
-        </Button>
+        <Stack direction="row" spacing={1}>
+          <Button onClick={() => setShowPreview((value) => !value)} variant="outlined">
+            {showPreview ? t('formDesigner.closePreview') : t('formDesigner.preview')}
+          </Button>
+          <Button color="success" onClick={() => setPublishOpen(true)} variant="contained">
+            {t('formDesigner.publish')}
+          </Button>
+        </Stack>
       </Stack>
       {mutationError ? <Alert severity="error">{mutationError}</Alert> : null}
       {showPreview ? <DynamicFormRenderer canEdit={false} formId={formId} /> : null}
@@ -183,6 +210,19 @@ function DraftDesigner({ formId }: { formId: string }) {
         </CardContent>
       </Card>
       <Stack spacing={1}>{definition.data.schema_json.sections.map((section) => <Card key={section.key} variant="outlined"><CardContent><Typography sx={{ fontWeight: 800 }}>{section.label}</Typography><Typography color="text.secondary" dir="ltr">{section.key}</Typography>{definition.data.fields.filter((field) => field.section_key === section.key).map((field) => <Chip key={field.id} label={`${field.label} · ${field.field_type}`} sx={{ m: 0.5 }} />)}</CardContent></Card>)}</Stack>
+      <Dialog open={publishOpen} onClose={() => setPublishOpen(false)}>
+        <DialogTitle>{t('formDesigner.publishConfirmTitle')}</DialogTitle>
+        <DialogContent>
+          <DialogContentText>{t('formDesigner.publishConfirmDescription')}</DialogContentText>
+          {publish.isError ? <Alert severity="error" sx={{ mt: 2 }}>{t('formDesigner.publishFailed')}</Alert> : null}
+        </DialogContent>
+        <DialogActions>
+          <Button disabled={publish.isPending} onClick={() => setPublishOpen(false)}>{t('formDesigner.cancel')}</Button>
+          <Button color="success" disabled={publish.isPending} onClick={() => publish.mutate()} variant="contained">
+            {publish.isPending ? t('formDesigner.publishing') : t('formDesigner.publish')}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Stack>
   )
 }
@@ -198,7 +238,8 @@ export function FormDesignerPage() {
   const creation = useForm<CreateValues>({ defaultValues: { key: '', name: '', description: '', entityTypeId: '' } })
   const entityTypeId = useWatch({ control: creation.control, name: 'entityTypeId' })
   const create = useMutation({ mutationFn: (values: CreateValues) => createForm(workspaceId ?? '', { key: values.key.trim(), name: values.name.trim(), description: values.description.trim() || null, entity_type_id: values.entityTypeId }), onSuccess: async (form) => { creation.reset(); setSelectedId(form.id); await queryClient.invalidateQueries({ queryKey: ['forms', workspaceId] }) } })
+  const newVersion = useMutation({ mutationFn: (formId: string) => createNewFormVersion(formId), onSuccess: async (form) => { setSelectedId(form.id); await queryClient.invalidateQueries({ queryKey: ['forms', workspaceId] }) } })
   if (workspaceId === undefined) return <Navigate replace to="/workspaces" />
   const submit = creation.handleSubmit(async (values) => { setError(null); try { await create.mutateAsync(values) } catch { setError(t('formDesigner.saveFailed')) } })
-  return <Stack spacing={3}><Typography component="h1" variant="h1">{t('formDesigner.title')}</Typography><Card><CardContent><Stack component="form" onSubmit={(event) => void submit(event)} spacing={2}><Typography component="h2" variant="h6">{t('formDesigner.create')}</Typography>{error ? <Alert severity="error">{error}</Alert> : null}<TextField label={t('formDesigner.key')} required {...creation.register('key', { required: true, pattern: /^[a-z][a-z0-9_]*$/ })} /><TextField label={t('formDesigner.name')} required {...creation.register('name', { required: true })} /><TextField label={t('formDesigner.description')} multiline {...creation.register('description')} /><FormControl fullWidth required><InputLabel id="form-entity-type-label">{t('formDesigner.entityType')}</InputLabel><Select label={t('formDesigner.entityType')} labelId="form-entity-type-label" value={entityTypeId} onChange={(event) => creation.setValue('entityTypeId', event.target.value, { shouldValidate: true })}>{entityTypes.data?.items.map((type) => <MenuItem key={type.id} value={type.id}>{type.name}</MenuItem>)}</Select></FormControl><Button disabled={create.isPending} type="submit" variant="contained">{t('formDesigner.create')}</Button></Stack></CardContent></Card>{forms.isPending ? <CircularProgress aria-label={t('formDesigner.loading')} /> : null}{forms.isError ? <Alert severity="error">{t('formDesigner.loadFailed')}</Alert> : null}<Stack spacing={1}>{forms.data?.items.map((form) => <Card key={form.id} variant="outlined"><CardContent><Typography component="h2" variant="h6">{form.name}</Typography><Chip label={form.lifecycle_status} size="small" /></CardContent><CardActions>{form.lifecycle_status === 'DRAFT' ? <Button onClick={() => setSelectedId(form.id)}>{t('formDesigner.design')}</Button> : null}</CardActions></Card>)}</Stack>{selectedId ? <DraftDesigner formId={selectedId} /> : null}</Stack>
+  return <Stack spacing={3}><Typography component="h1" variant="h1">{t('formDesigner.title')}</Typography><Card><CardContent><Stack component="form" onSubmit={(event) => void submit(event)} spacing={2}><Typography component="h2" variant="h6">{t('formDesigner.create')}</Typography>{error ? <Alert severity="error">{error}</Alert> : null}<TextField label={t('formDesigner.key')} required {...creation.register('key', { required: true, pattern: /^[a-z][a-z0-9_]*$/ })} /><TextField label={t('formDesigner.name')} required {...creation.register('name', { required: true })} /><TextField label={t('formDesigner.description')} multiline {...creation.register('description')} /><FormControl fullWidth required><InputLabel id="form-entity-type-label">{t('formDesigner.entityType')}</InputLabel><Select label={t('formDesigner.entityType')} labelId="form-entity-type-label" value={entityTypeId} onChange={(event) => creation.setValue('entityTypeId', event.target.value, { shouldValidate: true })}>{entityTypes.data?.items.map((type) => <MenuItem key={type.id} value={type.id}>{type.name}</MenuItem>)}</Select></FormControl><Button disabled={create.isPending} type="submit" variant="contained">{t('formDesigner.create')}</Button></Stack></CardContent></Card>{error || newVersion.isError ? <Alert severity="error">{error ?? t('formDesigner.newVersionFailed')}</Alert> : null}{forms.isPending ? <CircularProgress aria-label={t('formDesigner.loading')} /> : null}{forms.isError ? <Alert severity="error">{t('formDesigner.loadFailed')}</Alert> : null}<Stack spacing={1}>{forms.data?.items.map((form) => <Card key={form.id} variant="outlined"><CardContent><Typography component="h2" variant="h6">{form.name}</Typography><Chip label={`${form.lifecycle_status} · v${String(form.version_number)}`} size="small" /></CardContent><CardActions>{form.lifecycle_status === 'DRAFT' ? <Button onClick={() => setSelectedId(form.id)}>{t('formDesigner.design')}</Button> : <Button disabled={newVersion.isPending} onClick={() => newVersion.mutate(form.id)}>{t('formDesigner.newVersion')}</Button>}</CardActions></Card>)}</Stack>{selectedId ? <DraftDesigner formId={selectedId} /> : null}</Stack>
 }

@@ -40,6 +40,12 @@ class Settings(BaseSettings):
     allowed_hosts: list[str] = Field(
         default_factory=lambda: ["localhost", "127.0.0.1", "testserver"]
     )
+    storage_endpoint: str = "localhost:9000"
+    storage_access_key: SecretStr | None = None
+    storage_secret_key: SecretStr | None = None
+    storage_secure: bool = False
+    storage_bucket: str = "pm-eland-documents"
+    storage_presigned_expiry_seconds: int = Field(default=600, ge=60, le=900)
 
     @model_validator(mode="after")
     def validate_authentication_security(self) -> Self:
@@ -50,6 +56,8 @@ class Settings(BaseSettings):
                 raise ValueError("JWT_SECRET is required in production.")
             if not self.auth_cookie_secure:
                 raise ValueError("AUTH_COOKIE_SECURE must be enabled in production.")
+            if self.storage_access_key is None or self.storage_secret_key is None:
+                raise ValueError("Object-storage credentials are required in production.")
         return self
 
 

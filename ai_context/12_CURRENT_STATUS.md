@@ -2023,6 +2023,117 @@ NEXT_TASK:
 FORM-FE-005 Publish/New Version UI, the next dependency-ready demo-visible feature.
 ```
 
+Publish/new-version UI implementation entry:
+
+```text
+DATE:
+2026-08-23
+
+MILESTONE:
+M3 Dynamic Forms and Structured Data
+
+TASKS_COMPLETED:
+FORM-FE-005 Publish/New Version UI
+
+TASKS_IN_PROGRESS:
+None
+
+SUMMARY:
+Added lifecycle controls to publish draft form definitions through an explicit
+immutability confirmation and to copy published definitions into a newly selected
+draft version for continued design.
+
+FILES_CHANGED:
+Frontend form API, form designer lifecycle UI, Persian localization, focused form
+designer tests, and current status documentation.
+
+DATABASE_CHANGES:
+None.
+
+API_CHANGES:
+None. The UI consumes the existing FORM-BE-002 publish and new-version endpoints.
+
+TESTS_ADDED:
+Focused interaction coverage for publish confirmation and creating/selecting a
+new draft version, alongside the existing draft-section designer test.
+
+TEST_RESULTS:
+Quota-conscious focused gates pass: zero-warning ESLint for affected modules,
+strict application TypeScript, and 3 FormDesignerPage interaction tests.
+
+SECURITY_IMPACT:
+Frontend controls are UX only. FORM_DESIGN authorization, workspace isolation,
+validation, audit, and published-definition immutability remain backend enforced.
+
+KNOWN_LIMITATIONS:
+The list currently displays stable lifecycle codes with version numbers; richer
+localized lifecycle filters and history comparison are deferred UI enhancements.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+Housekeeping and dependency audit for the next P0 M4 document/import slice.
+```
+
+Document schema implementation entry:
+
+```text
+DATE:
+2026-08-23
+
+MILESTONE:
+M4 Documents and Import
+
+TASKS_COMPLETED:
+DOC-DB-001 Document Schema
+
+TASKS_IN_PROGRESS:
+None
+
+SUMMARY:
+Added the generic logical-document and immutable document-version persistence
+model, including private object keys, checksums, scan/preview states, version
+identity, current-version linkage, and workspace/entity ownership metadata.
+
+FILES_CHANGED:
+Document ORM models and exports, Alembic revision 0010, focused schema-contract
+tests, and current status documentation.
+
+DATABASE_CHANGES:
+Revision 0010 creates documents and document_versions, their constraints and
+indexes, then adds the circular current-version foreign key safely. The local
+PostgreSQL database migrated successfully from 0009 to 0010 (head).
+
+API_CHANGES:
+None.
+
+TESTS_ADDED:
+Two schema-contract tests covering workspace/entity ownership, current-version
+linkage, immutable version numbering, unique object keys, JSON metadata, and
+storage-state constraints.
+
+TEST_RESULTS:
+Focused Ruff and strict mypy checks pass; 2 schema tests pass; Alembic upgrade to
+0010 completes against local PostgreSQL and reports 0010 as head.
+
+SECURITY_IMPACT:
+Binary data remains outside PostgreSQL. The schema stores only private object
+identifiers and security workflow state; it introduces no public storage access
+or client credentials. API authorization remains future document-service work.
+
+KNOWN_LIMITATIONS:
+Schema alone cannot enforce that current_version_id belongs to the same logical
+document; the document service must set it transactionally from a locked version
+record belonging to that document. Storage IO starts with DOC-BE-001.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+DOC-BE-001 Storage Provider Abstraction.
+```
+
 ---
 
 # 27. Related Specifications
