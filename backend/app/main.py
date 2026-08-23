@@ -22,6 +22,7 @@ from app.core.database import (
 from app.core.logging import configure_logging
 from app.core.middleware import RequestContextMiddleware
 from app.core.readiness import DatabaseProbe
+from app.services.storage import StorageProvider
 
 if sys.platform == "win32":
     # Psycopg async connections require a selector-based loop on Windows.
@@ -32,6 +33,7 @@ def create_app(
     settings: Settings | None = None,
     *,
     database_probe: DatabaseProbe | None = None,
+    storage_provider: StorageProvider | None = None,
 ) -> FastAPI:
     """Build an application instance with explicit, testable dependencies."""
     resolved_settings = settings or get_settings()
@@ -71,6 +73,7 @@ def create_app(
     application.state.database_engine = None
     application.state.session_factory = None
     application.state.database_probe = database_probe
+    application.state.storage_provider = storage_provider
 
     application.add_middleware(
         CORSMiddleware,

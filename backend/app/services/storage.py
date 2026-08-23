@@ -10,6 +10,8 @@ from typing import BinaryIO, Protocol, cast
 from minio import Minio
 from minio.error import S3Error
 
+from app.core.config import Settings
+
 
 class StorageError(RuntimeError):
     """Raised when private object storage cannot satisfy an operation."""
@@ -147,3 +149,17 @@ class MinioStorageProvider:
 def in_memory_stream(value: bytes) -> BinaryIO:
     """Return a binary stream suitable for StorageProvider uploads."""
     return BytesIO(value)
+
+
+def create_storage_provider(settings: Settings) -> StorageProvider:
+    """Build the configured private storage adapter without exposing credentials."""
+    if settings.storage_access_key is None or settings.storage_secret_key is None:
+        raise RuntimeError("Object-storage credentials are not configured.")
+    return MinioStorageProvider(
+        endpoint=settings.storage_endpoint,
+        access_key=settings.storage_access_key.get_secret_value(),
+        secret_key=settings.storage_secret_key.get_secret_value(),
+        bucket=settings.storage_bucket,
+        secure=settings.storage_secure,
+        presigned_expiry_seconds=settings.storage_presigned_expiry_seconds,
+    )

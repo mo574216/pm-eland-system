@@ -12,6 +12,7 @@ from app.models.identity import (
     role_permissions,
     user_roles,
 )
+from app.models.import_job import ImportConflict, ImportJob, ImportMapping, ImportProfile
 from app.models.metadata import AttributeDefinition, EntityType
 from app.models.relationship import EntityRelationship, RelationshipType
 from app.models.workspace import Workspace, WorkspaceMembership
@@ -28,6 +29,10 @@ __all__ = [
     "FormDefinition",
     "FormField",
     "FormInstance",
+    "ImportConflict",
+    "ImportJob",
+    "ImportMapping",
+    "ImportProfile",
     "Permission",
     "RelationshipType",
     "Role",

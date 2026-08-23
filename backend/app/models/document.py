@@ -4,6 +4,7 @@ from datetime import datetime
 from uuid import UUID, uuid4
 
 from sqlalchemy import (
+    BigInteger,
     CheckConstraint,
     DateTime,
     ForeignKey,
@@ -81,7 +82,7 @@ class DocumentVersion(Base):
     original_file_name: Mapped[str] = mapped_column(String(500))
     content_type: Mapped[str | None] = mapped_column(String(255))
     file_extension: Mapped[str | None] = mapped_column(String(50))
-    file_size_bytes: Mapped[int] = mapped_column()
+    file_size_bytes: Mapped[int] = mapped_column(BigInteger)
     checksum_sha256: Mapped[str | None] = mapped_column(String(64))
     storage_provider: Mapped[str] = mapped_column(
         String(30), default="MINIO", server_default="MINIO"

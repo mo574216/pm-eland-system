@@ -1031,6 +1031,23 @@ paths:
         '422': {$ref: '#/components/responses/ValidationError'}
 
   /entities/{entityId}/documents:
+    get:
+      tags: [Documents]
+      operationId: listEntityDocuments
+      summary: List workspace-authorized logical documents for an entity
+      parameters:
+        - $ref: '#/components/parameters/EntityId'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: Paginated logical documents with current-version summaries
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessEnvelope'
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
     post:
       tags: [Documents]
       operationId: uploadDocument
@@ -1061,6 +1078,130 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SuccessEnvelope'
+
+  /documents/{documentId}/versions:
+    get:
+      tags: [Documents]
+      operationId: listDocumentVersions
+      summary: List immutable version history in descending version order
+      parameters:
+        - name: documentId
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: Paginated immutable version history
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessEnvelope'
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+    post:
+      tags: [Documents]
+      operationId: uploadDocumentVersion
+      summary: Upload a new immutable version and make it current
+      parameters:
+        - name: documentId
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                comment:
+                  type: string
+                  maxLength: 10000
+      responses:
+        '202':
+          description: Immutable version accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessEnvelope'
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '413':
+          description: File exceeds the configured size limit
+        '415':
+          description: File metadata or type is not allowed
+
+  /document-versions/{versionId}/download:
+    get:
+      tags: [Documents]
+      operationId: getDocumentVersionDownload
+      summary: Authorize short-lived download access to one immutable version
+      parameters:
+        - name: versionId
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+      responses:
+        '200':
+          description: Short-lived exact-object download access
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessEnvelope'
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+
+  /document-versions/{versionId}/preview:
+    get:
+      tags: [Documents]
+      operationId: getDocumentVersionPreview
+      summary: Return safe native preview availability and short-lived access
+      parameters:
+        - name: versionId
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+      responses:
+        '200':
+          description: Preview availability or ready native preview access
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SuccessEnvelope'}
+        '202':
+          description: Preview conversion is queued
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SuccessEnvelope'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+
+  /documents/{documentId}:
+    get:
+      tags: [Documents]
+      operationId: getDocument
+      summary: Retrieve workspace-authorized logical document metadata
+      parameters:
+        - name: documentId
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+      responses:
+        '200':
+          description: Logical document and current-version metadata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessEnvelope'
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
 
   /workspaces/{workspaceId}/imports:
     post:

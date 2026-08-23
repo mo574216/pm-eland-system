@@ -46,6 +46,25 @@ class Settings(BaseSettings):
     storage_secure: bool = False
     storage_bucket: str = "pm-eland-documents"
     storage_presigned_expiry_seconds: int = Field(default=600, ge=60, le=900)
+    document_max_upload_bytes: int = Field(default=52_428_800, ge=1, le=1_073_741_824)
+    document_allowed_mime_by_extension: dict[str, list[str]] = Field(
+        default_factory=lambda: {
+            ".pdf": ["application/pdf"],
+            ".docx": ["application/vnd.openxmlformats-officedocument.wordprocessingml.document"],
+            ".xlsx": ["application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"],
+            ".csv": ["text/csv", "application/csv"],
+            ".png": ["image/png"],
+            ".jpg": ["image/jpeg"],
+            ".jpeg": ["image/jpeg"],
+            ".svg": ["image/svg+xml"],
+            ".bpmn": ["application/xml", "text/xml"],
+            ".xml": ["application/xml", "text/xml"],
+            ".vpp": ["application/octet-stream"],
+        }
+    )
+    document_download_allowed_scan_statuses: list[Literal["PENDING", "CLEAN"]] = Field(
+        default_factory=lambda: ["CLEAN"]
+    )
 
     @model_validator(mode="after")
     def validate_authentication_security(self) -> Self:

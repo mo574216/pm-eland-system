@@ -37,6 +37,8 @@ async def test_bootstrap_is_disabled_in_production() -> None:
         database_url="postgresql+psycopg://unused:unused@localhost/unused",
         jwt_secret="production-test-secret-at-least-32-characters",  # noqa: S106
         auth_cookie_secure=True,
+        storage_access_key="production-test-storage-access",
+        storage_secret_key="production-test-storage-secret",  # noqa: S106
     )
 
     with pytest.raises(RuntimeError, match="disabled in production"):

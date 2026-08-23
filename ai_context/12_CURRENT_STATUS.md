@@ -2134,6 +2134,428 @@ NEXT_TASK:
 DOC-BE-001 Storage Provider Abstraction.
 ```
 
+Storage provider abstraction implementation entry:
+
+```text
+DATE:
+2026-08-23
+
+MILESTONE:
+M4 Documents and Import
+
+TASKS_COMPLETED:
+DOC-BE-001 Storage Provider Abstraction
+
+TASKS_IN_PROGRESS:
+None
+
+SUMMARY:
+Added the async StorageProvider boundary and a MinioStorageProvider adapter for
+private uploads, deletion, existence checks, bucket initialization, and bounded
+presigned upload/download access. Added validated environment configuration and
+a factory that unwraps credentials only when constructing the adapter.
+
+FILES_CHANGED:
+Backend storage service, settings, MinIO dependency/lock, focused storage tests,
+one production-settings fixture, and current status documentation.
+
+DATABASE_CHANGES:
+None.
+
+API_CHANGES:
+None.
+
+TESTS_ADDED:
+Focused coverage verifies private-bucket operations, exact object scoping,
+five-minute URL expiry, rejection of unsafe path shapes before IO, missing-secret
+failure, and the maximum expiry bound.
+
+TEST_RESULTS:
+Focused Ruff and strict mypy checks pass; 12 storage/config/security tests pass;
+the frozen dependency lock resolves successfully using the repository-local cache.
+
+SECURITY_IMPACT:
+Buckets remain private, URLs are limited to 60–900 seconds, object keys reject
+absolute/traversal shapes, secrets use SecretStr and are never returned by the
+adapter, and provider failures expose stable non-sensitive messages.
+
+KNOWN_LIMITATIONS:
+The adapter is unit-tested against a faithful client fake; live MinIO integration
+is deferred until deployment services are available. Authorization must occur in
+the document service before requesting any presigned URL.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+DOC-BE-002 Upload First Document Version.
+```
+
+First document-version upload implementation entry:
+
+```text
+DATE:
+2026-08-23
+
+MILESTONE:
+M4 Documents and Import
+
+TASKS_COMPLETED:
+DOC-BE-002 Upload First Document Version
+
+TASKS_IN_PROGRESS:
+None
+
+SUMMARY:
+Added the authenticated multipart upload endpoint and transactional document
+service that creates a logical document plus immutable version 1, stores the
+binary under a server-generated private key, computes SHA-256, marks scanning
+pending, sets the current version, and emits a workspace-scoped audit record.
+
+FILES_CHANGED:
+Document API/dependency/schema/repository/service, router/application injection,
+file-policy settings and errors, document model type alignment, multipart
+dependency/lock, focused service/OpenAPI tests, and current status documentation.
+
+DATABASE_CHANGES:
+No new migration. DOC-DB-001 revision 0010 is consumed. The ORM file-size type
+was aligned with the migration's BIGINT definition.
+
+API_CHANGES:
+Implemented the already-published POST /api/v1/entities/{entity_id}/documents
+multipart contract with its canonical 202 success envelope.
+
+TESTS_ADDED:
+Focused tests cover permission-before-IO, workspace/entity ownership, extension
+and MIME pairing, PDF spoof detection, actual-size limits, safe generated keys,
+checksum/version/current linkage, audit emission, and orphan cleanup after a
+database failure. Generated OpenAPI multipart/202 behavior is also asserted.
+
+TEST_RESULTS:
+Focused Ruff and strict mypy checks pass; 9 combined document schema, storage,
+upload-service, and OpenAPI tests pass. The dependency lock includes and installs
+python-multipart successfully.
+
+SECURITY_IMPACT:
+The backend is authoritative for permission and workspace scope. Original names
+never influence object paths; unsafe filenames, disallowed extension/MIME pairs,
+oversized/empty files, and obvious signature mismatches are rejected before IO.
+Audit state excludes object keys and checksums. Failed persistence triggers
+best-effort private-object cleanup.
+
+KNOWN_LIMITATIONS:
+Deep malware analysis remains DOC-BE-006. Signature checks are deliberately
+lightweight and do not replace quarantined scanning. Live MinIO integration is
+still deferred to deployment-service availability.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+DOC-BE-003 Add Document Version.
+```
+
+Immutable document-version upload implementation entry:
+
+```text
+DATE:
+2026-08-23
+
+MILESTONE:
+M4 Documents and Import
+
+TASKS_COMPLETED:
+DOC-BE-003 Add Document Version
+
+TASKS_IN_PROGRESS:
+None
+
+SUMMARY:
+Added multipart upload of subsequent immutable versions. The service locks the
+accessible active logical document, allocates the next number, stores a new
+private object, preserves every previous row/object, advances the current pointer
+transactionally, and audits the before/after version identity.
+
+FILES_CHANGED:
+Document repository/service/API/schema, canonical and narrative API contracts,
+focused service/OpenAPI tests, and current status documentation.
+
+DATABASE_CHANGES:
+None. Existing DOC-DB-001 uniqueness and foreign-key constraints are consumed.
+
+API_CHANGES:
+Added POST /api/v1/documents/{document_id}/versions as multipart file plus optional
+comment, returning the canonical 202 document/version/scan-status envelope. The
+previously missing endpoint is now recorded in contracts/openapi.yaml and the API
+specification.
+
+TESTS_ADDED:
+Focused coverage proves row-lock use, monotonically allocated version 2, untouched
+version 1 identity/object key, current pointer advancement, comment persistence,
+audit before/after state, and generated multipart OpenAPI behavior.
+
+TEST_RESULTS:
+Focused Ruff and strict mypy checks pass; 10 combined document schema, storage,
+upload/version-service, and OpenAPI tests pass; canonical OpenAPI YAML parses.
+
+SECURITY_IMPACT:
+Active membership and DOCUMENT_UPLOAD are enforced before storage access; locked
+allocation prevents concurrent silent overwrite; every version uses a new
+server-generated key; all first-upload file security checks are reused.
+
+KNOWN_LIMITATIONS:
+Version history retrieval is implemented with the upcoming document panel/API
+work. Malware and preview state processing remain separate backlog tasks.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+DOC-BE-004 Download Access, while document metadata/history reads required by the
+frontend panel will be added with the smallest contract-aligned read slice.
+```
+
+Authorized document download implementation entry:
+
+```text
+DATE:
+2026-08-23
+
+MILESTONE:
+M4 Documents and Import
+
+TASKS_COMPLETED:
+DOC-BE-004 Download Access
+
+TASKS_IN_PROGRESS:
+None
+
+SUMMARY:
+Added authorized exact-version download access through a private, short-lived
+presigned URL. Version lookup is membership-scoped, DOCUMENT_READ is authoritative,
+and configured scan policy is evaluated before any object-storage URL is generated.
+
+FILES_CHANGED:
+Document repository/service/API/schema, scan-policy settings and stable exception,
+canonical/narrative API contracts, focused service/OpenAPI tests, and status docs.
+
+DATABASE_CHANGES:
+None.
+
+API_CHANGES:
+Added GET /api/v1/document-versions/{version_id}/download returning url and
+expires_at in the canonical success envelope. The route is recorded in both API
+contracts with 403/404/422 behavior.
+
+TESTS_ADDED:
+Focused coverage proves inaccessible versions, missing DOCUMENT_READ, and PENDING
+scan status never generate storage access; CLEAN versions generate a URL for only
+their exact object with the configured ten-minute expiry.
+
+TEST_RESULTS:
+Focused Ruff and strict mypy checks pass; 11 combined document schema, storage,
+upload/version/download, and OpenAPI tests pass; canonical OpenAPI YAML parses.
+
+SECURITY_IMPACT:
+Private-bucket access is generated only after membership, permission, and scan
+checks. Cross-workspace identifiers are hidden as not found. Default quarantine
+permits only CLEAN objects, and presigned expiry remains bounded to 5–15 minutes.
+
+KNOWN_LIMITATIONS:
+Uploads remain PENDING until DOC-BE-006 supplies malware-state transitions. The
+default policy intentionally prevents downloading unscanned content.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+DOC-FE-001 Document Panel with the contract-aligned document metadata/history read
+slice, prioritized as the next demo-visible feature. DOC-BE-005 remains required
+before DOC-FE-002 preview UI.
+```
+
+Document panel and metadata/history read implementation entry:
+
+```text
+DATE:
+2026-08-23
+
+MILESTONE:
+M4 Documents and Import
+
+TASKS_COMPLETED:
+DOC-FE-001 Document Panel
+Supporting contract-aligned document metadata/history read slice
+
+TASKS_IN_PROGRESS:
+None
+
+SUMMARY:
+Mounted a generic Persian RTL Document Panel in every entity detail page. Users
+with permissions can upload a logical document, see current scan/version state,
+open immutable history, upload subsequent versions, and download CLEAN versions.
+Added workspace-authorized list/detail/history reads needed by the panel.
+
+FILES_CHANGED:
+Backend document read repository/service/API/schemas, canonical/narrative API
+contracts and tests; frontend multipart client handling, generic document API/types/
+panel and test, entity-detail integration, Persian localization, and status docs.
+
+DATABASE_CHANGES:
+None.
+
+API_CHANGES:
+Added contract-aligned GET endpoints for entity documents, logical document
+metadata, and immutable version history. Responses exclude private object keys.
+
+TESTS_ADDED:
+Backend coverage verifies workspace/permission-scoped metadata/history reads with
+no storage access. Frontend coverage verifies list/current state, expandable
+immutable history, and multipart logical-document upload; entity-tab integration
+now verifies the document permission state.
+
+TEST_RESULTS:
+Focused backend Ruff/mypy and 7 read/service/OpenAPI tests pass. Frontend zero-
+warning ESLint, strict TypeScript, the DocumentPanel test, and the entity-detail
+integration test pass. Canonical OpenAPI YAML parses. Broad gates remain deferred
+to the demo checkpoint per quota policy.
+
+SECURITY_IMPACT:
+Backend membership and DOCUMENT_READ/UPLOAD remain authoritative. Metadata reads
+never require or expose storage credentials/object keys. Download stays disabled
+in the UI unless CLEAN, while the backend independently enforces scan policy.
+Client file checks are UX only and multipart boundaries are browser-generated.
+
+KNOWN_LIMITATIONS:
+Upload progress is represented by disabled/pending controls rather than byte-level
+progress because the shared fetch client does not expose upload progress events.
+The running local backend must be restarted before the browser can use new routes.
+Preview waits for DOC-BE-005 and DOC-FE-002.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+DOC-BE-005 Preview Workflow, followed by DOC-FE-002 Preview and Version History UI.
+```
+
+Native document preview workflow implementation entry:
+
+```text
+DATE:
+2026-08-23
+
+MILESTONE:
+M4 Documents and Import
+
+TASKS_COMPLETED:
+DOC-BE-005 Preview Workflow (P0 PDF/images)
+
+TASKS_IN_PROGRESS:
+None
+
+SUMMARY:
+Added authorized preview availability and short-lived exact-object access for
+CLEAN PDF, PNG, and JPEG versions. Native-preview capability is recorded at upload
+without bypassing quarantine. Conversion-dependent formats remain explicitly
+unavailable/queued, and raw SVG is never returned for embedding.
+
+FILES_CHANGED:
+Document upload/preview service, preview API/schema, canonical/narrative contracts,
+focused preview/OpenAPI tests, and current status documentation.
+
+DATABASE_CHANGES:
+None. Existing preview_status metadata is used; newly uploaded native-preview
+formats are marked READY while scan_status remains independently PENDING.
+
+API_CHANGES:
+Added GET /api/v1/document-versions/{version_id}/preview with 200 availability/
+ready responses and declared 202 behavior for queued conversion workflows.
+
+TESTS_ADDED:
+Focused coverage verifies PENDING quarantine, CLEAN PDF and raster IMAGE access,
+exact-object URL generation, bounded expiry, and refusal to preview raw SVG.
+
+TEST_RESULTS:
+Focused Ruff and strict mypy checks pass; 7 document-service/OpenAPI tests pass;
+canonical OpenAPI YAML parses.
+
+SECURITY_IMPACT:
+Membership, DOCUMENT_READ, and scan policy precede storage access. URLs stay
+private, exact-object, and bounded. No server-side PDF execution, raw SVG embed,
+Office macro execution, or in-process conversion was introduced.
+
+KNOWN_LIMITATIONS:
+Office preview conversion is P1 and requires an isolated background worker. Old
+rows created before this feature may retain NOT_REQUESTED until reprocessed.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+DOC-FE-002 Preview and Version History UI.
+```
+
+Document preview and version-history UI implementation entry:
+
+```text
+DATE:
+2026-08-23
+
+MILESTONE:
+M4 Documents and Import
+
+TASKS_COMPLETED:
+DOC-FE-002 Preview and Version History UI
+
+TASKS_IN_PROGRESS:
+None
+
+SUMMARY:
+Extended the generic Document Panel with backend-authorized preview access and a
+Persian RTL dialog for immutable versions. Backend-declared PDF previews render in
+a dedicated iframe and raster images render responsively; history, scan/preview
+states, version upload, and download remain available together.
+
+FILES_CHANGED:
+Frontend document types/API/panel, Persian localization, focused panel test, and
+current status documentation.
+
+DATABASE_CHANGES:
+None.
+
+API_CHANGES:
+None. The UI consumes the DOC-BE-005 preview contract.
+
+TESTS_ADDED:
+Focused interaction coverage verifies history expansion, preview request for the
+selected immutable version, safe PDF dialog rendering with the authorized URL,
+dialog closure, and the existing multipart upload flow.
+
+TEST_RESULTS:
+Zero-warning ESLint and strict application TypeScript pass; the focused Document
+Panel preview/history/upload interaction test passes. Broader gates remain deferred
+to the demo checkpoint per quota policy.
+
+SECURITY_IMPACT:
+The frontend renders only backend-declared PDF or IMAGE preview types, uses
+no-referrer embeds, and never infers/executes SVG or Office content. Preview buttons
+remain disabled unless scan and preview states are CLEAN/READY; backend policy is
+still authoritative.
+
+KNOWN_LIMITATIONS:
+Office conversion preview remains P1. Byte-level upload progress is still not
+available through the shared fetch client. New backend routes require a local API
+restart before browser use.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+IMP-DB-001 Import Schema, the next dependency-ready P0 backlog task. DOC-BE-006
+Malware Scan Workflow remains P1 security hardening.
+```
+
 ---
 
 # 27. Related Specifications
