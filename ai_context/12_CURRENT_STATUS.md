@@ -1056,6 +1056,51 @@ NEXT_TASK:
 REL-FE-001 Relationship Panel.
 ```
 
+Relationship frontend implementation entry:
+
+```text
+DATE:
+2026-08-23
+
+MILESTONE:
+M2 Metadata and Generic Entity Platform
+
+TASKS_COMPLETED:
+REL-FE-001 Relationship Panel
+
+TASKS_IN_PROGRESS:
+None
+
+TEST_RESULTS:
+Frontend zero-warning ESLint, strict TypeScript, 12 test files with 22 tests, and
+the production build pass. Component coverage verifies metadata/type and entity-name
+resolution plus generic relationship creation and deletion.
+
+SECURITY:
+The frontend uses RELATIONSHIP_MANAGE only to hide mutation controls as a UX guard.
+The backend remains authoritative for workspace access and all relationship reads and
+mutations. No relationship data is inferred or retained across workspace scopes.
+
+DATABASE_CHANGES:
+None.
+
+API_CHANGES:
+None. The panel consumes the REL-BE-001 contract.
+
+USER_VISIBLE_RESULT:
+The Relationships tab on every generic entity detail page now lists named incoming
+and outgoing relationships. Authorized users can select any metadata-defined active
+relationship type and target entity, create the link, and logically delete links.
+
+KNOWN_LIMITATIONS:
+The first panel creates outgoing links with empty relationship attributes. Editing
+relationship attributes and richer metadata administration are not specified MVP UI
+capabilities. The production bundle reports a non-blocking chunk-size warning.
+
+NEXT_TASK:
+FORM-DB-001 Form Schema.
+```
+
 ---
 
 # 13. Recommended Immediate Implementation Sequence

@@ -119,4 +119,19 @@ export const fa = {
     treeLabel: 'درخت موجودیت‌ها',
     version: 'نسخه',
   },
+  relationships: {
+    create: 'ایجاد رابطه',
+    delete: 'حذف رابطه',
+    direction: {
+      incoming: 'ورودی',
+      outgoing: 'خروجی',
+    },
+    empty: 'رابطه‌ای برای این موجودیت ثبت نشده است.',
+    invalid: 'این رابطه با محدودیت‌های تعریف‌شده سازگار نیست.',
+    loadFailed: 'دریافت روابط انجام نشد.',
+    loading: 'در حال دریافت روابط',
+    saveFailed: 'ذخیره رابطه انجام نشد.',
+    target: 'موجودیت مقصد',
+    type: 'نوع رابطه',
+  },
 } as const

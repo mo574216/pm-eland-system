@@ -13,9 +13,12 @@ import {
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useSelector } from 'react-redux'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
 
 import { listAttributes } from '../metadata/metadataApi'
+import { RelationshipPanel } from '../relationships/RelationshipPanel'
+import type { RootState } from '../../store/store'
 import { getEntity } from './entityApi'
 
 const tabKeys = ['overview', 'information', 'forms', 'documents', 'relationships', 'history'] as const
@@ -33,6 +36,9 @@ function displayValue(value: unknown): string {
 export function EntityDetailPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const canManageRelationships = useSelector((state: RootState) =>
+    state.auth.user?.permissions.includes('RELATIONSHIP_MANAGE'),
+  ) ?? false
   const { workspaceId, entityId } = useParams()
   const [activeTab, setActiveTab] = useState<TabKey>('overview')
   const entity = useQuery({
@@ -136,7 +142,15 @@ export function EntityDetailPage() {
         </Stack>
       ) : null}
 
-      {!['overview', 'information'].includes(activeTab) ? (
+      {activeTab === 'relationships' ? (
+        <RelationshipPanel
+          canManage={canManageRelationships}
+          entityId={entityId}
+          workspaceId={workspaceId}
+        />
+      ) : null}
+
+      {!['overview', 'information', 'relationships'].includes(activeTab) ? (
         <Alert severity="info">{t('entities.sectionPending')}</Alert>
       ) : null}
     </Stack>
