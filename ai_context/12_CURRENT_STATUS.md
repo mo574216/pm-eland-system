@@ -3340,6 +3340,79 @@ NEXT_TASK:
 Paused at user request before IMP-FE-005; awaiting usage-scenario guidance.
 ```
 
+Usage-scenario specification alignment entry:
+
+```text
+DATE:
+2026-08-25
+
+MILESTONE:
+Cross-cutting product scope and governed-delivery planning
+
+TASKS_COMPLETED:
+Usage scenario incorporation and specification alignment
+GOV-ADR-001 Governance Authority Model
+
+TASKS_IN_PROGRESS:
+None
+
+SUMMARY:
+Incorporated the user-provided catalog of 343 scenarios across Administrator,
+Project Manager, Project Officer, Technical Reviewer, Contractor Project Leader,
+Contractor Team Member, and Employer Representative. Accepted an architecture
+decision that keeps baseline personas configurable while separating contractor
+internal review, formal submission, monitoring, project review/recommendation,
+technical recommendation/sign-off, and employer acceptance. Expanded requirements,
+technical specifications, security rules, tests, backlog, and roadmap around a
+generic governed-deliverable vertical slice.
+
+FILES_CHANGED:
+Project context; system, database, API, backend, frontend, test, and security
+specifications; backlog and roadmap; complete scenario catalog and its traceability
+baseline; ADR-0006 and ADR index; agent instructions; current status.
+
+DATABASE_CHANGES:
+None. Future GOV/DEL/WORK/COM/ACC tasks now explicitly require Alembic migrations.
+
+API_CHANGES:
+No published OpenAPI operations changed. Narrative contract rules now require typed,
+versioned, idempotent governance APIs and prohibit an ambiguous generic approval
+endpoint. Concrete paths/payloads remain a contract-first step of their backlog tasks.
+
+TESTS_ADDED:
+No executable tests. The test specification now defines authority-matrix,
+transition/version/audit integrity, governed-resource isolation, acceptance-gate,
+conditional-closure, communication-visibility, and governed-delivery E2E cases.
+
+TEST_RESULTS:
+Git diff whitespace validation passes. All 16 changed/new Markdown files have
+balanced code fences; the system requirements and backlog contain no duplicate IDs;
+the detailed catalog contains all 343 unique scenario IDs and exactly preserves the
+source body; and published shared contracts have no diff. Runtime suites are
+unaffected because no code, schema, or published contract was changed.
+
+SECURITY_IMPACT:
+Formal authority lanes, immutable/version-bound decisions, workspace-constrained
+participants and targets, safe notification visibility, server-side acceptance
+gates, and audit requirements are now explicit. Permission-contract/seed expansion
+is gated by AUTH-DB-002 and DG-09 so current runtime authorization is not silently
+changed by documentation alone.
+
+KNOWN_LIMITATIONS:
+The scenario baseline establishes product scope and delivery order; the new P1
+governance, activity, communication, monitoring, and acceptance capabilities are not
+yet implemented. The detailed permission codes and public API schemas require DG-09
+and contract-first task work. Advanced ERP, budgeting, payroll, timesheets, resource
+optimization, and unrestricted chat remain out of scope.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+IMP-FE-005 remains the smallest demo-visible completion of the current import slice.
+After import E2E, resolve DG-09 and begin the governed-deliverable vertical slice.
+```
+
 ---
 
 # 27. Related Specifications
@@ -3357,4 +3430,7 @@ Paused at user request before IMP-FE-005; awaiting usage-scenario guidance.
 09_TEST_SPECIFICATION.md
 10_DEPLOYMENT_GUIDE.md
 11_SECURITY_SPECIFICATION.md
+13_IMPLEMENTATION_ROADMAP.md
+14_PROJECT_USAGE_SCENARIOS.md
+15_DETAILED_USAGE_SCENARIOS.md
 ```

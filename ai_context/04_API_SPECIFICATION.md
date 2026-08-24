@@ -1970,6 +1970,54 @@ Resolve comment.
 
 ---
 
+# 16.4 Governed Delivery API Contract Rules
+
+The initial review endpoints cover the MVP comment flow only. They SHALL NOT be
+interpreted as technical sign-off, project-manager recommendation, or employer
+acceptance.
+
+Before GOV/DEL/SUB/ACC implementation, canonical OpenAPI paths and schemas SHALL be
+defined for generic workflow definitions/versions, instances/actions/transitions,
+deliverables/assignments, immutable submissions, version-bound review outcomes,
+acceptance packages/decisions, and conditions/evidence.
+
+Every transition request SHALL include optimistic concurrency or an equivalent
+current-state precondition and an idempotency key for externally repeatable formal
+actions. Responses SHALL identify:
+
+```text
+workspace_id
+resource/instance ID
+workflow definition version
+previous and current state
+performed action and authority kind
+actor and timestamp
+bound artifact/submission version where applicable
+available next actions (UX hint only)
+```
+
+Separate routes or explicit discriminated commands SHALL represent internal review,
+formal submission, withdrawal, technical outcome/sign-off, manager recommendation,
+employer decision, and condition verification. A generic untyped `/approve` endpoint
+is prohibited.
+
+Cross-workspace or unauthorized IDs SHALL use the standard safe not-found/access
+behavior. Bulk operations SHALL be bounded, single-workspace, and atomic. Formal
+history records SHALL expose create/transition operations but no ordinary update or
+delete endpoint.
+
+---
+
+# 16.5 Work, Communication, and Notification Contract Rules
+
+Work items, dependencies, risks/issues, threads, notes, announcements, reminders,
+and notifications SHALL use typed/discriminated contracts with explicit workspace,
+target kind/ID, visibility, status, assignment/recipient, and version fields where
+mutable. APIs SHALL not accept arbitrary recipient expansion, workflow expressions,
+query code, or polymorphic target kinds outside server allowlists.
+
+---
+
 # 17. Dashboard API
 
 # 17.1 POST /workspaces/{workspace_id}/dashboards
@@ -2234,6 +2282,11 @@ DOC-FR-*   → /documents/*, /document-versions/*
 IMP-FR-*   → /imports/*
 PHASE-FR-* → /phases/*
 REV-FR-*   → /reviews/*
+GOV-FR-*   → contract-first workflow/deliverable/submission APIs
+WORK-FR-*  → contract-first work/risk/issue APIs
+COM-FR-*   → contract-first thread/announcement/notification APIs
+ACC-FR-*   → contract-first acceptance/condition APIs
+CONF-FR-*  → contract-first configuration lifecycle APIs
 RPT-FR-*   → /dashboards/*
 AUD-FR-*   → /audit/*
 ```
@@ -2255,5 +2308,7 @@ AUD-FR-*   → /audit/*
 10_DEPLOYMENT_GUIDE.md
 11_SECURITY_SPECIFICATION.md
 12_CURRENT_STATUS.md
+13_IMPLEMENTATION_ROADMAP.md
+14_PROJECT_USAGE_SCENARIOS.md
 contracts/openapi.yaml
 ```

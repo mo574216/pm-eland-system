@@ -1123,6 +1123,43 @@ CREATE TABLE phase_deliverables (
 );
 ```
 
+The initial `phase_deliverables` structure is an MVP association. Before governed
+delivery is implemented, `DEL-DB-001` SHALL evolve it through Alembic into a generic
+versioned deliverable/submission model. The four-state check above SHALL NOT be used
+as the full contractor-review, external-review, or acceptance workflow.
+
+---
+
+# 15.3 Versioned Governance Model
+
+`GOV-DB-001`, `DEL-DB-001`, and `ACC-DB-001` SHALL define normalized generic records
+for:
+
+```text
+workflow definitions and immutable published versions
+state/transition definitions and policy configuration
+workflow instances and append-only transition events
+generic deliverables and scoped assignments
+immutable submission/resubmission packages and withdrawals
+version-bound review outcomes and sign-offs
+phase/final acceptance packages and decisions
+acceptance conditions, evidence, verification, and closure
+```
+
+Every operational record SHALL carry `workspace_id` directly when needed for secure
+querying and composite workspace integrity. Referenced entities, documents, forms,
+phases, users, and configuration SHALL belong to the same workspace. Transition and
+decision history SHALL not be updated in place.
+
+Workflow status names and transition graphs are metadata. Stable engine-level states
+MAY be constrained where required for idempotency, publication, or immutable event
+integrity, but project-specific workflow labels SHALL NOT become SQL check values.
+
+`WORK-DB-001` and `COM-DB-001` SHALL similarly use generic workspace-scoped work
+items/dependencies/risks/issues and explicit-kind communication/notification records.
+Dependencies require cycle prevention. Notification and thread targets require
+validated polymorphic references or a supported typed target registry.
+
 ---
 
 # 16. Review and Comment Model
@@ -1599,6 +1636,11 @@ DOC-FR-*   → documents, document_versions
 IMP-FR-*   → import_profiles, import_mappings, import_jobs, import_conflicts
 PHASE-FR-* → phases, phase_deliverables
 REV-FR-*   → review_comments
+GOV-FR-*   → workflow definitions/versions/instances/transition events, deliverables/submissions
+WORK-FR-*  → generic work items/dependencies/risks/issues
+COM-FR-*   → typed threads/messages/announcements/notifications
+ACC-FR-*   → acceptance packages/decisions/conditions/evidence
+CONF-FR-*  → versioned configuration packages/change history
 RPT-FR-*   → dashboards
 AUD-FR-*   → audit_logs
 ```
@@ -1619,4 +1661,6 @@ AUD-FR-*   → audit_logs
 10_DEPLOYMENT_GUIDE.md
 11_SECURITY_SPECIFICATION.md
 12_CURRENT_STATUS.md
+13_IMPLEMENTATION_ROADMAP.md
+14_PROJECT_USAGE_SCENARIOS.md
 ```

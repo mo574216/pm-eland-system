@@ -881,6 +881,59 @@ Unlock is especially sensitive and SHALL be audited.
 
 ---
 
+# 49.1 Governed Workflow Authority Separation
+
+Internal contractor review, formal submission, project monitoring, project-manager
+review/recommendation, technical review/sign-off, and employer acceptance SHALL use
+separate permission codes and transition policies. Backend services SHALL authorize
+the requested transition from effective workspace permissions, target assignment,
+workflow state, and configured policy; they SHALL NOT infer authority from a
+frontend route or a literal role name.
+
+Every formal transition SHALL:
+
+- constrain actor, target, referenced artifacts, recipients, and configuration to
+  the same workspace;
+- bind decisions to immutable document/form/submission versions where applicable;
+- reject replay, stale state, invalid sequencing, and unauthorized withdrawal or
+  reopening;
+- preserve actor, authority context, timestamp, reason/statement, and prior state;
+- create an immutable audit event in the same transaction;
+- avoid revealing cross-workspace target existence.
+
+Technical recommendation or sign-off SHALL NOT authorize contractual acceptance.
+Monitoring permission SHALL NOT authorize project-manager decisions. Contribution
+permission SHALL NOT authorize formal external submission.
+
+---
+
+# 49.2 Acceptance Record Security
+
+Phase/final acceptance packages, decisions, and conditions are integrity-critical.
+Acceptance evidence and referenced versions SHALL be immutable after decision.
+Corrections SHALL use a new governed event, superseding record, or reopening flow;
+history SHALL never be overwritten.
+
+Final acceptance SHALL be evaluated server-side against configured mandatory phase,
+deliverable, finding, and condition gates. Any supported exception requires a
+separate explicit permission, mandatory reason, and audit record.
+
+---
+
+# 49.3 Contextual Communication and Notification Security
+
+Threads, internal notes, comments, announcements, reminders, and notifications SHALL
+carry explicit workspace, target, kind, and visibility scope. Recipient selection
+SHALL be authorized and bounded. Notification payloads and links SHALL not reveal a
+resource the recipient cannot currently access; access SHALL be rechecked when the
+target is opened.
+
+Internal contractor notes, Project Officer monitoring notes, formal review comments,
+and employer comments SHALL remain distinguishable. Content SHALL use the standard
+XSS, upload, audit-redaction, retention, and rate-limit controls.
+
+---
+
 # 50. Audit Security
 
 Audit records SHALL be append-only.
@@ -1478,4 +1531,6 @@ A feature is security-compliant when:
 09_TEST_SPECIFICATION.md
 10_DEPLOYMENT_GUIDE.md
 12_CURRENT_STATUS.md
+13_IMPLEMENTATION_ROADMAP.md
+14_PROJECT_USAGE_SCENARIOS.md
 ```

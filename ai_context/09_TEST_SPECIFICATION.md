@@ -951,6 +951,48 @@ P1:
 - revision requested,
 - preserve author/time.
 
+# TEST-GOV-001 — Authority Separation Matrix
+
+For every governed transition, test allow and deny cases for the seven baseline
+personas plus a custom role. At minimum prove:
+
+- contractor contribution does not grant formal submission,
+- contractor formal submission does not grant project review,
+- Project Officer monitoring does not grant Project Manager decisions,
+- technical recommendation/sign-off does not grant employer acceptance,
+- employer acceptance does not grant contractor work management,
+- frontend-hidden actions remain rejected through direct API calls.
+
+# TEST-GOV-002 — Transition Version and Audit Integrity
+
+Each internal review, submission, withdrawal, resubmission, recommendation, sign-off,
+reopening, and acceptance transition SHALL retain workflow-definition version,
+target artifact version, actor, authority context, time, prior/resulting state, and
+an immutable audit event.
+
+# TEST-GOV-003 — Governed Resource Isolation
+
+Cross-workspace IDs for workflows, assignments, submissions, comments, threads,
+notifications, acceptance packages, and conditions SHALL be denied without resource
+existence leakage. Mixed-workspace bulk requests SHALL fail atomically.
+
+# TEST-ACC-001 — Acceptance Gate Enforcement
+
+Final acceptance SHALL be rejected while any configured mandatory phase,
+deliverable, critical finding, or acceptance condition remains unsatisfied.
+
+# TEST-ACC-002 — Conditional Acceptance Closure
+
+Only configured verifiers may verify evidence; conditional acceptance becomes full
+acceptance only when every mandatory condition is satisfied. Rejection and reopening
+retain the earlier evidence and decisions.
+
+# TEST-COM-001 — Communication Visibility
+
+Internal contractor notes, Project Officer monitoring notes, formal review comments,
+employer comments, threads, announcements, reminders, and notifications SHALL obey
+their explicit visibility and linked-target authorization.
+
 ---
 
 # 28. Dashboard Tests
@@ -1248,6 +1290,31 @@ Expected all rejected.
 
 ---
 
+# 45.1 Governed Delivery and Acceptance Scenario
+
+## E2E-003
+
+```text
+1. Administrator publishes a configurable deliverable workflow.
+2. Contractor Team Member prepares a version and requests internal review.
+3. Verify the Team Member cannot formally submit it.
+4. Contractor Project Leader returns one internal correction.
+5. Team Member revises and returns the work.
+6. Contractor Project Leader marks it ready and formally submits the exact version.
+7. Project Officer sees the queue and records a monitoring flag but cannot decide it.
+8. Technical Reviewer records a major comment and requests revision.
+9. Contractor resolves the assigned action through internal review and resubmission.
+10. Technical Reviewer recommends approval; verify this is not acceptance.
+11. Project Manager recommends phase acceptance.
+12. Employer Representative conditionally accepts with one explicit condition.
+13. Authorized verifier accepts evidence for the condition.
+14. Employer Representative closes conditional acceptance.
+15. Verify immutable submission, review, decision, condition, notification, and audit history.
+16. Repeat protected reads/transitions with a foreign-workspace actor and verify denial.
+```
+
+---
+
 # 46. Regression Gate
 
 Before merging to protected branch:
@@ -1401,4 +1468,6 @@ A feature is considered tested when:
 10_DEPLOYMENT_GUIDE.md
 11_SECURITY_SPECIFICATION.md
 12_CURRENT_STATUS.md
+13_IMPLEMENTATION_ROADMAP.md
+14_PROJECT_USAGE_SCENARIOS.md
 ```

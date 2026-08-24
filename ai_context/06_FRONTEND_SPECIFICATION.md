@@ -860,6 +860,54 @@ Comments SHALL display:
 - text,
 - status.
 
+Review UI SHALL identify the authority and lifecycle kind of each action. Internal
+contractor feedback, formal reviewer comments, technical recommendation/sign-off,
+project-manager recommendation, and employer acceptance SHALL not share ambiguous
+"Approve" copy or controls.
+
+---
+
+# 36.1 Governed Deliverable Workspace
+
+One metadata-driven deliverable workspace SHALL compose reusable panels for:
+
+```text
+requirements and assignment
+structured data and repository files
+version/package history
+internal review
+formal submission
+external comments and revision actions
+technical outcome
+project-manager recommendation
+acceptance status and conditions
+audit timeline
+```
+
+The backend SHALL return current state and authorized available actions. Components
+MAY hide unavailable actions for usability, but every action remains backend
+authorized. The UI SHALL always show which artifact version a decision concerns.
+
+---
+
+# 36.2 Role-Appropriate Workspaces
+
+Personal, contractor-leader, Project Officer, Project Manager, technical-reviewer,
+and employer views SHALL be reusable projections/widgets over common APIs—not
+persona-specific data stores or hard-coded domain pages. Each view should prioritize
+assigned work, deadlines, overdue/blocking items, review queues, comments,
+completeness, decisions, and notifications appropriate to the actor.
+
+---
+
+# 36.3 Contextual Communication and Notifications
+
+Threads and notifications SHALL display their kind, visibility, linked target,
+participants, time, read/action-required state, and safe navigation. Internal notes,
+formal comments, clarifications, announcements, and reminders SHALL remain visually
+and semantically distinguishable. This feature is contextual project communication,
+not unrestricted chat.
+
 ---
 
 # 37. Relationship Panel
@@ -1383,6 +1431,11 @@ DOC-FR-*   → DocumentPanel
 IMP-FR-*   → ImportWizard
 PHASE-FR-* → phase UI
 REV-FR-*   → review components
+GOV-FR-*   → governed deliverable workspace and transition history
+WORK-FR-*  → personal/management queues and planning components
+COM-FR-*   → contextual conversation and notification components
+ACC-FR-*   → acceptance decision/condition workspace
+CONF-FR-*  → configuration lifecycle UI
 RPT-FR-*   → dashboard components
 AUD-FR-*   → audit viewer
 ```
@@ -1404,5 +1457,7 @@ AUD-FR-*   → audit viewer
 10_DEPLOYMENT_GUIDE.md
 11_SECURITY_SPECIFICATION.md
 12_CURRENT_STATUS.md
+13_IMPLEMENTATION_ROADMAP.md
+14_PROJECT_USAGE_SCENARIOS.md
 contracts/openapi.yaml
 ```

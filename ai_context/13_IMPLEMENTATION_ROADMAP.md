@@ -1,12 +1,12 @@
 # Implementation Roadmap
 
-**Status:** Informational / Execution Guide  
-**Derived from:** `00_PROJECT_CONTEXT.md` through `12_CURRENT_STATUS.md`, `08_TASK_BACKLOG.md`, shared contracts, and accepted ADRs  
+**Status:** Informational / Execution Guide
+**Derived from:** `00_PROJECT_CONTEXT.md` through `15_DETAILED_USAGE_SCENARIOS.md`, `08_TASK_BACKLOG.md`, shared contracts, and accepted ADRs
 **Baseline date:** 2026-08-22
 
 ## 1. Outcome
 
-Deliver the MVP as a Persian-first, RTL, metadata-driven enterprise architecture and project knowledge platform. The implementation is complete only when the canonical end-to-end scenario passes: authentication, workspace isolation, configurable metadata, generic hierarchy, dynamic forms, immutable document versions, safe XLSX/CSV import, phase locking, dashboards, and immutable audit history.
+Deliver the MVP as a Persian-first, RTL, metadata-driven enterprise architecture and project knowledge platform, then deliver the approved governed-project scenarios through reusable workflow engines. The first technical MVP remains proven by authentication, workspace isolation, configurable metadata, generic hierarchy, dynamic forms, immutable document versions, safe XLSX/CSV import, phase locking, dashboards, and immutable audit history. The governed-delivery release additionally requires the authority-separated submission, review, revision, acceptance, communication, monitoring, and configuration-lifecycle scenarios in `14_PROJECT_USAGE_SCENARIOS.md`.
 
 The architectural invariant for every milestone is:
 
@@ -53,6 +53,7 @@ The repository uses `ai_context/`. Canonical repository guidance now references 
 | DG-06 | DOC-BE-006 | Select malware scanner integration (OD-009) | Security/deployment decision |
 | DG-07 | DR-001 | Approve production RPO/RTO (OD-013) | Operations decision and recovery plan |
 | DG-08 | Date/number-intensive frontend work | Choose Jalali/Gregorian calendar and Persian/Latin display digits (OD-015) | Localization policy update and centralized formatter tests |
+| DG-09 | GOV-DB-001 / AUTH-DB-002 | Define granular contribution, submission, monitoring, review, recommendation, sign-off, acceptance, condition-verification, and configuration permissions | Updated permission contract, seed migration, and authority-matrix tests |
 
 OD-002 is resolved for the MVP by the accepted architecture direction: JSONB is canonical. OD-003, OD-004, OD-007, OD-010, OD-011, OD-012, and OD-014 do not block foundation work and must not expand MVP scope.
 
@@ -177,9 +178,10 @@ Exit gate:
 - MERGE, REPLACE, and SKIP are explicit; unresolved conflicts block commit.
 - Import commit is transactional, idempotent, workspace-scoped, and audited.
 
-### M5 - Phase Control, Audit, Review, and Reporting
+### M5 - Phase Control, Governed Delivery, Review, Acceptance, and Reporting
 
-**Goal:** Managers control progression and can observe trusted system state.
+**Goal:** Each actor can perform its governed project role without crossing authority
+lanes, and managers can observe trusted system state.
 
 Execution order:
 
@@ -187,9 +189,13 @@ Execution order:
 2. PHASE-DB-001, PHASE-BE-001, PHASE-BE-002, and PHASE-FE-001.
 3. RPT-DB-001, RPT-BE-001, and RPT-FE-001 for server-defined MVP KPIs.
 4. Complete P1 audit query/viewer work: AUD-BE-002 and AUD-FE-001.
-5. Complete P1 review flow: REV-DB-001, REV-BE-001, and REV-FE-001.
-6. Complete P1 configurable dashboard work only through a safe metadata-driven query model; arbitrary SQL is prohibited.
-7. Complete TEST-LOCK-001 and audit/dashboard isolation tests.
+5. Resolve DG-09 and implement AUTH-DB-002 before exposing governed transitions.
+6. Implement GOV-DB-001/GOV-BE-001, then the DEL/SUB deliverable vertical slice.
+7. Extend review with version-bound outcomes; implement ACC phase/final acceptance
+   and conditions without conflating technical recommendation with acceptance.
+8. Add generic WORK, COM, and notification engines, then role-appropriate projections.
+9. Complete P1 configurable dashboard work only through a safe metadata-driven query model; arbitrary SQL is prohibited.
+10. Complete TEST-LOCK-001, QA-002, and audit/dashboard/isolation tests.
 
 Exit gate:
 
@@ -198,6 +204,12 @@ Exit gate:
 - Audit records are append-only and redact secrets/sensitive values.
 - Dashboard KPIs are correct and cannot aggregate across workspaces.
 - P1 review history preserves author, timestamp, target, status, and revisions.
+- A contractor contributor cannot formally submit unless separately authorized.
+- Contractor readiness, formal submission, project review, technical recommendation,
+  and employer acceptance are distinct, version-bound, audited transitions.
+- Conditional phase acceptance creates verifiable obligations and cannot become full
+  acceptance while mandatory conditions remain open.
+- Project Officers can monitor and flag without acquiring Project Manager decisions.
 
 ### M6 - Production Hardening and Release
 
@@ -205,7 +217,7 @@ Exit gate:
 
 Execution order:
 
-1. Run QA-001 canonical and negative Playwright scenarios.
+1. Run QA-001 and QA-002 canonical and negative Playwright scenarios.
 2. Run SEC-001 across authentication, BOLA/IDOR, workspace isolation, uploads, imports, XSS, CORS, secrets, object storage, and audit tampering.
 3. Complete PERF-001 with representative entity, hierarchy, form, relationship, audit, import, and dashboard data.
 4. Complete OBS-001 for structured logs, correlation IDs, metrics, health/readiness, and error monitoring.
@@ -235,7 +247,11 @@ Use thin, demonstrable slices within each milestone:
 5. **Document slice:** upload, version, preview, and authorize download.
 6. **Import slice:** inspect, map, dry-run, resolve, commit, and audit.
 7. **Control slice:** dashboard, phase lock, rejected analyst edit.
-8. **Release slice:** full E2E, security, performance, recovery, and deployment evidence.
+8. **Governed deliverable slice:** contributor draft, internal review, leader
+   submission, external review, revision, recommendation, and phase acceptance.
+9. **Operations slice:** personal/monitoring queues, contextual notifications,
+   risks/issues, readiness, and acceptance status.
+10. **Release slice:** full E2E, security, performance, recovery, and deployment evidence.
 
 Each slice must preserve the API envelope, permission registry, workspace scope, audit expectations, and test traceability.
 
@@ -253,12 +269,15 @@ Each slice must preserve the API envelope, permission registry, workspace scope,
 
 ## 8. Immediate Next Actions
 
-1. Begin ENT-DB-001 with the generic entity-object schema.
-2. Continue TEST-WS-001 with each new workspace-scoped resource.
-3. Resolve DG-08 before date- or number-intensive frontend workflows.
+1. Finish IMP-FE-005 so the currently implemented import workflow is demonstrable.
+2. Implement the focused import E2E and preserve TEST-WS-001 coverage.
+3. Resolve DG-09, then begin the generic governed-deliverable slice with
+   GOV-DB-001/GOV-BE-001 rather than adding persona-specific pages.
+4. Resolve DG-08 before deadline-heavy work-planning and monitoring UI.
 
-The next implementation handoff should begin `ENT-DB-001`; the generic metadata
-schema, APIs, validator, and administration UI are complete.
+The next implementation handoff remains `IMP-FE-005`. The first scenario-aligned
+demo after the existing MVP slice is the governed deliverable flow defined in
+`14_PROJECT_USAGE_SCENARIOS.md` and QA-002.
 
 ## 9. Roadmap Maintenance
 

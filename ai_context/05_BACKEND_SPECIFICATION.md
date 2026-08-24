@@ -992,6 +992,63 @@ request_revision()
 
 Review comments SHALL preserve author and timestamp.
 
+Formal review outcomes SHALL also preserve the exact submission/document/form
+version assessed. Comment resolution, technical recommendation, technical sign-off,
+project-manager recommendation, and employer acceptance are different commands and
+permissions; ReviewService SHALL NOT expose one generic `approve()` operation that
+can cross those authority boundaries.
+
+---
+
+# 37.1 Workflow Policy Service
+
+The governed-delivery engine SHALL provide generic operations such as:
+
+```text
+available_actions()
+start_instance()
+transition()
+reopen()
+transition_history()
+```
+
+`available_actions()` is a presentation aid. `transition()` SHALL independently
+reload and lock current state, verify workspace membership, effective permission,
+assignment, published definition version, configured preconditions, target evidence,
+and optimistic/idempotency inputs inside the write transaction.
+
+Transition handlers SHALL dispatch stable generic side effects through an allowlist;
+workflow configuration SHALL NOT execute arbitrary code, expressions, imports, SQL,
+or client-provided callbacks.
+
+---
+
+# 37.2 Deliverable and Submission Service
+
+Preparation, internal review, ready-for-submission, formal submission, permitted
+withdrawal, revision, and resubmission SHALL operate on generic deliverables and
+immutable packages. Formal submission SHALL capture the exact included versions and
+shall be restricted independently from contribution/edit permission.
+
+---
+
+# 37.3 Acceptance Service
+
+AcceptanceService SHALL assemble authorized immutable evidence packages and enforce
+configured phase/final gates. Accept, conditionally accept, reject, verify condition,
+reopen, and close conditional acceptance are explicit transactional commands with
+separate permission/policy checks and audit records.
+
+---
+
+# 37.4 Contextual Communication and Monitoring Services
+
+CommunicationService SHALL validate thread kind, visibility, participants, linked
+target, and recipient access. Notification generation SHALL be idempotent and SHALL
+recheck target authorization on read/navigation. Monitoring and dashboard services
+SHALL build permission-aware projections; they SHALL NOT duplicate canonical work,
+submission, review, or acceptance state.
+
 ---
 
 # 38. Dashboard Service
@@ -1487,6 +1544,11 @@ DOC-FR-*   → DocumentService, StorageProvider, workers
 IMP-FR-*   → ImportService, ImportParser, ImportConflictPolicy
 PHASE-FR-* → PhaseService, LockPolicyService
 REV-FR-*   → ReviewService
+GOV-FR-*   → WorkflowPolicyService, DeliverableService, SubmissionService
+WORK-FR-*  → WorkItemService, RiskIssueService, MonitoringService
+COM-FR-*   → CommunicationService, NotificationService
+ACC-FR-*   → AcceptanceService
+CONF-FR-*  → ConfigurationLifecycleService
 RPT-FR-*   → DashboardService
 AUD-FR-*   → AuditService
 ```
@@ -1508,5 +1570,7 @@ AUD-FR-*   → AuditService
 10_DEPLOYMENT_GUIDE.md
 11_SECURITY_SPECIFICATION.md
 12_CURRENT_STATUS.md
+13_IMPLEMENTATION_ROADMAP.md
+14_PROJECT_USAGE_SCENARIOS.md
 contracts/openapi.yaml
 ```

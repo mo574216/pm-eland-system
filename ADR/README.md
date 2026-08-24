@@ -59,6 +59,7 @@ Supersedes / Superseded By
 
 ## Current ADRs
 
+- `ADR-0006-configurable-governance-authority-lanes.md` - ACCEPTED
 - `ADR-0005-rtl-portal-experience.md` - ACCEPTED
 - `ADR-0004-bearer-access-and-rotating-refresh-sessions.md` - ACCEPTED
 - `ADR-0003-persian-first-localization.md` — ACCEPTED

@@ -1300,6 +1300,291 @@ Arbitrary browser SQL prohibited.
 
 ---
 
+# 9.1 M5A — Governed Deliverable Vertical Slice
+
+These tasks implement the first scenario-aligned demo from
+`14_PROJECT_USAGE_SCENARIOS.md`. They SHALL use generic configurable workflow and
+deliverable engines; persona names are permission profiles, not code branches.
+
+# TASK GOV-ADR-001 — Governance Authority Model
+
+**Priority:** P0 before governed-delivery implementation
+**Owner:** Architecture Agent
+**Requirements:** GOV-FR-001 through GOV-FR-008
+
+Accepted by `ADR-0006`.
+
+---
+
+# TASK AUTH-DB-002 — Governance Permission and Baseline Role Expansion
+
+**Priority:** P0 before governed-delivery implementation
+**Owner:** Database Agent + Backend Agent + Security Agent
+**Dependencies:** GOV-ADR-001, AUTH-DB-001
+
+Update `contracts/permissions.yaml`, the backend permission enum, and an idempotent
+seed migration with separate generic permissions for contribution, formal
+submission, monitoring, project review/recommendation, technical review/sign-off,
+employer acceptance, condition verification, communication, and configuration.
+Seed the seven scenario personas as editable baseline profiles while retaining a
+documented compatibility/migration path for existing assignments.
+
+Acceptance criteria:
+
+- [ ] no service authorizes by literal role name,
+- [ ] baseline grants implement the ADR-0006 authority matrix,
+- [ ] Team Member preparation does not grant formal submission,
+- [ ] technical review/sign-off does not grant employer acceptance,
+- [ ] Project Officer monitoring does not grant Project Manager decisions,
+- [ ] contract, enum, seed migration, and authorization tests agree.
+
+---
+
+# TASK GOV-DB-001 — Versioned Workflow and Transition Schema
+
+**Priority:** P1
+**Owner:** Database Agent
+**Dependencies:** GOV-ADR-001, AUTH-DB-002, WS-DB-001, AUD-DB-001
+
+Store generic workflow definitions/versions, states, transitions, instances, and
+immutable transition events. Do not create persona- or deliverable-type-specific
+tables.
+
+---
+
+# TASK GOV-BE-001 — Workflow Policy and Transition Engine
+
+**Priority:** P1
+**Owner:** Backend Agent + Security Agent
+**Dependencies:** GOV-DB-001, AUTH-BE-002
+
+Acceptance criteria:
+
+- [ ] published definition version is retained by each instance,
+- [ ] transition eligibility is enforced server-side from permission, assignment,
+  state, and configured policy,
+- [ ] invalid and cross-workspace transitions reveal no protected target,
+- [ ] every transition is transactional and audited,
+- [ ] internal review, submission, recommendation, and acceptance cannot substitute
+  for one another.
+
+---
+
+# TASK DEL-DB-001 — Generic Deliverable and Submission Schema
+
+**Priority:** P1
+**Owner:** Database Agent
+**Dependencies:** GOV-DB-001, DOC-DB-001, PHASE-DB-001
+
+Store metadata-defined deliverables, assignments, package contents, immutable
+submission/resubmission records, recipients, and withdrawal history.
+
+---
+
+# TASK DEL-BE-001 — Deliverable Preparation and Internal Review API
+
+**Priority:** P1
+**Owner:** Backend Agent
+**Dependencies:** DEL-DB-001, GOV-BE-001, DOC-BE-003
+
+Supports contributor drafts, required-content validation, contractor internal
+review, correction, and ready-for-submission transition.
+
+---
+
+# TASK SUB-BE-001 — Formal Submission and Revision API
+
+**Priority:** P1
+**Owner:** Backend Agent + Security Agent
+**Dependencies:** DEL-BE-001, REV-BE-001
+
+Supports leader-controlled submission, permitted withdrawal, version-bound review,
+revision packages, and resubmission with complete provenance.
+
+---
+
+# TASK DEL-FE-001 — Role-Aware Deliverable Workspace
+
+**Priority:** P1
+**Owner:** Frontend Agent
+**Dependencies:** DEL-BE-001, SUB-BE-001
+
+One metadata-driven workspace SHALL render preparation, internal review, formal
+submission, external review, and revision states according to backend-returned
+actions. It SHALL not hard-code a page per persona.
+
+---
+
+# 9.2 M5B — Work Planning, Monitoring, and Communication
+
+# TASK WORK-DB-001 — Generic Work Item, Dependency, Risk, and Issue Schema
+
+**Priority:** P1
+**Owner:** Database Agent
+**Requirements:** WORK-FR-001 through WORK-FR-003
+**Dependencies:** WS-DB-001, PHASE-DB-001
+
+---
+
+# TASK WORK-BE-001 — Work Planning and Monitoring API
+
+**Priority:** P1
+**Owner:** Backend Agent
+**Dependencies:** WORK-DB-001
+
+Provide assignment, progress, cycle-safe dependencies, baseline/revised dates,
+extensions, risk/issue escalation, and permission-aware monitoring projections.
+
+---
+
+# TASK WORK-FE-001 — Personal and Management Work Queues
+
+**Priority:** P1
+**Owner:** Frontend Agent
+**Dependencies:** WORK-BE-001
+
+---
+
+# TASK COM-DB-001 — Contextual Communication and Notification Schema
+
+**Priority:** P1
+**Owner:** Database Agent
+**Requirements:** COM-FR-001 through COM-FR-004
+**Dependencies:** WS-DB-001
+
+Internal notes, formal review comments, conversations, announcements, reminders,
+and notifications SHALL retain explicit kind and visibility scope.
+
+---
+
+# TASK COM-BE-001 — Contextual Threads and Event Notification Service
+
+**Priority:** P1
+**Owner:** Backend Agent + Security Agent
+**Dependencies:** COM-DB-001
+
+---
+
+# TASK COM-FE-001 — Notification Center and Contextual Conversation UI
+
+**Priority:** P1
+**Owner:** Frontend Agent
+**Dependencies:** COM-BE-001
+
+---
+
+# 9.3 M5C — Technical Review and Contractual Acceptance
+
+# TASK REV-BE-002 — Version-Bound Review Outcomes and Sign-Off
+
+**Priority:** P1
+**Owner:** Backend Agent + Security Agent
+**Dependencies:** REV-BE-001, SUB-BE-001, GOV-BE-001
+
+Add technical clarification, revision, recommendation, conditional recommendation,
+rejection, and authorized sign-off without treating any as employer acceptance.
+
+---
+
+# TASK ACC-DB-001 — Acceptance Package, Decision, and Condition Schema
+
+**Priority:** P1
+**Owner:** Database Agent
+**Requirements:** ACC-FR-001 through ACC-FR-006
+**Dependencies:** PHASE-DB-001, DEL-DB-001, GOV-DB-001
+
+---
+
+# TASK ACC-BE-001 — Phase and Final Acceptance Engine
+
+**Priority:** P1
+**Owner:** Backend Agent + Security Agent
+**Dependencies:** ACC-DB-001, REV-BE-002
+
+Acceptance criteria:
+
+- [ ] packages reference immutable evidence versions,
+- [ ] accept/conditional/reject authority is explicit,
+- [ ] final acceptance cannot bypass mandatory phase/condition gates,
+- [ ] condition verification and closure authority is configurable,
+- [ ] all decisions are immutable and audited.
+
+---
+
+# TASK ACC-FE-001 — Acceptance Decision Workspace
+
+**Priority:** P1
+**Owner:** Frontend Agent
+**Dependencies:** ACC-BE-001
+
+---
+
+# 9.4 M5D — Configuration Lifecycle and Scenario Reporting
+
+# TASK CONF-BE-001 — Configuration Package, Clone, Impact, and History API
+
+**Priority:** P1
+**Owner:** Backend Agent + Database Agent
+**Requirements:** CONF-FR-001 through CONF-FR-004
+**Dependencies:** Metadata, form, workflow, dashboard, and template contracts
+
+---
+
+# TASK CONF-FE-001 — Configuration Lifecycle UI
+
+**Priority:** P1
+**Owner:** Frontend Agent
+**Dependencies:** CONF-BE-001
+
+---
+
+# TASK RPT-BE-003 — Role-Appropriate Monitoring and Readiness Projections
+
+**Priority:** P1
+**Owner:** Backend Agent
+**Dependencies:** GOV-BE-001, WORK-BE-001, SUB-BE-001, ACC-BE-001
+
+Provide safe projections for personal work, project monitoring, technical review,
+contractor delivery, employer oversight, completeness, timeline, and acceptance.
+
+---
+
+# TASK RPT-FE-003 — Scenario-Aligned Dashboards and Reports
+
+**Priority:** P1
+**Owner:** Frontend Agent
+**Dependencies:** RPT-BE-003
+
+Use reusable widgets and backend-authorized datasets rather than separate data
+models or hard-coded business dashboards.
+
+---
+
+# TASK QA-002 — Governed Delivery and Acceptance E2E
+
+**Priority:** P0 before governed-delivery release
+**Owner:** QA Agent
+**Dependencies:** DEL-FE-001, REV-BE-002, ACC-FE-001, COM-FE-001
+
+Scenario:
+
+```text
+contractor member prepares version
+→ contractor leader performs internal review
+→ contractor leader formally submits
+→ project manager / technical reviewer requests revision
+→ contractor corrects and leader resubmits
+→ project manager recommends acceptance
+→ employer conditionally accepts phase
+→ evidence is verified
+→ employer closes acceptance
+```
+
+Negative cases SHALL prove authority separation and cross-workspace denial at every
+transition.
+
+---
+
 # 10. M6 — Production Hardening
 
 # TASK SEC-001 — Security Review Baseline
@@ -1629,4 +1914,6 @@ FOLLOW_UP_TASKS:
 10_DEPLOYMENT_GUIDE.md
 11_SECURITY_SPECIFICATION.md
 12_CURRENT_STATUS.md
+13_IMPLEMENTATION_ROADMAP.md
+14_PROJECT_USAGE_SCENARIOS.md
 ```
