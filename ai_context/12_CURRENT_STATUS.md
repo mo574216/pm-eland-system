@@ -2952,6 +2952,331 @@ profile/mapping integration needed to progress the same wizard. IMP-BE-004 Dry R
 then unlocks the visible summary step.
 ```
 
+Import mapping UI implementation entry:
+
+```text
+DATE:
+2026-08-24
+
+MILESTONE:
+M4 Documents and Import / Demo-visible MVP
+
+TASKS_COMPLETED:
+IMP-FE-002 Mapping UI
+
+TASKS_IN_PROGRESS:
+None
+
+SUMMARY:
+Extended the live Persian RTL import wizard with sheet selection, metadata-driven
+entity-type and attribute targets, source-to-target column mapping, all four
+accepted matching strategies, client-side invalid/duplicate mapping feedback, and
+creation or reuse of authorized import profiles. Saving a profile advances the
+visible wizard to the dry-run boundary.
+
+FILES_CHANGED:
+Import mapping component, wizard page and focused interaction test, frontend import
+API/types, Persian localization, import-profile validation service/test, and current
+status documentation.
+
+DATABASE_CHANGES:
+None.
+
+API_CHANGES:
+No new backend endpoint or published payload. The frontend now consumes the accepted
+import-profile create/list endpoints.
+
+TESTS_ADDED:
+The focused wizard interaction proves real inspection rendering, metadata target
+selection, a name mapping and matching key, profile creation, and visible wizard
+advancement. Backend coverage proves duplicate target mappings are rejected.
+
+TEST_RESULTS:
+Frontend focused test passes; zero-warning ESLint, strict TypeScript, and production
+build pass. Backend focused import-profile suite passes 10 tests; Ruff format/lint
+and strict mypy pass for changed backend files.
+
+SECURITY_IMPACT:
+Backend workspace membership and IMPORT_EXECUTE checks remain authoritative for
+profile listing and creation. The UI uses only backend-returned active metadata,
+does not expose read-only attributes as import targets, and adds no client-side
+authorization assumption. Duplicate targets are independently rejected server-side.
+
+KNOWN_LIMITATIONS:
+The uploaded job is not yet associated with the newly created or selected profile.
+That lifecycle transition and re-validation of source columns belong to the dry-run
+backend integration. Transform configuration remains an empty generic object until
+its dedicated UX is specified.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+IMP-BE-004 Dry Run, including the accepted job-to-mapping/profile transition, then
+IMP-FE-003 Dry-Run Summary UI for the earliest useful read-only MVP demonstration.
+```
+
+Import dry-run backend implementation entry:
+
+```text
+DATE:
+2026-08-25
+
+MILESTONE:
+M4 Documents and Import / Demo-visible MVP
+
+TASKS_COMPLETED:
+IMP-BE-004 Dry Run
+
+TASKS_IN_PROGRESS:
+None
+
+SUMMARY:
+Implemented authorized reusable-profile assignment and a read-only import dry-run
+engine. It securely reads the private staged source, streams bounded CSV/XLSX rows,
+maps generic system fields and metadata attributes, applies safe type coercion and
+metadata validation, executes all accepted matching strategies, rejects duplicate
+or ambiguous source keys, and classifies create/update/unchanged/invalid rows.
+Differences from persisted generic entities create reviewable conflict records;
+canonical entity objects are never mutated.
+
+FILES_CHANGED:
+Import dry-run service, job repository/schemas/API, parser row iterator, private
+storage reader, focused parser/storage/dry-run tests, narrative and canonical API
+contracts, and current status documentation.
+
+DATABASE_CHANGES:
+None. Dry-run uses the accepted import_jobs.dry_run_summary and import_conflicts
+structures from revision 0011.
+
+API_CHANGES:
+Implemented PUT /imports/{import_job_id}/mapping with an import_profile_id and POST
+/imports/{import_job_id}/dry-run. Mapping assignment clears stale prior analysis.
+Dry-run returns status, required summary counters, and row-addressable validation
+errors. The canonical and narrative contracts were updated.
+
+TESTS_ADDED:
+Parser coverage proves full row iteration for CSV/XLSX without formula evaluation;
+storage coverage proves private server-side reads; dry-run coverage proves create,
+update, invalid and duplicate classification, persisted field conflicts, and an
+unchanged canonical entity snapshot.
+
+TEST_RESULTS:
+All 174 backend tests pass. Full backend Ruff format/lint and strict mypy across
+app, scripts, and tests pass.
+
+SECURITY_IMPACT:
+Active workspace membership and IMPORT_EXECUTE are checked before source access and
+again inside the persistence transaction. Profiles are constrained to the job
+workspace and source type. Source objects remain private, spreadsheet formulas are
+never evaluated, arbitrary transformations are not executed, references remain
+workspace-resolved, and a locked compare-before-write prevents stale dry-run state.
+
+KNOWN_LIMITATIONS:
+Validation errors are currently stored with the bounded job summary rather than a
+separate paginated table. Existing candidates for the selected entity type are
+loaded as one read-only matching snapshot; query-side batched matching is a future
+performance optimization for very large workspaces. Conflict resolution and commit
+remain intentionally unavailable until IMP-BE-005 and IMP-BE-006.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+IMP-FE-003 Dry-Run Summary UI, integrated into the same visible wizard. IMP-BE-005
+Conflict Resolution follows immediately because dry-run now persists conflicts.
+```
+
+Dry-run summary UI implementation entry:
+
+```text
+DATE:
+2026-08-25
+
+MILESTONE:
+M4 Documents and Import / First useful MVP demo
+
+TASKS_COMPLETED:
+IMP-FE-003 Dry-Run Summary UI
+
+TASKS_IN_PROGRESS:
+None
+
+SUMMARY:
+Connected the import wizard to the accepted mapping-assignment and dry-run APIs.
+After creating or reusing a profile, users can explicitly run a read-only analysis
+and see Persian RTL status, rows read/valid/invalid, creates, updates, unchanged
+records, conflicts, and row-addressable validation errors. Loading, retry, and safe
+failure states keep the user at the correct wizard boundary.
+
+FILES_CHANGED:
+Frontend import API/types, wizard orchestration and focused interaction test,
+dry-run summary component, Persian localization, and current status documentation.
+
+DATABASE_CHANGES:
+None.
+
+API_CHANGES:
+No new API beyond the accepted IMP-BE-004 endpoints. The frontend now consumes PUT
+/imports/{import_job_id}/mapping and POST /imports/{import_job_id}/dry-run.
+
+TESTS_ADDED:
+The existing focused wizard interaction now proves profile assignment, dry-run
+execution, summary rendering, ready-for-review status, and the explicit guarantee
+that canonical entities were not changed.
+
+TEST_RESULTS:
+Frontend zero-warning ESLint and strict TypeScript pass. The focused wizard test
+passes in a single worker after the Windows fork pool timed out before starting a
+worker. Production build passes; the existing advisory bundle-size warning remains.
+
+SECURITY_IMPACT:
+The browser sends only opaque job/profile identifiers and renders backend-authorized
+results. Backend permission, workspace isolation, matching, reference validation,
+and canonical write prevention remain authoritative. No commit control is exposed.
+
+KNOWN_LIMITATIONS:
+Validation codes are displayed as stable machine codes pending a dedicated localized
+error-code presentation map. Conflict rows can be counted but not reviewed or
+resolved until IMP-BE-005 and IMP-FE-004. The main JavaScript bundle remains above
+Vite's advisory 500 kB threshold; route-level splitting is deferred housekeeping.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+IMP-BE-005 Conflict Resolution followed by IMP-FE-004 Conflict Resolver UI, keeping
+the same demo-first vertical slice.
+```
+
+Import conflict-resolution backend implementation entry:
+
+```text
+DATE:
+2026-08-25
+
+MILESTONE:
+M4 Documents and Import / Demo-visible MVP
+
+TASKS_COMPLETED:
+IMP-BE-005 Conflict Resolution
+
+TASKS_IN_PROGRESS:
+None
+
+SUMMARY:
+Implemented paginated import-conflict reads and explicit per-field or selected-bulk
+MERGE, REPLACE, and SKIP decisions. Decisions retain actor/time attribution, every
+mutation is audited, no resolution is selected by default, and the job advances to
+READY_TO_COMMIT only when its persisted unresolved count reaches zero. A conflict-
+free valid dry run now advances directly to READY_TO_COMMIT.
+
+FILES_CHANGED:
+Import conflict service, job repository queries, import API schemas/routes, focused
+authorization/state tests, dry-run readiness transition, canonical API contract,
+frontend status type/localization, and current status documentation.
+
+DATABASE_CHANGES:
+None. Resolution uses the accepted nullable resolution/resolved_by/resolved_at fields
+on import_conflicts.
+
+API_CHANGES:
+Implemented GET /imports/{import_job_id}/conflicts, PUT
+/imports/{import_job_id}/conflicts/{conflict_id}, and POST
+/imports/{import_job_id}/resolve-bulk. Filters distinguish ALL, UNRESOLVED, RESOLVED,
+and each decision. The canonical contract now publishes the routes and bounded
+request payloads.
+
+TESTS_ADDED:
+Focused service tests prove nullable decisions become actor-attributed explicit
+MERGE/SKIP decisions, bulk resolution is atomic, the last decision unlocks commit,
+audits are written, missing permission is rejected, and a foreign/missing conflict
+is not exposed.
+
+TEST_RESULTS:
+All 176 backend tests pass. Full backend Ruff format/lint and strict mypy across
+app, scripts, and tests pass.
+
+SECURITY_IMPACT:
+Active workspace membership and IMPORT_EXECUTE remain authoritative. Conflict lookup
+is constrained by both job and conflict identifiers, mutations lock current rows,
+bulk IDs must be unique and all belong to the job, stale/non-reviewable job states
+are rejected, and existing values are never overwritten by choosing a decision.
+
+KNOWN_LIMITATIONS:
+MERGE, REPLACE, and SKIP are persisted decisions only; their transactional write
+semantics are intentionally deferred to IMP-BE-006. Bulk resolution operates on an
+explicit bounded ID list rather than every result matching a server-side filter.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+IMP-FE-004 Conflict Resolver UI, followed by IMP-BE-006 transactional commit.
+```
+
+Import conflict resolver UI implementation entry:
+
+```text
+DATE:
+2026-08-25
+
+MILESTONE:
+M4 Documents and Import / Demo-visible MVP
+
+TASKS_COMPLETED:
+IMP-FE-004 Conflict Resolver UI
+
+TASKS_IN_PROGRESS:
+None
+
+SUMMARY:
+Extended the same Persian RTL import wizard with a paginated field-level conflict
+table showing source row, field, existing value, imported value, and current
+decision. Users can explicitly choose MERGE, REPLACE, or SKIP per conflict or for a
+selected bounded set. No option is preselected, REPLACE is visually cautionary,
+loading/failure states are visible, and resolving the last conflict advances the
+wizard to the final-confirmation boundary.
+
+FILES_CHANGED:
+Conflict resolver component, wizard orchestration and focused interaction test,
+frontend import API/types, Persian localization, and current status documentation.
+
+DATABASE_CHANGES:
+None.
+
+API_CHANGES:
+No new API beyond IMP-BE-005. The frontend now consumes paginated conflict listing,
+single resolution, and bounded bulk resolution endpoints.
+
+TESTS_ADDED:
+The focused wizard interaction now continues through conflict retrieval, displays
+existing/imported values, applies an explicit MERGE decision, verifies the backend
+payload, and displays readiness for final confirmation.
+
+TEST_RESULTS:
+Frontend zero-warning ESLint, strict TypeScript, focused wizard test, and production
+build pass. The realistic wizard test uses a 15-second per-test ceiling and a single
+thread because Windows worker startup previously consumed most of the default five
+seconds. The existing advisory bundle-size warning remains.
+
+SECURITY_IMPACT:
+Conflict data is rendered only after the backend-authorized job query. The UI does
+not infer permissions, never defaults to overwrite, sends only accepted decisions
+and opaque IDs, and provides no canonical commit action before IMP-BE-006.
+
+KNOWN_LIMITATIONS:
+Values are rendered as plain strings or serialized JSON; rich type-specific diff
+visualization is deferred. Bulk actions apply only to explicitly selected rows on
+the loaded pages. Transactional commit and completion summary remain unavailable.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+IMP-BE-006 Transactional Commit, then IMP-FE-005 Commit Confirmation and Summary.
+```
+
 ---
 
 # 27. Related Specifications

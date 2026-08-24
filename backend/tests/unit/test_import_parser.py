@@ -52,6 +52,23 @@ def test_xlsx_inspection_lists_sheets_and_never_evaluates_formulas() -> None:
     assert result.sheets[0].columns[2].sample_values == ()
 
 
+def test_row_iteration_returns_bounded_source_rows_without_formula_evaluation() -> None:
+    parser = ImportParser()
+    csv_rows = tuple(
+        parser.iter_rows(BytesIO(b"Name,Score\nAli,4\nSara,5\n"), filename="people.csv")
+    )
+    assert [(row.row_number, row.values) for row in csv_rows] == [
+        (2, {"Name": "Ali", "Score": "4"}),
+        (3, {"Name": "Sara", "Score": "5"}),
+    ]
+
+    xlsx_rows = tuple(
+        parser.iter_rows(BytesIO(xlsx_bytes()), filename="people.xlsx", sheet_name="People")
+    )
+    assert xlsx_rows[0].sheet == "People"
+    assert xlsx_rows[0].values == {"Name": "Ali", "Score": 4, "Formula": None}
+
+
 @pytest.mark.parametrize(
     ("payload", "filename", "reason"),
     [

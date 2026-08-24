@@ -77,6 +77,11 @@ class ImportProfileService:
         sources = [(item.source_sheet, item.source_column) for item in mappings]
         if len(set(sources)) != len(sources):
             raise InvalidMetadataError({"field": "mappings", "reason": "duplicate_source_column"})
+        targets = [
+            (item.target_attribute_definition_id, item.target_system_field) for item in mappings
+        ]
+        if len(set(targets)) != len(targets):
+            raise InvalidMetadataError({"field": "mappings", "reason": "duplicate_target"})
 
     @staticmethod
     def _matching_keys(strategy: ImportMatchingStrategy) -> tuple[AttributeMatchKey, ...]:

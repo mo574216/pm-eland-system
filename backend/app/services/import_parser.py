@@ -1,6 +1,7 @@
 """Bounded, non-evaluating inspection of untrusted CSV and XLSX imports."""
 
 import csv
+from collections.abc import Iterator
 from dataclasses import dataclass
 from datetime import date, datetime, time
 from io import BytesIO, StringIO
@@ -42,6 +43,13 @@ class ImportInspection:
 
 
 @dataclass(frozen=True, slots=True)
+class ImportSourceRow:
+    sheet: str
+    row_number: int
+    values: dict[str, ImportScalar]
+
+
+@dataclass(frozen=True, slots=True)
 class ImportParserLimits:
     max_file_bytes: int = 25 * 1024 * 1024
     max_uncompressed_bytes: int = 200 * 1024 * 1024
@@ -72,6 +80,121 @@ class ImportParser:
         if suffix == ".csv":
             return self._inspect_csv(payload, filename=Path(filename).name)
         return self._inspect_xlsx(payload)
+
+    def iter_rows(
+        self, source: BinaryIO, *, filename: str, sheet_name: str | None = None
+    ) -> Iterator[ImportSourceRow]:
+        suffix = Path(filename).suffix.lower()
+        payload = source.read(self._limits.max_file_bytes + 1)
+        if len(payload) > self._limits.max_file_bytes:
+            raise ImportParseError("FILE_TOO_LARGE")
+        if not payload:
+            raise ImportParseError("EMPTY_FILE")
+        if suffix == ".csv":
+            yield from self._iter_csv_rows(payload, filename=Path(filename).name)
+            return
+        if suffix != ".xlsx":
+            raise ImportParseError("UNSUPPORTED_FILE_TYPE")
+        yield from self._iter_xlsx_rows(payload, sheet_name=sheet_name)
+
+    def _iter_csv_rows(self, payload: bytes, *, filename: str) -> Iterator[ImportSourceRow]:
+        try:
+            text = payload.decode("utf-8-sig")
+            rows = csv.reader(StringIO(text, newline=""), dialect=self._csv_dialect(text))
+            headers = self._validated_headers(next(rows))
+            emitted = 0
+            for row_number, row in enumerate(rows, start=2):
+                if not any(value != "" for value in row):
+                    continue
+                emitted += 1
+                if emitted > self._limits.max_rows_per_sheet:
+                    raise ImportParseError("TOO_MANY_ROWS")
+                yield ImportSourceRow(
+                    filename,
+                    row_number,
+                    {
+                        header: self._bounded_scalar(row[index] if index < len(row) else None)
+                        for index, header in enumerate(headers)
+                    },
+                )
+        except ImportParseError:
+            raise
+        except (csv.Error, StopIteration, UnicodeDecodeError) as error:
+            raise ImportParseError("MALFORMED_CSV") from error
+
+    def _iter_xlsx_rows(
+        self, payload: bytes, *, sheet_name: str | None
+    ) -> Iterator[ImportSourceRow]:
+        self._validate_archive(payload)
+        try:
+            workbook = load_workbook(
+                BytesIO(payload), read_only=True, data_only=True, keep_links=False
+            )
+            worksheets = (
+                [workbook[sheet_name]]
+                if sheet_name is not None and sheet_name in workbook.sheetnames
+                else list(workbook.worksheets)
+                if sheet_name is None
+                else []
+            )
+            if not worksheets:
+                raise ImportParseError("SHEET_NOT_FOUND")
+            for worksheet in worksheets:
+                rows = worksheet.iter_rows(values_only=True)
+                headers = self._validated_headers(next(rows))
+                emitted = 0
+                for row_number, row in enumerate(rows, start=2):
+                    if not any(value is not None and value != "" for value in row):
+                        continue
+                    emitted += 1
+                    if emitted > self._limits.max_rows_per_sheet:
+                        raise ImportParseError("TOO_MANY_ROWS")
+                    yield ImportSourceRow(
+                        worksheet.title,
+                        row_number,
+                        {
+                            header: self._bounded_scalar(row[index] if index < len(row) else None)
+                            for index, header in enumerate(headers)
+                        },
+                    )
+        except ImportParseError:
+            raise
+        except (
+            BadZipFile,
+            InvalidFileException,
+            DefusedXmlException,
+            OSError,
+            ValueError,
+            StopIteration,
+        ) as error:
+            raise ImportParseError("MALFORMED_XLSX") from error
+        finally:
+            if "workbook" in locals():
+                workbook.close()
+
+    def _validated_headers(self, values: tuple[object, ...] | list[str]) -> tuple[str, ...]:
+        if len(values) > self._limits.max_columns_per_sheet:
+            raise ImportParseError("TOO_MANY_COLUMNS")
+        headers = tuple(self._header(value) for value in values)
+        if not headers or any(not value for value in headers):
+            raise ImportParseError("INVALID_HEADER")
+        if len(set(headers)) != len(headers):
+            raise ImportParseError("DUPLICATE_HEADER")
+        return headers
+
+    def _header(self, value: object) -> str:
+        normalized = self._bounded_scalar(value)
+        return "" if normalized is None else str(normalized).strip()
+
+    def _bounded_scalar(self, value: object) -> ImportScalar:
+        if value is None or isinstance(value, (bool, int, float)):
+            return value
+        if isinstance(value, (date, datetime, time)):
+            return value.isoformat()
+        text = str(value)
+        if len(text) > self._limits.max_cell_characters:
+            raise ImportParseError("CELL_TOO_LARGE")
+        return text
 
     def _inspect_csv(self, payload: bytes, *, filename: str) -> ImportInspection:
         try:

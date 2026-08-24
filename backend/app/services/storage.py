@@ -28,6 +28,8 @@ class StorageProvider(Protocol):
 
     async def object_exists(self, object_key: str) -> bool: ...
 
+    async def read_object(self, object_key: str) -> bytes: ...
+
     async def create_download_url(self, object_key: str) -> str: ...
 
     async def create_upload_url(self, object_key: str) -> str: ...
@@ -103,6 +105,24 @@ class MinioStorageProvider:
                 return False
             raise StorageError("Object lookup failed.") from error
         return True
+
+    async def read_object(self, object_key: str) -> bytes:
+        key = self._validated_key(object_key)
+        response: object | None = None
+        try:
+            response = await self._call(self._client.get_object, self._bucket, key)
+            reader = cast(BinaryIO, response)
+            return cast(bytes, await self._call(reader.read))
+        except S3Error as error:
+            raise StorageError("Object read failed.") from error
+        finally:
+            if response is not None:
+                close = getattr(response, "close", None)
+                release_conn = getattr(response, "release_conn", None)
+                if callable(close):
+                    close()
+                if callable(release_conn):
+                    release_conn()
 
     async def create_download_url(self, object_key: str) -> str:
         key = self._validated_key(object_key)

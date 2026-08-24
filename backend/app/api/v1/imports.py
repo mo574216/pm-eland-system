@@ -12,9 +12,20 @@ from app.api.envelopes import success_envelope
 from app.core.database import get_database_session
 from app.core.request_context import get_request_id
 from app.schemas.import_job import (
+    ImportBulkResolutionRequest,
     ImportColumnInspectionResponse,
+    ImportConflictListResponse,
+    ImportConflictResolutionRequest,
+    ImportConflictResolutionResult,
+    ImportConflictResolutionStatus,
+    ImportConflictResponse,
+    ImportDryRunResponse,
+    ImportDryRunSummaryResponse,
+    ImportJobStatusResponse,
+    ImportProfileAssignment,
     ImportSheetInspectionResponse,
     ImportUploadResponse,
+    ImportValidationErrorResponse,
 )
 from app.schemas.import_profile import (
     ImportMappingResponse,
@@ -25,6 +36,8 @@ from app.schemas.import_profile import (
 )
 from app.services.auth import AuthenticatedIdentity
 from app.services.authorization import AuditContext
+from app.services.import_conflict import ImportConflictService, ImportResolutionResult
+from app.services.import_dry_run import ImportDryRunService
 from app.services.import_job import ImportJobService, ImportUpload
 from app.services.import_profile import ImportProfileRecord, ImportProfileService
 from app.services.storage import StorageProvider
@@ -55,6 +68,15 @@ def _response(record: ImportProfileRecord) -> ImportProfileResponse:
         created_at=profile.created_at,
         updated_at=profile.updated_at,
         mappings=tuple(ImportMappingResponse.model_validate(item) for item in record.mappings),
+    )
+
+
+def _resolution_response(result: ImportResolutionResult) -> ImportConflictResolutionResult:
+    return ImportConflictResolutionResult(
+        import_job_id=result.import_job_id,
+        status=result.status,
+        resolved=result.resolved,
+        unresolved=result.unresolved,
     )
 
 
@@ -93,6 +115,122 @@ async def upload_import(
                 ),
             )
             for sheet in result.inspection.sheets
+        ),
+    )
+    return success_envelope(response.model_dump(mode="json"))
+
+
+@router.get("/imports/{import_job_id}/conflicts")
+async def list_import_conflicts(
+    import_job_id: UUID,
+    actor: Annotated[AuthenticatedIdentity, Depends(get_current_identity)],
+    session: Annotated[AsyncSession, Depends(get_database_session)],
+    page: Annotated[int, Query(ge=1)] = 1,
+    page_size: Annotated[int, Query(ge=1, le=200)] = 50,
+    resolution_status: ImportConflictResolutionStatus = "ALL",
+) -> dict[str, object]:
+    result = await ImportConflictService(session, actor).list_conflicts(
+        import_job_id,
+        page=page,
+        page_size=page_size,
+        resolution_status=resolution_status,
+    )
+    response = ImportConflictListResponse(
+        items=tuple(
+            ImportConflictResponse.model_validate(item, from_attributes=True)
+            for item in result.items
+        ),
+        page=result.page,
+        page_size=result.page_size,
+        total=result.total,
+        unresolved=result.unresolved,
+    )
+    return success_envelope(response.model_dump(mode="json"))
+
+
+@router.put("/imports/{import_job_id}/conflicts/{conflict_id}")
+async def resolve_import_conflict(
+    import_job_id: UUID,
+    conflict_id: UUID,
+    payload: ImportConflictResolutionRequest,
+    request: Request,
+    actor: Annotated[AuthenticatedIdentity, Depends(get_current_identity)],
+    session: Annotated[AsyncSession, Depends(get_database_session)],
+) -> dict[str, object]:
+    result = await ImportConflictService(session, actor).resolve_one(
+        import_job_id,
+        conflict_id,
+        payload.resolution,
+        audit=_audit_context(request),
+    )
+    return success_envelope(_resolution_response(result).model_dump(mode="json"))
+
+
+@router.post("/imports/{import_job_id}/resolve-bulk")
+async def resolve_import_conflicts_bulk(
+    import_job_id: UUID,
+    payload: ImportBulkResolutionRequest,
+    request: Request,
+    actor: Annotated[AuthenticatedIdentity, Depends(get_current_identity)],
+    session: Annotated[AsyncSession, Depends(get_database_session)],
+) -> dict[str, object]:
+    result = await ImportConflictService(session, actor).resolve_bulk(
+        import_job_id,
+        payload.conflict_ids,
+        payload.resolution,
+        audit=_audit_context(request),
+    )
+    return success_envelope(_resolution_response(result).model_dump(mode="json"))
+
+
+@router.put("/imports/{import_job_id}/mapping")
+async def assign_import_profile(
+    import_job_id: UUID,
+    payload: ImportProfileAssignment,
+    request: Request,
+    actor: Annotated[AuthenticatedIdentity, Depends(get_current_identity)],
+    session: Annotated[AsyncSession, Depends(get_database_session)],
+    storage: Annotated[StorageProvider, Depends(get_storage_provider)],
+) -> dict[str, object]:
+    job = await ImportDryRunService(session, actor, storage).assign_profile(
+        import_job_id, payload.import_profile_id, audit=_audit_context(request)
+    )
+    response = ImportJobStatusResponse(
+        import_job_id=job.id,
+        status=job.status,
+        import_profile_id=job.import_profile_id,
+    )
+    return success_envelope(response.model_dump(mode="json"))
+
+
+@router.post("/imports/{import_job_id}/dry-run")
+async def dry_run_import(
+    import_job_id: UUID,
+    request: Request,
+    actor: Annotated[AuthenticatedIdentity, Depends(get_current_identity)],
+    session: Annotated[AsyncSession, Depends(get_database_session)],
+    storage: Annotated[StorageProvider, Depends(get_storage_provider)],
+) -> dict[str, object]:
+    result = await ImportDryRunService(session, actor, storage).dry_run(
+        import_job_id, audit=_audit_context(request)
+    )
+    response = ImportDryRunResponse(
+        import_job_id=result.import_job_id,
+        status=result.status,
+        summary=ImportDryRunSummaryResponse(
+            rows_read=result.summary.rows_read,
+            rows_valid=result.summary.rows_valid,
+            rows_invalid=result.summary.rows_invalid,
+            records_to_create=result.summary.records_to_create,
+            records_to_update=result.summary.records_to_update,
+            records_unchanged=result.summary.records_unchanged,
+            conflicts=result.summary.conflicts,
+        ),
+        validation_errors=tuple(
+            ImportValidationErrorResponse(
+                row_number=item.row_number, field=item.field, code=item.code
+            )
+            for item in result.validation_errors
         ),
     )
     return success_envelope(response.model_dump(mode="json"))
