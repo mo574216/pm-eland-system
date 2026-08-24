@@ -3,7 +3,7 @@
 from typing import cast
 from uuid import UUID
 
-from sqlalchemy import delete, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.entity import EntityObject
@@ -84,3 +84,77 @@ class ImportJobRepository:
         await self.session.execute(
             delete(ImportConflict).where(ImportConflict.import_job_id == job_id)
         )
+
+    async def accessible_conflict(
+        self, job_id: UUID, conflict_id: UUID, user_id: UUID, *, lock: bool = False
+    ) -> ImportConflict | None:
+        statement = (
+            select(ImportConflict)
+            .join(ImportJob, ImportJob.id == ImportConflict.import_job_id)
+            .join(WorkspaceMembership, WorkspaceMembership.workspace_id == ImportJob.workspace_id)
+            .where(
+                ImportConflict.id == conflict_id,
+                ImportConflict.import_job_id == job_id,
+                WorkspaceMembership.user_id == user_id,
+                WorkspaceMembership.status == "ACTIVE",
+            )
+        )
+        if lock:
+            statement = statement.with_for_update().execution_options(populate_existing=True)
+        return cast(ImportConflict | None, await self.session.scalar(statement))
+
+    async def list_conflicts(
+        self,
+        job_id: UUID,
+        *,
+        page: int,
+        page_size: int,
+        resolution_status: str,
+    ) -> tuple[tuple[ImportConflict, ...], int]:
+        filters = [ImportConflict.import_job_id == job_id]
+        if resolution_status == "UNRESOLVED":
+            filters.append(ImportConflict.resolution.is_(None))
+        elif resolution_status == "RESOLVED":
+            filters.append(ImportConflict.resolution.is_not(None))
+        elif resolution_status != "ALL":
+            filters.append(ImportConflict.resolution == resolution_status)
+        statement = select(ImportConflict).where(*filters)
+        count_statement = select(func.count(ImportConflict.id)).where(*filters)
+        items = tuple(
+            (
+                await self.session.scalars(
+                    statement.order_by(
+                        ImportConflict.row_number,
+                        ImportConflict.attribute_key,
+                        ImportConflict.id,
+                    )
+                    .offset((page - 1) * page_size)
+                    .limit(page_size)
+                )
+            ).all()
+        )
+        total = int((await self.session.scalar(count_statement)) or 0)
+        return items, total
+
+    async def conflicts_by_ids(
+        self, job_id: UUID, conflict_ids: frozenset[UUID]
+    ) -> tuple[ImportConflict, ...]:
+        if not conflict_ids:
+            return ()
+        statement = (
+            select(ImportConflict)
+            .where(
+                ImportConflict.import_job_id == job_id,
+                ImportConflict.id.in_(conflict_ids),
+            )
+            .with_for_update()
+            .execution_options(populate_existing=True)
+        )
+        return tuple((await self.session.scalars(statement)).all())
+
+    async def unresolved_conflict_count(self, job_id: UUID) -> int:
+        statement = select(func.count(ImportConflict.id)).where(
+            ImportConflict.import_job_id == job_id,
+            ImportConflict.resolution.is_(None),
+        )
+        return int((await self.session.scalar(statement)) or 0)

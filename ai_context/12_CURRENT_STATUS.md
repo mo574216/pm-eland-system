@@ -3149,6 +3149,72 @@ IMP-BE-005 Conflict Resolution followed by IMP-FE-004 Conflict Resolver UI, keep
 the same demo-first vertical slice.
 ```
 
+Import conflict-resolution backend implementation entry:
+
+```text
+DATE:
+2026-08-25
+
+MILESTONE:
+M4 Documents and Import / Demo-visible MVP
+
+TASKS_COMPLETED:
+IMP-BE-005 Conflict Resolution
+
+TASKS_IN_PROGRESS:
+None
+
+SUMMARY:
+Implemented paginated import-conflict reads and explicit per-field or selected-bulk
+MERGE, REPLACE, and SKIP decisions. Decisions retain actor/time attribution, every
+mutation is audited, no resolution is selected by default, and the job advances to
+READY_TO_COMMIT only when its persisted unresolved count reaches zero. A conflict-
+free valid dry run now advances directly to READY_TO_COMMIT.
+
+FILES_CHANGED:
+Import conflict service, job repository queries, import API schemas/routes, focused
+authorization/state tests, dry-run readiness transition, canonical API contract,
+frontend status type/localization, and current status documentation.
+
+DATABASE_CHANGES:
+None. Resolution uses the accepted nullable resolution/resolved_by/resolved_at fields
+on import_conflicts.
+
+API_CHANGES:
+Implemented GET /imports/{import_job_id}/conflicts, PUT
+/imports/{import_job_id}/conflicts/{conflict_id}, and POST
+/imports/{import_job_id}/resolve-bulk. Filters distinguish ALL, UNRESOLVED, RESOLVED,
+and each decision. The canonical contract now publishes the routes and bounded
+request payloads.
+
+TESTS_ADDED:
+Focused service tests prove nullable decisions become actor-attributed explicit
+MERGE/SKIP decisions, bulk resolution is atomic, the last decision unlocks commit,
+audits are written, missing permission is rejected, and a foreign/missing conflict
+is not exposed.
+
+TEST_RESULTS:
+All 176 backend tests pass. Full backend Ruff format/lint and strict mypy across
+app, scripts, and tests pass.
+
+SECURITY_IMPACT:
+Active workspace membership and IMPORT_EXECUTE remain authoritative. Conflict lookup
+is constrained by both job and conflict identifiers, mutations lock current rows,
+bulk IDs must be unique and all belong to the job, stale/non-reviewable job states
+are rejected, and existing values are never overwritten by choosing a decision.
+
+KNOWN_LIMITATIONS:
+MERGE, REPLACE, and SKIP are persisted decisions only; their transactional write
+semantics are intentionally deferred to IMP-BE-006. Bulk resolution operates on an
+explicit bounded ID list rather than every result matching a server-side filter.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+IMP-FE-004 Conflict Resolver UI, followed by IMP-BE-006 transactional commit.
+```
+
 ---
 
 # 27. Related Specifications

@@ -1,5 +1,6 @@
 """Import upload and source inspection API schemas."""
 
+from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -55,3 +56,44 @@ class ImportDryRunResponse(BaseModel):
     status: str
     summary: ImportDryRunSummaryResponse
     validation_errors: tuple[ImportValidationErrorResponse, ...]
+
+
+ImportConflictResolution = Literal["MERGE", "REPLACE", "SKIP"]
+ImportConflictResolutionStatus = Literal[
+    "ALL", "UNRESOLVED", "RESOLVED", "MERGE", "REPLACE", "SKIP"
+]
+
+
+class ImportConflictResponse(BaseModel):
+    id: UUID
+    import_job_id: UUID
+    row_number: int | None
+    entity_id: UUID | None
+    attribute_key: str | None
+    existing_value: object | None
+    imported_value: object | None
+    resolution: ImportConflictResolution | None
+
+
+class ImportConflictListResponse(BaseModel):
+    items: tuple[ImportConflictResponse, ...]
+    page: int
+    page_size: int
+    total: int
+    unresolved: int
+
+
+class ImportConflictResolutionRequest(BaseModel):
+    resolution: ImportConflictResolution
+
+
+class ImportBulkResolutionRequest(BaseModel):
+    resolution: ImportConflictResolution
+    conflict_ids: tuple[UUID, ...] = Field(min_length=1, max_length=1_000)
+
+
+class ImportConflictResolutionResult(BaseModel):
+    import_job_id: UUID
+    status: str
+    resolved: int
+    unresolved: int

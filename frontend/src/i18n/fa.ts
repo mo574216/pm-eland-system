@@ -93,6 +93,7 @@ export const fa = {
     mapping: 'نگاشت',
     status: {
       READY_FOR_REVIEW: 'آماده بررسی',
+      READY_TO_COMMIT: 'آماده تأیید نهایی',
       VALIDATION_FAILED: 'نیازمند اصلاح',
     },
     summary: {

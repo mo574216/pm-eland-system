@@ -26,7 +26,7 @@ export function ImportDryRunSummary({ result }: Props) {
           <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
             <Typography component="h2" variant="h2">{t('imports.dryRunTitle')}</Typography>
             <Chip
-              color={result.status === 'READY_FOR_REVIEW' ? 'success' : 'warning'}
+              color={result.status === 'VALIDATION_FAILED' ? 'warning' : 'success'}
               label={t(`imports.status.${result.status}`)}
               size="small"
             />

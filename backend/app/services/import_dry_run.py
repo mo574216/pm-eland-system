@@ -303,7 +303,13 @@ class ImportDryRunService:
             records_unchanged=unchanged,
             conflicts=len(conflicts),
         )
-        status = "VALIDATION_FAILED" if invalid else "READY_FOR_REVIEW"
+        status = (
+            "VALIDATION_FAILED"
+            if invalid
+            else "READY_FOR_REVIEW"
+            if conflicts
+            else "READY_TO_COMMIT"
+        )
         return ImportDryRunResult(job.id, status, summary, tuple(issues)), tuple(conflicts)
 
     @staticmethod

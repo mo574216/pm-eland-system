@@ -90,7 +90,7 @@ export interface ImportDryRunSummary {
 
 export interface ImportDryRunResult {
   import_job_id: string
-  status: 'READY_FOR_REVIEW' | 'VALIDATION_FAILED'
+  status: 'READY_FOR_REVIEW' | 'READY_TO_COMMIT' | 'VALIDATION_FAILED'
   summary: ImportDryRunSummary
   validation_errors: ImportValidationError[]
 }
