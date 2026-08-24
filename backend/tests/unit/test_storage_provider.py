@@ -33,6 +33,12 @@ class FakeMinio:
         self._record("stat", *args, **kwargs)
         return object()
 
+    def get_object(self, *args: object, **kwargs: object) -> BytesIO:
+        self._record("read", *args, **kwargs)
+        response = BytesIO(b"private content")
+        response.release_conn = lambda: None  # type: ignore[attr-defined]
+        return response
+
     def presigned_get_object(self, *args: object, **kwargs: object) -> str:
         self._record("download", *args, **kwargs)
         return "https://storage.test/private-download"
@@ -71,6 +77,7 @@ async def test_adapter_uploads_to_private_bucket_and_scopes_short_lived_urls() -
     assert await storage.create_upload_url("workspaces/generated-id/original") == (
         "https://storage.test/private-upload"
     )
+    assert await storage.read_object("workspaces/generated-id/original") == b"private content"
 
     assert fake.calls[0][0:2] == (
         "put",
@@ -79,6 +86,10 @@ async def test_adapter_uploads_to_private_bucket_and_scopes_short_lived_urls() -
     assert fake.calls[0][2]["content_type"] == "application/pdf"
     assert fake.calls[1][2]["expires"] == timedelta(seconds=300)
     assert fake.calls[2][2]["expires"] == timedelta(seconds=300)
+    assert fake.calls[3][0:2] == (
+        "read",
+        ("private-documents", "workspaces/generated-id/original"),
+    )
 
 
 @pytest.mark.asyncio

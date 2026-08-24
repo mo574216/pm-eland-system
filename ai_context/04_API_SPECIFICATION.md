@@ -1687,26 +1687,21 @@ Result eventually contains:
 
 # 14.3 PUT /imports/{import_job_id}/mapping
 
-Store mapping.
+Assign a stored, workspace-authorized mapping profile to the staged job. Assigning
+a profile clears any previous dry-run summary and conflicts so stale analysis can
+never be committed.
 
 ### Request
 
 ```json
 {
-  "entity_type_id": "...",
-  "sheet": "Stakeholders",
-  "match_keys": ["stakeholder_name"],
-  "mappings": [
-    {
-      "source_column": "Stakeholder Name",
-      "target": {
-        "type": "ATTRIBUTE",
-        "key": "stakeholder_name"
-      }
-    }
-  ]
+  "import_profile_id": "..."
 }
 ```
+
+The profile SHALL belong to the same workspace and its source type SHALL match the
+uploaded object. The operation requires `IMPORT_EXECUTE` and an active workspace
+membership.
 
 ---
 

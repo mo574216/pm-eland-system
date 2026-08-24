@@ -3016,6 +3016,77 @@ IMP-BE-004 Dry Run, including the accepted job-to-mapping/profile transition, th
 IMP-FE-003 Dry-Run Summary UI for the earliest useful read-only MVP demonstration.
 ```
 
+Import dry-run backend implementation entry:
+
+```text
+DATE:
+2026-08-25
+
+MILESTONE:
+M4 Documents and Import / Demo-visible MVP
+
+TASKS_COMPLETED:
+IMP-BE-004 Dry Run
+
+TASKS_IN_PROGRESS:
+None
+
+SUMMARY:
+Implemented authorized reusable-profile assignment and a read-only import dry-run
+engine. It securely reads the private staged source, streams bounded CSV/XLSX rows,
+maps generic system fields and metadata attributes, applies safe type coercion and
+metadata validation, executes all accepted matching strategies, rejects duplicate
+or ambiguous source keys, and classifies create/update/unchanged/invalid rows.
+Differences from persisted generic entities create reviewable conflict records;
+canonical entity objects are never mutated.
+
+FILES_CHANGED:
+Import dry-run service, job repository/schemas/API, parser row iterator, private
+storage reader, focused parser/storage/dry-run tests, narrative and canonical API
+contracts, and current status documentation.
+
+DATABASE_CHANGES:
+None. Dry-run uses the accepted import_jobs.dry_run_summary and import_conflicts
+structures from revision 0011.
+
+API_CHANGES:
+Implemented PUT /imports/{import_job_id}/mapping with an import_profile_id and POST
+/imports/{import_job_id}/dry-run. Mapping assignment clears stale prior analysis.
+Dry-run returns status, required summary counters, and row-addressable validation
+errors. The canonical and narrative contracts were updated.
+
+TESTS_ADDED:
+Parser coverage proves full row iteration for CSV/XLSX without formula evaluation;
+storage coverage proves private server-side reads; dry-run coverage proves create,
+update, invalid and duplicate classification, persisted field conflicts, and an
+unchanged canonical entity snapshot.
+
+TEST_RESULTS:
+All 174 backend tests pass. Full backend Ruff format/lint and strict mypy across
+app, scripts, and tests pass.
+
+SECURITY_IMPACT:
+Active workspace membership and IMPORT_EXECUTE are checked before source access and
+again inside the persistence transaction. Profiles are constrained to the job
+workspace and source type. Source objects remain private, spreadsheet formulas are
+never evaluated, arbitrary transformations are not executed, references remain
+workspace-resolved, and a locked compare-before-write prevents stale dry-run state.
+
+KNOWN_LIMITATIONS:
+Validation errors are currently stored with the bounded job summary rather than a
+separate paginated table. Existing candidates for the selected entity type are
+loaded as one read-only matching snapshot; query-side batched matching is a future
+performance optimization for very large workspaces. Conflict resolution and commit
+remain intentionally unavailable until IMP-BE-005 and IMP-BE-006.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+IMP-FE-003 Dry-Run Summary UI, integrated into the same visible wizard. IMP-BE-005
+Conflict Resolution follows immediately because dry-run now persists conflicts.
+```
+
 ---
 
 # 27. Related Specifications
