@@ -18,7 +18,15 @@ from app.models.identity import AuditLog
 from app.models.import_job import ImportMapping, ImportProfile
 from app.repositories.import_profile import ImportProfileRepository
 from app.repositories.workspace import WorkspaceRepository
-from app.schemas.import_profile import ImportMappingInput
+from app.schemas.import_profile import (
+    MATCHING_STRATEGY_ADAPTER,
+    AttributeMatchKey,
+    CompositeMatchingStrategy,
+    ImportMappingInput,
+    ImportMatchingStrategy,
+    ParentKeyMatchingStrategy,
+    UniqueAttributeMatchingStrategy,
+)
 from app.services.auth import AuthenticatedIdentity
 from app.services.authorization import AuditContext, AuthorizationService
 
@@ -70,6 +78,63 @@ class ImportProfileService:
         if len(set(sources)) != len(sources):
             raise InvalidMetadataError({"field": "mappings", "reason": "duplicate_source_column"})
 
+    @staticmethod
+    def _matching_keys(strategy: ImportMatchingStrategy) -> tuple[AttributeMatchKey, ...]:
+        if isinstance(strategy, UniqueAttributeMatchingStrategy):
+            return (strategy.key,)
+        if isinstance(strategy, CompositeMatchingStrategy):
+            return strategy.keys
+        if isinstance(strategy, ParentKeyMatchingStrategy):
+            return (strategy.key,)
+        return ()
+
+    async def _validate_matching_strategy(
+        self,
+        entity_type_id: UUID,
+        mappings: tuple[ImportMappingInput, ...],
+        strategy: ImportMatchingStrategy,
+    ) -> None:
+        keys = self._matching_keys(strategy)
+        attribute_ids = frozenset(
+            key.attribute_definition_id for key in keys if key.attribute_definition_id is not None
+        )
+        attributes = await self.repository.active_attributes(entity_type_id, attribute_ids)
+        if {attribute.id for attribute in attributes} != attribute_ids:
+            raise InvalidMetadataError(
+                {"field": "matching_strategy", "reason": "invalid_attribute_target"}
+            )
+        mapped_targets = {
+            (
+                mapping.source_sheet,
+                mapping.source_column,
+                mapping.target_attribute_definition_id,
+                mapping.target_system_field,
+            )
+            for mapping in mappings
+        }
+        for key in keys:
+            expected = (
+                key.source_sheet,
+                key.source_column,
+                key.attribute_definition_id,
+                key.system_field,
+            )
+            if expected not in mapped_targets:
+                raise InvalidMetadataError(
+                    {"field": "matching_strategy", "reason": "key_not_mapped"}
+                )
+        if isinstance(strategy, ParentKeyMatchingStrategy):
+            parent_target = (
+                strategy.parent_source_sheet,
+                strategy.parent_source_column,
+                None,
+                "parent_id",
+            )
+            if parent_target not in mapped_targets:
+                raise InvalidMetadataError(
+                    {"field": "matching_strategy", "reason": "parent_not_mapped"}
+                )
+
     def _audit(
         self,
         profile: ImportProfile,
@@ -99,6 +164,7 @@ class ImportProfileService:
             "name": profile.name,
             "description": profile.description,
             "source_type": profile.source_type,
+            "matching_strategy": profile.matching_strategy,
             "configuration": profile.configuration,
             "mappings": [
                 {
@@ -131,6 +197,7 @@ class ImportProfileService:
         name: str,
         description: str | None,
         source_type: str,
+        matching_strategy: ImportMatchingStrategy,
         configuration: dict[str, object],
         mappings: tuple[ImportMappingInput, ...],
         audit: AuditContext,
@@ -138,6 +205,7 @@ class ImportProfileService:
         async with self.session.begin():
             await self._require_execute(workspace_id)
             await self._validate_targets(workspace_id, entity_type_id, mappings)
+            await self._validate_matching_strategy(entity_type_id, mappings, matching_strategy)
             profile = ImportProfile(
                 id=uuid4(),
                 workspace_id=workspace_id,
@@ -145,7 +213,7 @@ class ImportProfileService:
                 name=name,
                 description=description,
                 source_type=source_type,
-                matching_strategy={},
+                matching_strategy=matching_strategy.model_dump(mode="json"),
                 configuration=configuration,
                 created_by=self.actor.user.id,
             )
@@ -195,6 +263,7 @@ class ImportProfileService:
         *,
         values: dict[str, object],
         mappings: tuple[ImportMappingInput, ...] | None,
+        matching_strategy: ImportMatchingStrategy | None,
         audit: AuditContext,
     ) -> ImportProfileRecord:
         async with self.session.begin():
@@ -204,8 +273,39 @@ class ImportProfileService:
             await self._require_execute(profile.workspace_id)
             current = await self.repository.mappings(profile.id)
             before = self._state(profile, current)
+            effective_mappings = mappings
+            if effective_mappings is None:
+                effective_mappings = tuple(
+                    ImportMappingInput.model_validate(
+                        {
+                            "source_sheet": item.source_sheet,
+                            "source_column": item.source_column,
+                            "target_attribute_definition_id": item.target_attribute_definition_id,
+                            "target_system_field": item.target_system_field,
+                            "transformation_config": item.transformation_config,
+                            "display_order": item.display_order,
+                        }
+                    )
+                    for item in current
+                )
+            if matching_strategy is not None:
+                await self._validate_matching_strategy(
+                    profile.entity_type_id,
+                    effective_mappings,
+                    matching_strategy,
+                )
+                profile.matching_strategy = matching_strategy.model_dump(mode="json")
             if mappings is not None:
                 await self._validate_targets(profile.workspace_id, profile.entity_type_id, mappings)
+                if matching_strategy is None:
+                    existing_strategy = MATCHING_STRATEGY_ADAPTER.validate_python(
+                        profile.matching_strategy
+                    )
+                    await self._validate_matching_strategy(
+                        profile.entity_type_id,
+                        mappings,
+                        existing_strategy,
+                    )
                 await self.repository.replace_mappings(profile.id)
                 current = self._new_mappings(profile.id, mappings)
                 for mapping in current:
