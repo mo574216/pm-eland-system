@@ -1,5 +1,12 @@
 import { apiRequest } from '../../api/client'
-import type { ImportProfile, ImportProfileCreate, ImportProfileList, ImportUploadResult } from './types'
+import type {
+  ImportDryRunResult,
+  ImportJobStatus,
+  ImportProfile,
+  ImportProfileCreate,
+  ImportProfileList,
+  ImportUploadResult,
+} from './types'
 
 export function uploadImport(workspaceId: string, file: File): Promise<ImportUploadResult> {
   const body = new FormData()
@@ -24,4 +31,20 @@ export function listImportProfiles(workspaceId: string): Promise<ImportProfileLi
   return apiRequest<ImportProfileList>(
     `/workspaces/${workspaceId}/import-profiles?page=1&page_size=200`,
   )
+}
+
+export function assignImportProfile(
+  importJobId: string,
+  importProfileId: string,
+): Promise<ImportJobStatus> {
+  return apiRequest<ImportJobStatus>(`/imports/${importJobId}/mapping`, {
+    method: 'PUT',
+    body: JSON.stringify({ import_profile_id: importProfileId }),
+  })
+}
+
+export function dryRunImport(importJobId: string): Promise<ImportDryRunResult> {
+  return apiRequest<ImportDryRunResult>(`/imports/${importJobId}/dry-run`, {
+    method: 'POST',
+  })
 }

@@ -65,3 +65,32 @@ export interface ImportProfileList {
   page_size: number
   total: number
 }
+
+export interface ImportJobStatus {
+  import_job_id: string
+  status: string
+  import_profile_id: string | null
+}
+
+export interface ImportValidationError {
+  row_number: number | null
+  field: string
+  code: string
+}
+
+export interface ImportDryRunSummary {
+  rows_read: number
+  rows_valid: number
+  rows_invalid: number
+  records_to_create: number
+  records_to_update: number
+  records_unchanged: number
+  conflicts: number
+}
+
+export interface ImportDryRunResult {
+  import_job_id: string
+  status: 'READY_FOR_REVIEW' | 'VALIDATION_FAILED'
+  summary: ImportDryRunSummary
+  validation_errors: ImportValidationError[]
+}

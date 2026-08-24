@@ -3,13 +3,19 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 
 import { renderWithProviders } from '../../test/render'
-import { createImportProfile, uploadImport } from './importApi'
+import { assignImportProfile, createImportProfile, dryRunImport, uploadImport } from './importApi'
 import { ImportWizardPage } from './ImportWizardPage'
 
 vi.mock('./importApi', () => ({
   uploadImport: vi.fn(),
   createImportProfile: vi.fn(),
   listImportProfiles: vi.fn().mockResolvedValue({ items: [], page: 1, page_size: 200, total: 0 }),
+  assignImportProfile: vi.fn().mockResolvedValue({
+    import_job_id: 'f1cb5ce2-64b5-4726-a653-acb73af7e9cc',
+    status: 'UPLOADED',
+    import_profile_id: 'profile-1',
+  }),
+  dryRunImport: vi.fn(),
 }))
 vi.mock('../metadata/metadataApi', () => ({
   listEntityTypes: vi.fn().mockResolvedValue({
@@ -20,6 +26,8 @@ vi.mock('../metadata/metadataApi', () => ({
 
 const mockedUpload = vi.mocked(uploadImport)
 const mockedCreateProfile = vi.mocked(createImportProfile)
+const mockedAssignProfile = vi.mocked(assignImportProfile)
+const mockedDryRun = vi.mocked(dryRunImport)
 
 describe('ImportWizardPage', () => {
   it('uploads a CSV and displays real inspection metadata', async () => {
@@ -85,5 +93,29 @@ describe('ImportWizardPage', () => {
       'workspace-1',
       expect.objectContaining({ entity_type_id: 'entity-type-1', name: 'ورود افراد' }),
     )
+    expect(mockedAssignProfile).toHaveBeenCalledWith(
+      'f1cb5ce2-64b5-4726-a653-acb73af7e9cc',
+      'profile-1',
+    )
+
+    mockedDryRun.mockResolvedValue({
+      import_job_id: 'f1cb5ce2-64b5-4726-a653-acb73af7e9cc',
+      status: 'READY_FOR_REVIEW',
+      summary: {
+        rows_read: 2,
+        rows_valid: 2,
+        rows_invalid: 0,
+        records_to_create: 1,
+        records_to_update: 1,
+        records_unchanged: 0,
+        conflicts: 1,
+      },
+      validation_errors: [],
+    })
+    await user.click(screen.getByRole('button', { name: 'اجرای آزمایشی و نمایش نتیجه' }))
+
+    expect(await screen.findByRole('heading', { name: 'نتیجه اجرای آزمایشی' })).toBeVisible()
+    expect(screen.getByText('آماده بررسی')).toBeVisible()
+    expect(screen.getByText('هیچ موجودیتی ایجاد یا تغییر نکرده است.', { exact: false })).toBeVisible()
   })
 })

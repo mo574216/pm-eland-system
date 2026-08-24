@@ -26,7 +26,8 @@ import { useTranslation } from 'react-i18next'
 import { Navigate, useParams } from 'react-router-dom'
 
 import { ApiError } from '../../api/client'
-import { uploadImport } from './importApi'
+import { assignImportProfile, dryRunImport, uploadImport } from './importApi'
+import { ImportDryRunSummary } from './ImportDryRunSummary'
 import { ImportMappingStep } from './ImportMappingStep'
 import type { ImportProfile } from './types'
 
@@ -37,6 +38,20 @@ export function ImportWizardPage() {
   const [savedProfile, setSavedProfile] = useState<ImportProfile | null>(null)
   const mutation = useMutation({
     mutationFn: (selected: File) => uploadImport(workspaceId!, selected),
+  })
+  const profileAssignment = useMutation({
+    mutationFn: async (profile: ImportProfile) => {
+      if (!mutation.data) throw new Error('Import upload is required')
+      await assignImportProfile(mutation.data.import_job_id, profile.id)
+      return profile
+    },
+    onSuccess: setSavedProfile,
+  })
+  const dryRun = useMutation({
+    mutationFn: () => {
+      if (!mutation.data) throw new Error('Import upload is required')
+      return dryRunImport(mutation.data.import_job_id)
+    },
   })
   if (workspaceId === undefined) return <Navigate replace to="/workspaces" />
 
@@ -57,7 +72,7 @@ export function ImportWizardPage() {
         <Typography component="h1" variant="h1">{t('imports.title')}</Typography>
         <Typography color="text.secondary" sx={{ mt: 1 }}>{t('imports.description')}</Typography>
       </Box>
-      <Stepper activeStep={savedProfile ? 2 : mutation.data ? 1 : 0} alternativeLabel sx={{ overflowX: 'auto', pb: 1 }}>
+      <Stepper activeStep={dryRun.data ? 3 : savedProfile ? 2 : mutation.data ? 1 : 0} alternativeLabel sx={{ overflowX: 'auto', pb: 1 }}>
         {steps.map((label) => <Step key={label}><StepLabel>{label}</StepLabel></Step>)}
       </Stepper>
       <Card>
@@ -74,6 +89,8 @@ export function ImportWizardPage() {
                 onChange={(event) => {
                   setFile(event.target.files?.[0] ?? null)
                   setSavedProfile(null)
+                  profileAssignment.reset()
+                  dryRun.reset()
                   mutation.reset()
                 }}
               />
@@ -123,17 +140,46 @@ export function ImportWizardPage() {
             </Card>
           ))}
           {savedProfile ? (
-            <Alert severity="success">
-              {t('imports.profileSaved', { name: savedProfile.name })} {t('imports.dryRunNext')}
+            <Stack spacing={2}>
+              <Alert severity="success">
+                {t('imports.profileSaved', { name: savedProfile.name })} {t('imports.dryRunNext')}
+              </Alert>
+              {!dryRun.data ? (
+                <Button
+                  disabled={dryRun.isPending}
+                  onClick={() => dryRun.mutate()}
+                  variant="contained"
+                >
+                  {dryRun.isPending ? <CircularProgress color="inherit" size={22} /> : t('imports.runDryRun')}
+                </Button>
+              ) : null}
+              {dryRun.isError ? <Alert severity="error">{t('imports.dryRunFailed')}</Alert> : null}
+            </Stack>
+          ) : profileAssignment.isPending ? (
+            <Alert icon={<CircularProgress size={20} />} severity="info">
+              {t('imports.assigningProfile')}
             </Alert>
+          ) : profileAssignment.isError ? (
+            <Stack spacing={1.5}>
+              <Alert severity="error">{t('imports.profileAssignmentFailed')}</Alert>
+              <Button
+                onClick={() => {
+                  if (profileAssignment.variables) profileAssignment.mutate(profileAssignment.variables)
+                }}
+                variant="outlined"
+              >
+                {t('imports.retry')}
+              </Button>
+            </Stack>
           ) : (
             <ImportMappingStep
               inspection={mutation.data}
-              onSaved={setSavedProfile}
+              onSaved={(profile) => profileAssignment.mutate(profile)}
               sourceType={file?.name.toLowerCase().endsWith('.xlsx') ? 'XLSX' : 'CSV'}
               workspaceId={workspaceId}
             />
           )}
+          {dryRun.data ? <ImportDryRunSummary result={dryRun.data} /> : null}
         </Stack>
       ) : null}
     </Stack>

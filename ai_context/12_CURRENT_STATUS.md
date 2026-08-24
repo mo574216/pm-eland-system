@@ -3087,6 +3087,68 @@ IMP-FE-003 Dry-Run Summary UI, integrated into the same visible wizard. IMP-BE-0
 Conflict Resolution follows immediately because dry-run now persists conflicts.
 ```
 
+Dry-run summary UI implementation entry:
+
+```text
+DATE:
+2026-08-25
+
+MILESTONE:
+M4 Documents and Import / First useful MVP demo
+
+TASKS_COMPLETED:
+IMP-FE-003 Dry-Run Summary UI
+
+TASKS_IN_PROGRESS:
+None
+
+SUMMARY:
+Connected the import wizard to the accepted mapping-assignment and dry-run APIs.
+After creating or reusing a profile, users can explicitly run a read-only analysis
+and see Persian RTL status, rows read/valid/invalid, creates, updates, unchanged
+records, conflicts, and row-addressable validation errors. Loading, retry, and safe
+failure states keep the user at the correct wizard boundary.
+
+FILES_CHANGED:
+Frontend import API/types, wizard orchestration and focused interaction test,
+dry-run summary component, Persian localization, and current status documentation.
+
+DATABASE_CHANGES:
+None.
+
+API_CHANGES:
+No new API beyond the accepted IMP-BE-004 endpoints. The frontend now consumes PUT
+/imports/{import_job_id}/mapping and POST /imports/{import_job_id}/dry-run.
+
+TESTS_ADDED:
+The existing focused wizard interaction now proves profile assignment, dry-run
+execution, summary rendering, ready-for-review status, and the explicit guarantee
+that canonical entities were not changed.
+
+TEST_RESULTS:
+Frontend zero-warning ESLint and strict TypeScript pass. The focused wizard test
+passes in a single worker after the Windows fork pool timed out before starting a
+worker. Production build passes; the existing advisory bundle-size warning remains.
+
+SECURITY_IMPACT:
+The browser sends only opaque job/profile identifiers and renders backend-authorized
+results. Backend permission, workspace isolation, matching, reference validation,
+and canonical write prevention remain authoritative. No commit control is exposed.
+
+KNOWN_LIMITATIONS:
+Validation codes are displayed as stable machine codes pending a dedicated localized
+error-code presentation map. Conflict rows can be counted but not reviewed or
+resolved until IMP-BE-005 and IMP-FE-004. The main JavaScript bundle remains above
+Vite's advisory 500 kB threshold; route-level splitting is deferred housekeeping.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+IMP-BE-005 Conflict Resolution followed by IMP-FE-004 Conflict Resolver UI, keeping
+the same demo-first vertical slice.
+```
+
 ---
 
 # 27. Related Specifications
