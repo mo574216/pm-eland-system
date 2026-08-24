@@ -27,15 +27,17 @@ import { Navigate, useParams } from 'react-router-dom'
 
 import { ApiError } from '../../api/client'
 import { assignImportProfile, dryRunImport, uploadImport } from './importApi'
+import { ImportConflictResolver } from './ImportConflictResolver'
 import { ImportDryRunSummary } from './ImportDryRunSummary'
 import { ImportMappingStep } from './ImportMappingStep'
-import type { ImportProfile } from './types'
+import type { ImportProfile, ImportResolutionResult } from './types'
 
 export function ImportWizardPage() {
   const { t } = useTranslation()
   const { workspaceId } = useParams()
   const [file, setFile] = useState<File | null>(null)
   const [savedProfile, setSavedProfile] = useState<ImportProfile | null>(null)
+  const [resolutionState, setResolutionState] = useState<ImportResolutionResult | null>(null)
   const mutation = useMutation({
     mutationFn: (selected: File) => uploadImport(workspaceId!, selected),
   })
@@ -72,7 +74,7 @@ export function ImportWizardPage() {
         <Typography component="h1" variant="h1">{t('imports.title')}</Typography>
         <Typography color="text.secondary" sx={{ mt: 1 }}>{t('imports.description')}</Typography>
       </Box>
-      <Stepper activeStep={dryRun.data ? 3 : savedProfile ? 2 : mutation.data ? 1 : 0} alternativeLabel sx={{ overflowX: 'auto', pb: 1 }}>
+      <Stepper activeStep={resolutionState?.unresolved === 0 || dryRun.data?.status === 'READY_TO_COMMIT' ? 4 : dryRun.data ? 3 : savedProfile ? 2 : mutation.data ? 1 : 0} alternativeLabel sx={{ overflowX: 'auto', pb: 1 }}>
         {steps.map((label) => <Step key={label}><StepLabel>{label}</StepLabel></Step>)}
       </Stepper>
       <Card>
@@ -91,6 +93,7 @@ export function ImportWizardPage() {
                   setSavedProfile(null)
                   profileAssignment.reset()
                   dryRun.reset()
+                  setResolutionState(null)
                   mutation.reset()
                 }}
               />
@@ -147,7 +150,7 @@ export function ImportWizardPage() {
               {!dryRun.data ? (
                 <Button
                   disabled={dryRun.isPending}
-                  onClick={() => dryRun.mutate()}
+                  onClick={() => { setResolutionState(null); dryRun.mutate() }}
                   variant="contained"
                 >
                   {dryRun.isPending ? <CircularProgress color="inherit" size={22} /> : t('imports.runDryRun')}
@@ -180,6 +183,15 @@ export function ImportWizardPage() {
             />
           )}
           {dryRun.data ? <ImportDryRunSummary result={dryRun.data} /> : null}
+          {dryRun.data && dryRun.data.summary.conflicts > 0 ? (
+            <ImportConflictResolver
+              importJobId={dryRun.data.import_job_id}
+              onStatusChange={setResolutionState}
+            />
+          ) : null}
+          {resolutionState?.unresolved === 0 || dryRun.data?.status === 'READY_TO_COMMIT' ? (
+            <Alert severity="success">{t('imports.conflictsResolved')}</Alert>
+          ) : null}
         </Stack>
       ) : null}
     </Stack>

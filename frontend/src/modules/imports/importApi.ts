@@ -1,11 +1,14 @@
 import { apiRequest } from '../../api/client'
 import type {
   ImportDryRunResult,
+  ImportConflictList,
+  ImportConflictResolution,
   ImportJobStatus,
   ImportProfile,
   ImportProfileCreate,
   ImportProfileList,
   ImportUploadResult,
+  ImportResolutionResult,
 } from './types'
 
 export function uploadImport(workspaceId: string, file: File): Promise<ImportUploadResult> {
@@ -46,5 +49,37 @@ export function assignImportProfile(
 export function dryRunImport(importJobId: string): Promise<ImportDryRunResult> {
   return apiRequest<ImportDryRunResult>(`/imports/${importJobId}/dry-run`, {
     method: 'POST',
+  })
+}
+
+export function listImportConflicts(
+  importJobId: string,
+  page: number,
+  pageSize: number,
+): Promise<ImportConflictList> {
+  return apiRequest<ImportConflictList>(
+    `/imports/${importJobId}/conflicts?page=${String(page)}&page_size=${String(pageSize)}&resolution_status=ALL`,
+  )
+}
+
+export function resolveImportConflict(
+  importJobId: string,
+  conflictId: string,
+  resolution: ImportConflictResolution,
+): Promise<ImportResolutionResult> {
+  return apiRequest<ImportResolutionResult>(`/imports/${importJobId}/conflicts/${conflictId}`, {
+    method: 'PUT',
+    body: JSON.stringify({ resolution }),
+  })
+}
+
+export function resolveImportConflictsBulk(
+  importJobId: string,
+  conflictIds: string[],
+  resolution: ImportConflictResolution,
+): Promise<ImportResolutionResult> {
+  return apiRequest<ImportResolutionResult>(`/imports/${importJobId}/resolve-bulk`, {
+    method: 'POST',
+    body: JSON.stringify({ conflict_ids: conflictIds, resolution }),
   })
 }

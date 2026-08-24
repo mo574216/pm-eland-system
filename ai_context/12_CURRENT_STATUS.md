@@ -3215,6 +3215,68 @@ NEXT_TASK:
 IMP-FE-004 Conflict Resolver UI, followed by IMP-BE-006 transactional commit.
 ```
 
+Import conflict resolver UI implementation entry:
+
+```text
+DATE:
+2026-08-25
+
+MILESTONE:
+M4 Documents and Import / Demo-visible MVP
+
+TASKS_COMPLETED:
+IMP-FE-004 Conflict Resolver UI
+
+TASKS_IN_PROGRESS:
+None
+
+SUMMARY:
+Extended the same Persian RTL import wizard with a paginated field-level conflict
+table showing source row, field, existing value, imported value, and current
+decision. Users can explicitly choose MERGE, REPLACE, or SKIP per conflict or for a
+selected bounded set. No option is preselected, REPLACE is visually cautionary,
+loading/failure states are visible, and resolving the last conflict advances the
+wizard to the final-confirmation boundary.
+
+FILES_CHANGED:
+Conflict resolver component, wizard orchestration and focused interaction test,
+frontend import API/types, Persian localization, and current status documentation.
+
+DATABASE_CHANGES:
+None.
+
+API_CHANGES:
+No new API beyond IMP-BE-005. The frontend now consumes paginated conflict listing,
+single resolution, and bounded bulk resolution endpoints.
+
+TESTS_ADDED:
+The focused wizard interaction now continues through conflict retrieval, displays
+existing/imported values, applies an explicit MERGE decision, verifies the backend
+payload, and displays readiness for final confirmation.
+
+TEST_RESULTS:
+Frontend zero-warning ESLint, strict TypeScript, focused wizard test, and production
+build pass. The realistic wizard test uses a 15-second per-test ceiling and a single
+thread because Windows worker startup previously consumed most of the default five
+seconds. The existing advisory bundle-size warning remains.
+
+SECURITY_IMPACT:
+Conflict data is rendered only after the backend-authorized job query. The UI does
+not infer permissions, never defaults to overwrite, sends only accepted decisions
+and opaque IDs, and provides no canonical commit action before IMP-BE-006.
+
+KNOWN_LIMITATIONS:
+Values are rendered as plain strings or serialized JSON; rich type-specific diff
+visualization is deferred. Bulk actions apply only to explicitly selected rows on
+the loaded pages. Transactional commit and completion summary remain unavailable.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+IMP-BE-006 Transactional Commit, then IMP-FE-005 Commit Confirmation and Summary.
+```
+
 ---
 
 # 27. Related Specifications

@@ -94,3 +94,31 @@ export interface ImportDryRunResult {
   summary: ImportDryRunSummary
   validation_errors: ImportValidationError[]
 }
+
+export type ImportConflictResolution = 'MERGE' | 'REPLACE' | 'SKIP'
+
+export interface ImportConflict {
+  id: string
+  import_job_id: string
+  row_number: number | null
+  entity_id: string | null
+  attribute_key: string | null
+  existing_value: unknown
+  imported_value: unknown
+  resolution: ImportConflictResolution | null
+}
+
+export interface ImportConflictList {
+  items: ImportConflict[]
+  page: number
+  page_size: number
+  total: number
+  unresolved: number
+}
+
+export interface ImportResolutionResult {
+  import_job_id: string
+  status: string
+  resolved: number
+  unresolved: number
+}

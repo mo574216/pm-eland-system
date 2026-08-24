@@ -3,7 +3,13 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 
 import { renderWithProviders } from '../../test/render'
-import { assignImportProfile, createImportProfile, dryRunImport, uploadImport } from './importApi'
+import {
+  assignImportProfile,
+  createImportProfile,
+  dryRunImport,
+  resolveImportConflict,
+  uploadImport,
+} from './importApi'
 import { ImportWizardPage } from './ImportWizardPage'
 
 vi.mock('./importApi', () => ({
@@ -16,6 +22,24 @@ vi.mock('./importApi', () => ({
     import_profile_id: 'profile-1',
   }),
   dryRunImport: vi.fn(),
+  listImportConflicts: vi.fn().mockResolvedValue({
+    items: [{
+      id: 'conflict-1',
+      import_job_id: 'f1cb5ce2-64b5-4726-a653-acb73af7e9cc',
+      row_number: 2,
+      entity_id: 'entity-1',
+      attribute_key: 'name',
+      existing_value: 'علی',
+      imported_value: 'علی رضایی',
+      resolution: null,
+    }],
+    page: 1,
+    page_size: 25,
+    total: 1,
+    unresolved: 1,
+  }),
+  resolveImportConflict: vi.fn(),
+  resolveImportConflictsBulk: vi.fn(),
 }))
 vi.mock('../metadata/metadataApi', () => ({
   listEntityTypes: vi.fn().mockResolvedValue({
@@ -28,6 +52,7 @@ const mockedUpload = vi.mocked(uploadImport)
 const mockedCreateProfile = vi.mocked(createImportProfile)
 const mockedAssignProfile = vi.mocked(assignImportProfile)
 const mockedDryRun = vi.mocked(dryRunImport)
+const mockedResolveConflict = vi.mocked(resolveImportConflict)
 
 describe('ImportWizardPage', () => {
   it('uploads a CSV and displays real inspection metadata', async () => {
@@ -117,5 +142,22 @@ describe('ImportWizardPage', () => {
     expect(await screen.findByRole('heading', { name: 'نتیجه اجرای آزمایشی' })).toBeVisible()
     expect(screen.getByText('آماده بررسی')).toBeVisible()
     expect(screen.getByText('هیچ موجودیتی ایجاد یا تغییر نکرده است.', { exact: false })).toBeVisible()
-  })
+    expect(await screen.findByRole('heading', { name: 'بررسی و رفع تعارض‌ها' })).toBeVisible()
+    expect(screen.getByText('علی رضایی')).toBeVisible()
+
+    mockedResolveConflict.mockResolvedValue({
+      import_job_id: 'f1cb5ce2-64b5-4726-a653-acb73af7e9cc',
+      status: 'READY_TO_COMMIT',
+      resolved: 1,
+      unresolved: 0,
+    })
+    await user.click(screen.getByRole('button', { name: 'ادغام' }))
+
+    expect(await screen.findByText(/همه تعارض‌ها تصمیم‌گیری شده‌اند/)).toBeVisible()
+    expect(mockedResolveConflict).toHaveBeenCalledWith(
+      'f1cb5ce2-64b5-4726-a653-acb73af7e9cc',
+      'conflict-1',
+      'MERGE',
+    )
+  }, 15_000)
 })
