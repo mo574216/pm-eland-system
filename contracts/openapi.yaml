@@ -1470,15 +1470,63 @@ components:
         display_order: {type: integer, minimum: 0, default: 0}
       description: Exactly one target field must be supplied.
 
+    AttributeMatchKey:
+      type: object
+      additionalProperties: false
+      required: [source_column]
+      properties:
+        source_sheet: {type: [string, 'null'], minLength: 1, maxLength: 255}
+        source_column: {type: string, minLength: 1, maxLength: 255}
+        attribute_definition_id: {type: [string, 'null'], format: uuid}
+        system_field: {type: [string, 'null'], enum: [name, null]}
+      description: Exactly one target must be supplied.
+
+    ImportMatchingStrategy:
+      oneOf:
+        - type: object
+          additionalProperties: false
+          required: [type, source_column]
+          properties:
+            type: {const: ENTITY_ID}
+            source_sheet: {type: [string, 'null'], minLength: 1, maxLength: 255}
+            source_column: {type: string, minLength: 1, maxLength: 255}
+        - type: object
+          additionalProperties: false
+          required: [type, key]
+          properties:
+            type: {const: UNIQUE_ATTRIBUTE}
+            key: {$ref: '#/components/schemas/AttributeMatchKey'}
+        - type: object
+          additionalProperties: false
+          required: [type, keys]
+          properties:
+            type: {const: COMPOSITE_KEY}
+            keys:
+              type: array
+              minItems: 2
+              maxItems: 10
+              items: {$ref: '#/components/schemas/AttributeMatchKey'}
+        - type: object
+          additionalProperties: false
+          required: [type, parent_source_column, key]
+          properties:
+            type: {const: PARENT_AND_KEY}
+            parent_source_sheet: {type: [string, 'null'], minLength: 1, maxLength: 255}
+            parent_source_column: {type: string, minLength: 1, maxLength: 255}
+            key: {$ref: '#/components/schemas/AttributeMatchKey'}
+      discriminator:
+        propertyName: type
+
     ImportProfileCreate:
       type: object
       additionalProperties: false
-      required: [entity_type_id, name, source_type]
+      required: [entity_type_id, name, source_type, matching_strategy]
       properties:
         entity_type_id: {type: string, format: uuid}
         name: {type: string, minLength: 1, maxLength: 255}
         description: {type: [string, 'null']}
         source_type: {type: string, enum: [XLSX, CSV]}
+        matching_strategy: {$ref: '#/components/schemas/ImportMatchingStrategy'}
         configuration: {type: object, additionalProperties: true}
         mappings:
           type: array
@@ -1493,6 +1541,7 @@ components:
         name: {type: string, minLength: 1, maxLength: 255}
         description: {type: [string, 'null']}
         configuration: {type: object, additionalProperties: true}
+        matching_strategy: {$ref: '#/components/schemas/ImportMatchingStrategy'}
         mappings:
           type: array
           maxItems: 1000

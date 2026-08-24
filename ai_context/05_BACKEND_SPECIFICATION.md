@@ -889,6 +889,21 @@ The matching strategy SHALL be part of the import profile/configuration.
 
 Name-only matching SHALL not be assumed globally.
 
+The stable strategy discriminators are:
+
+```text
+ENTITY_ID
+UNIQUE_ATTRIBUTE
+COMPOSITE_KEY
+PARENT_AND_KEY
+```
+
+Attribute and composite keys SHALL reference active attribute definitions for the
+profile entity type and the same mapped source columns. `name` MAY be selected as
+an explicit generic system key; it is never an implicit fallback. Parent-and-key
+matching SHALL include an explicit source mapping to `parent_id`. Entity IDs are
+read-only matching input and SHALL NOT be mapped into mutable entity fields.
+
 ---
 
 # 33. Import Dry Run

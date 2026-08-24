@@ -1603,6 +1603,11 @@ generic entity system field (`name`, `description`, or `parent_id`). Replacing a
 mapping set is atomic. Every operation requires active workspace membership and
 `IMPORT_EXECUTE`; mutations are audited.
 
+Create requests require a discriminated `matching_strategy`. Update requests may
+replace it. Supported `type` values are `ENTITY_ID`, `UNIQUE_ATTRIBUTE`,
+`COMPOSITE_KEY`, and `PARENT_AND_KEY`; referenced keys must correspond to mappings
+in the same profile.
+
 # 14.1 POST /workspaces/{workspace_id}/imports
 
 Upload import file and create import job.

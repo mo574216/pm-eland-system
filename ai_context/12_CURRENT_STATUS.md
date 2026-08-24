@@ -2813,6 +2813,74 @@ Commit/push the repair and IMP-BE-001/002 slices, confirm a new Required CI Gate
 then resume IMP-BE-003 Matching Strategy.
 ```
 
+Import matching strategy implementation entry:
+
+```text
+DATE:
+2026-08-23
+
+MILESTONE:
+M4 Documents and Import
+
+TASKS_COMPLETED:
+IMP-BE-003 Matching Strategy
+
+TASKS_IN_PROGRESS:
+None
+
+SUMMARY:
+Added an explicit, discriminated matching-strategy contract for stable entity ID,
+unique attribute, composite key, and parent-plus-key matching. Strategies are stored
+inside reusable import profiles and may be replaced through the existing profile
+API. Attribute and generic-name keys must correspond exactly to profile mappings;
+parent-plus-key also requires an explicit parent_id mapping. Entity ID remains a
+read-only match input rather than a mutable mapping target.
+
+FILES_CHANGED:
+Import profile schemas/service/API integration, backend and narrative API
+specifications, canonical OpenAPI matching schemas, focused profile strategy tests,
+and current status documentation.
+
+DATABASE_CHANGES:
+None. Strategies use the accepted import_profiles.matching_strategy JSONB field.
+
+API_CHANGES:
+Import profile create now requires matching_strategy; profile update may replace it.
+The contract supports ENTITY_ID, UNIQUE_ATTRIBUTE, COMPOSITE_KEY, and
+PARENT_AND_KEY discriminators with bounded, explicit key definitions.
+
+TESTS_ADDED:
+Focused coverage verifies distinct composite keys, rejects parent-plus-key without
+an explicit parent mapping, and proves successful persistence for entity-ID,
+unique-attribute, composite, and parent-plus-key modes.
+
+TEST_RESULTS:
+Ruff formatting/lint and strict mypy pass for the changed backend files; all ten
+focused profile/OpenAPI tests pass; canonical OpenAPI YAML parses successfully.
+The immediately preceding PR #6 workflow run 32663232281 passed every job including
+the Required CI Gate before this slice began.
+
+SECURITY_IMPACT:
+Matching configuration remains workspace-authorized through ImportProfileService.
+Foreign/inactive attribute IDs and unmapped key/parent sources are rejected.
+Unknown strategy fields, implicit name fallback, mutable entity-ID mapping, and
+arbitrary matching modes are prohibited by discriminated request schemas.
+
+KNOWN_LIMITATIONS:
+This task configures and validates matching semantics. Database lookup execution,
+duplicate-row detection, ambiguity handling, diffs, and canonical-data protection
+are implemented by IMP-BE-004 Dry Run. Existing pre-feature profiles with an empty
+matching_strategy must be updated before they can be returned by the typed API.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+IMP-FE-001 Import Wizard as the next demo-visible, dependency-ready slice. It will
+include the missing authorized upload/analyze API integration required to make the
+wizard functional. IMP-BE-004 Dry Run follows that visible inspection workflow.
+```
+
 ---
 
 # 27. Related Specifications

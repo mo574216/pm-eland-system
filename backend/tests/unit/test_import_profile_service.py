@@ -16,7 +16,13 @@ from app.models.metadata import AttributeDefinition, EntityType
 from app.models.workspace import Workspace
 from app.repositories.import_profile import ImportProfileRepository
 from app.repositories.workspace import WorkspaceRepository
-from app.schemas.import_profile import ImportMappingInput
+from app.schemas.import_profile import (
+    CompositeMatchingStrategy,
+    EntityIdMatchingStrategy,
+    ImportMappingInput,
+    ParentKeyMatchingStrategy,
+    UniqueAttributeMatchingStrategy,
+)
 from app.services.auth import AuthenticatedIdentity
 from app.services.authorization import AuditContext
 from app.services.import_profile import ImportProfileService
@@ -152,6 +158,18 @@ def mapping(attribute_id: UUID) -> ImportMappingInput:
     )
 
 
+def unique_strategy(attribute_id: UUID) -> UniqueAttributeMatchingStrategy:
+    return UniqueAttributeMatchingStrategy.model_validate(
+        {
+            "type": "UNIQUE_ATTRIBUTE",
+            "key": {
+                "source_column": "Code",
+                "attribute_definition_id": str(attribute_id),
+            },
+        }
+    )
+
+
 def audit() -> AuditContext:
     return AuditContext(uuid4(), "127.0.0.1", "test-agent")
 
@@ -181,6 +199,7 @@ async def test_create_profile_validates_workspace_targets_and_audits_atomically(
         name="Items",
         description=None,
         source_type="CSV",
+        matching_strategy=unique_strategy(attribute.id),
         configuration={},
         mappings=(mapping(attribute.id),),
         audit=audit(),
@@ -206,6 +225,7 @@ async def test_workspace_role_permission_is_effective() -> None:
         name="Items",
         description=None,
         source_type="CSV",
+        matching_strategy=unique_strategy(attribute.id),
         configuration={},
         mappings=(mapping(attribute.id),),
         audit=audit(),
@@ -225,6 +245,7 @@ async def test_missing_permission_is_rejected() -> None:
             name="Items",
             description=None,
             source_type="CSV",
+            matching_strategy=unique_strategy(uuid4()),
             configuration={},
             mappings=(),
             audit=audit(),
@@ -243,6 +264,7 @@ async def test_foreign_or_wrong_type_attribute_is_rejected() -> None:
             name="Items",
             description=None,
             source_type="CSV",
+            matching_strategy=unique_strategy(uuid4()),
             configuration={},
             mappings=(mapping(uuid4()),),
             audit=audit(),
@@ -260,15 +282,141 @@ async def test_mapping_replacement_is_atomic_and_audited() -> None:
         name="Items",
         description=None,
         source_type="CSV",
+        matching_strategy=unique_strategy(attribute.id),
         configuration={},
         mappings=(mapping(attribute.id),),
         audit=audit(),
     )
     replacement = ImportMappingInput(source_column="Name", target_system_field="name")
+    replacement_strategy = UniqueAttributeMatchingStrategy.model_validate(
+        {
+            "type": "UNIQUE_ATTRIBUTE",
+            "key": {"source_column": "Name", "system_field": "name"},
+        }
+    )
     updated = await import_service.update_profile(
-        created.profile.id, values={"name": "Updated"}, mappings=(replacement,), audit=audit()
+        created.profile.id,
+        values={"name": "Updated"},
+        mappings=(replacement,),
+        matching_strategy=replacement_strategy,
+        audit=audit(),
     )
     assert repository.replaced
     assert updated.profile.name == "Updated"
     assert updated.mappings[0].target_system_field == "name"
     assert repository.audit_logs[-1].action == "IMPORT_PROFILE_UPDATED"
+
+
+def test_composite_strategy_requires_distinct_keys() -> None:
+    with pytest.raises(ValidationError):
+        CompositeMatchingStrategy.model_validate(
+            {
+                "type": "COMPOSITE_KEY",
+                "keys": [
+                    {"source_column": "Code", "system_field": "name"},
+                    {"source_column": "Code", "attribute_definition_id": str(uuid4())},
+                ],
+            }
+        )
+
+
+@pytest.mark.asyncio
+async def test_parent_and_key_requires_explicit_parent_mapping() -> None:
+    actor = identity(PermissionCode.IMPORT_EXECUTE)
+    workspace = Workspace(id=uuid4(), name="A", slug="a", owner_id=actor.user.id)
+    import_service, repository, attribute = service(actor, workspace)
+    strategy = ParentKeyMatchingStrategy.model_validate(
+        {
+            "type": "PARENT_AND_KEY",
+            "parent_source_column": "Parent ID",
+            "key": {
+                "source_column": "Code",
+                "attribute_definition_id": str(attribute.id),
+            },
+        }
+    )
+    with pytest.raises(InvalidMetadataError) as raised:
+        await import_service.create_profile(
+            workspace.id,
+            entity_type_id=repository.entity_type.id,
+            name="Items",
+            description=None,
+            source_type="CSV",
+            matching_strategy=strategy,
+            configuration={},
+            mappings=(mapping(attribute.id),),
+            audit=audit(),
+        )
+    assert raised.value.details["reason"] == "parent_not_mapped"
+
+
+@pytest.mark.asyncio
+async def test_entity_id_composite_and_parent_key_modes_are_supported() -> None:
+    actor = identity(PermissionCode.IMPORT_EXECUTE)
+    workspace = Workspace(id=uuid4(), name="A", slug="a", owner_id=actor.user.id)
+
+    entity_id_service, entity_id_repository, _ = service(actor, workspace)
+    entity_id_result = await entity_id_service.create_profile(
+        workspace.id,
+        entity_type_id=entity_id_repository.entity_type.id,
+        name="By ID",
+        description=None,
+        source_type="CSV",
+        matching_strategy=EntityIdMatchingStrategy(type="ENTITY_ID", source_column="Entity ID"),
+        configuration={},
+        mappings=(),
+        audit=audit(),
+    )
+    assert entity_id_result.profile.matching_strategy["type"] == "ENTITY_ID"
+
+    composite_service, composite_repository, composite_attribute = service(actor, workspace)
+    name_mapping = ImportMappingInput(source_column="Name", target_system_field="name")
+    composite = CompositeMatchingStrategy.model_validate(
+        {
+            "type": "COMPOSITE_KEY",
+            "keys": [
+                {
+                    "source_column": "Code",
+                    "attribute_definition_id": str(composite_attribute.id),
+                },
+                {"source_column": "Name", "system_field": "name"},
+            ],
+        }
+    )
+    composite_result = await composite_service.create_profile(
+        workspace.id,
+        entity_type_id=composite_repository.entity_type.id,
+        name="Composite",
+        description=None,
+        source_type="CSV",
+        matching_strategy=composite,
+        configuration={},
+        mappings=(mapping(composite_attribute.id), name_mapping),
+        audit=audit(),
+    )
+    assert composite_result.profile.matching_strategy["type"] == "COMPOSITE_KEY"
+
+    parent_service, parent_repository, parent_attribute = service(actor, workspace)
+    parent_mapping = ImportMappingInput(source_column="Parent ID", target_system_field="parent_id")
+    parent_strategy = ParentKeyMatchingStrategy.model_validate(
+        {
+            "type": "PARENT_AND_KEY",
+            "parent_source_column": "Parent ID",
+            "key": {
+                "source_column": "Code",
+                "attribute_definition_id": str(parent_attribute.id),
+            },
+        }
+    )
+    parent_result = await parent_service.create_profile(
+        workspace.id,
+        entity_type_id=parent_repository.entity_type.id,
+        name="Parent and key",
+        description=None,
+        source_type="CSV",
+        matching_strategy=parent_strategy,
+        configuration={},
+        mappings=(mapping(parent_attribute.id), parent_mapping),
+        audit=audit(),
+    )
+    assert parent_result.profile.matching_strategy["type"] == "PARENT_AND_KEY"

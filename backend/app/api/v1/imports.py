@@ -67,6 +67,7 @@ async def create_import_profile(
         name=payload.name,
         description=payload.description,
         source_type=payload.source_type,
+        matching_strategy=payload.matching_strategy,
         configuration=payload.configuration,
         mappings=payload.mappings,
         audit=_audit_context(request),
@@ -112,11 +113,14 @@ async def update_import_profile(
     actor: Annotated[AuthenticatedIdentity, Depends(get_current_identity)],
     session: Annotated[AsyncSession, Depends(get_database_session)],
 ) -> dict[str, object]:
-    dumped = payload.model_dump(exclude={"mappings"}, exclude_unset=True)
+    dumped = payload.model_dump(exclude={"mappings", "matching_strategy"}, exclude_unset=True)
     record = await ImportProfileService(session, actor).update_profile(
         profile_id,
         values=dumped,
         mappings=payload.mappings if "mappings" in payload.model_fields_set else None,
+        matching_strategy=(
+            payload.matching_strategy if "matching_strategy" in payload.model_fields_set else None
+        ),
         audit=_audit_context(request),
     )
     return success_envelope(_response(record).model_dump(mode="json"))
