@@ -1771,6 +1771,11 @@ REPLACE
 SKIP
 ```
 
+Resolution semantics are field-level. `SKIP` retains the persisted value;
+`REPLACE` uses the imported value; `MERGE` shallow-merges object members, appends
+previously absent list members, and uses the imported value for scalar fields.
+No resolution is implicit.
+
 ---
 
 # 14.7 POST /imports/{import_job_id}/resolve-bulk
@@ -1794,7 +1799,8 @@ Commit import.
 
 ### Headers
 
-Recommended:
+Optional. When omitted, the server derives a stable key from the import job. A
+caller-supplied key SHALL be 1 through 255 characters.
 
 ```http
 Idempotency-Key: <client-generated-key>
@@ -1809,23 +1815,35 @@ Idempotency-Key: <client-generated-key>
 
 ### Success
 
-For background execution:
-
-```text
-202 Accepted
-```
+The current bounded implementation completes synchronously and returns `200 OK`.
+The same job and idempotency key replay the stored completion summary without
+performing canonical writes again. A different key after completion returns
+`IMPORT_ALREADY_COMMITTED`.
 
 ```json
 {
   "success": true,
   "data": {
     "import_job_id": "...",
-    "status": "COMMITTING"
+    "status": "COMPLETED",
+    "summary": {
+      "rows_read": 128,
+      "records_created": 80,
+      "records_updated": 32,
+      "records_unchanged": 12,
+      "records_skipped": 4,
+      "conflicts_resolved": 9,
+      "invalid_rows": 0
+    }
   },
   "error": null,
   "meta": {}
 }
 ```
+
+Partial commit is not supported. Any dry-run validation error blocks commit; a
+changed source/profile preview, stale entity version, hierarchy cycle, or failed
+write rolls back the entire canonical transaction.
 
 ---
 

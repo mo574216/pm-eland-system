@@ -3,7 +3,7 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, File, Form, Query, Request, UploadFile, status
+from fastapi import APIRouter, Depends, File, Form, Header, Query, Request, UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies.authentication import get_current_identity
@@ -14,6 +14,8 @@ from app.core.request_context import get_request_id
 from app.schemas.import_job import (
     ImportBulkResolutionRequest,
     ImportColumnInspectionResponse,
+    ImportCommitResponse,
+    ImportCommitSummaryResponse,
     ImportConflictListResponse,
     ImportConflictResolutionRequest,
     ImportConflictResolutionResult,
@@ -36,6 +38,7 @@ from app.schemas.import_profile import (
 )
 from app.services.auth import AuthenticatedIdentity
 from app.services.authorization import AuditContext
+from app.services.import_commit import ImportCommitService
 from app.services.import_conflict import ImportConflictService, ImportResolutionResult
 from app.services.import_dry_run import ImportDryRunService
 from app.services.import_job import ImportJobService, ImportUpload
@@ -231,6 +234,39 @@ async def dry_run_import(
                 row_number=item.row_number, field=item.field, code=item.code
             )
             for item in result.validation_errors
+        ),
+    )
+    return success_envelope(response.model_dump(mode="json"))
+
+
+@router.post("/imports/{import_job_id}/commit")
+async def commit_import(
+    import_job_id: UUID,
+    request: Request,
+    actor: Annotated[AuthenticatedIdentity, Depends(get_current_identity)],
+    session: Annotated[AsyncSession, Depends(get_database_session)],
+    storage: Annotated[StorageProvider, Depends(get_storage_provider)],
+    idempotency_key: Annotated[
+        str | None,
+        Header(alias="Idempotency-Key", min_length=1, max_length=255),
+    ] = None,
+) -> dict[str, object]:
+    result = await ImportCommitService(session, actor, storage).commit(
+        import_job_id,
+        idempotency_key=idempotency_key,
+        audit=_audit_context(request),
+    )
+    response = ImportCommitResponse(
+        import_job_id=result.import_job_id,
+        status=result.status,
+        summary=ImportCommitSummaryResponse(
+            rows_read=result.summary.rows_read,
+            records_created=result.summary.records_created,
+            records_updated=result.summary.records_updated,
+            records_unchanged=result.summary.records_unchanged,
+            records_skipped=result.summary.records_skipped,
+            conflicts_resolved=result.summary.conflicts_resolved,
+            invalid_rows=result.summary.invalid_rows,
         ),
     )
     return success_envelope(response.model_dump(mode="json"))

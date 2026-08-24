@@ -97,3 +97,19 @@ class ImportConflictResolutionResult(BaseModel):
     status: str
     resolved: int
     unresolved: int
+
+
+class ImportCommitSummaryResponse(BaseModel):
+    rows_read: int
+    records_created: int
+    records_updated: int
+    records_unchanged: int
+    records_skipped: int
+    conflicts_resolved: int
+    invalid_rows: int
+
+
+class ImportCommitResponse(BaseModel):
+    import_job_id: UUID
+    status: str
+    summary: ImportCommitSummaryResponse

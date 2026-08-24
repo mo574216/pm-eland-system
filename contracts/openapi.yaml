@@ -1423,16 +1423,17 @@ paths:
         - name: Idempotency-Key
           in: header
           required: false
-          schema: {type: string}
+          schema: {type: string, minLength: 1, maxLength: 255}
       responses:
-        '202':
-          description: Commit accepted
+        '200':
+          description: Import committed transactionally, or same-key result replayed
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/SuccessEnvelope'
         '409':
           $ref: '#/components/responses/Conflict'
+        '422': {$ref: '#/components/responses/ValidationError'}
 
   /phases/{phaseId}/lock:
     post:

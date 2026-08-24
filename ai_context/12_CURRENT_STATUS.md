@@ -3277,6 +3277,69 @@ NEXT_TASK:
 IMP-BE-006 Transactional Commit, then IMP-FE-005 Commit Confirmation and Summary.
 ```
 
+Transactional import commit implementation entry:
+
+```text
+DATE:
+2026-08-25
+
+MILESTONE:
+M4 Documents and Import / Demo-visible MVP
+
+TASKS_COMPLETED:
+IMP-BE-006 Transactional Commit
+
+TASKS_IN_PROGRESS:
+None
+
+SUMMARY:
+Added a synchronous, idempotent transactional commit endpoint that revalidates the
+reviewed import evidence, rejects unresolved or changed inputs, and applies create,
+update, unchanged, and skip outcomes to generic entity records as one atomic unit.
+MERGE, REPLACE, and SKIP now have explicit field-level write semantics, and every
+material entity change plus the completed import job receives an audit record.
+
+FILES_CHANGED:
+Import API, commit service, import repository and schemas, domain exceptions,
+focused backend tests, OpenAPI contract, API specification, and this status file.
+
+DATABASE_CHANGES:
+None.
+
+API_CHANGES:
+POST /imports/{import_job_id}/commit now accepts an optional bounded
+Idempotency-Key and returns a completed import summary. The OpenAPI contract and API
+specification document the synchronous 200 response and commit failure responses.
+
+TESTS_ADDED:
+Focused tests cover generic entity creation/update/skip behavior and audits,
+unresolved-conflict rejection, completed-job idempotent retry behavior, and rollback
+of a forced failure after a simulated canonical write.
+
+TEST_RESULTS:
+Focused Ruff, strict mypy, import commit tests, and OpenAPI validation pass. Full
+backend verification is recorded in the implementation handoff.
+
+SECURITY_IMPACT:
+Workspace access and IMPORT_EXECUTE are checked before source access and again under
+the final job lock. The private stored source and reviewed evidence are revalidated,
+unresolved conflicts cannot commit, silent overwrite is prevented, hierarchy parent
+changes use cycle protection, optimistic versions protect updates, and mutations
+are audited.
+
+KNOWN_LIMITATIONS:
+Commit is synchronous and partial commit is intentionally unsupported. No phase
+association or phase-lock schema exists in this milestone; when that model lands,
+the shared lock policy must be integrated before imports can mutate phase-associated
+entities.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+Paused at user request before IMP-FE-005; awaiting usage-scenario guidance.
+```
+
 ---
 
 # 27. Related Specifications
