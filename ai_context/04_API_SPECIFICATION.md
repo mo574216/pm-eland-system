@@ -202,6 +202,19 @@ presentation formatting belongs to the frontend localization layer.
 
 ---
 
+## API-RULE-009 — Human-Readable Selector Contracts
+
+UUIDs remain API identifiers, but user-facing workflows SHALL consume authorized,
+searchable, paginated lookup resources containing at minimum `id`, localized display
+label, resource kind, and safe disambiguating context. Selector APIs SHALL support
+bounded search and SHALL not expose unauthorized identities/resources.
+
+Create requests SHOULD omit stable technical keys when the server can generate them.
+Where an explicit key is accepted, it belongs to an Advanced/integration contract,
+is server-normalized/validated, and returns collision errors through stable codes.
+
+---
+
 # 3. HTTP Status Codes
 
 The API SHALL use standard HTTP semantics.
@@ -1249,6 +1262,13 @@ Return normalized rendering contract.
 entity_id
 ```
 
+CTX-BE-001 SHALL extend canonical OpenAPI before implementation with a discriminated
+context request supporting applicable `phase_id`, `deliverable_id`, and `work_item_id`.
+Such values establish requested context only. The backend derives and authorizes the
+effective context and returns human-readable context-header items, binding mode,
+source provenance/version where allowed, current/locked state, and field suggestion
+policy descriptors. A client-supplied context ID never grants access.
+
 If `entity_id` is supplied, response MAY include:
 
 - inherited values,
@@ -1394,6 +1414,21 @@ Manager/reviewer action.
 ### Permission
 
 Review permission defined in security specification.
+
+---
+
+# 12.6 Form Suggestion Contract Rules
+
+Before ASSIST implementation, OpenAPI SHALL define bounded operations to generate,
+list, accept/edit, reject, and optionally regenerate suggestions for a form draft or
+import review. Candidate schemas SHALL contain target field/row, candidate value,
+reason, source kind and safe provenance, confidence where meaningful,
+deterministic/AI indicator, status, and concurrency token.
+
+Acceptance SHALL send the suggestion ID and explicit chosen value and SHALL execute
+normal validation, authorization, lock, and optimistic-concurrency checks. Suggestion
+generation SHALL not mutate the draft. Bulk decisions are bounded and atomic per
+resource.
 
 ---
 
@@ -1608,6 +1643,10 @@ replace it. Supported `type` values are `ENTITY_ID`, `UNIQUE_ATTRIBUTE`,
 `COMPOSITE_KEY`, and `PARENT_AND_KEY`; referenced keys must correspond to mappings
 in the same profile.
 
+Profiles and mappings are reusable configuration managed from the Administration
+console. Operational users invoke import from an eligible phase, deliverable, form,
+or output-specification action rather than ordinary top-level project navigation.
+
 # 14.1 POST /workspaces/{workspace_id}/imports
 
 Upload import file and create import job.
@@ -1618,6 +1657,13 @@ Upload import file and create import job.
 file
 import_profile_id (optional)
 ```
+
+The current workspace upload shape remains a compatibility/support contract until
+IMP-BE-007 publishes a discriminated contextual request carrying the applicable
+`phase_id`, governed `deliverable_id`, and configured form/entity target. Normal frontend workflows
+SHALL not ask users to reselect a target already established by an authorized
+phase/deliverable/form action. The backend SHALL revalidate context compatibility,
+same-workspace ownership, import permission, and phase/resource lock state.
 
 ### Success
 
@@ -2072,6 +2118,31 @@ Response MAY include multiple widgets:
 
 ---
 
+# 17.5 Report Template and Generation Contract Rules
+
+Before RPT-DB/BE-002 implementation, OpenAPI SHALL define versioned report-template
+draft, preview, publish, new-version, list/read, retire, generate, generation-status,
+and authorized download operations. Template schemas use discriminated allowlisted
+section/widget/binding kinds and required-content rules; raw SQL, code, and arbitrary
+external URLs are prohibited.
+
+A completed generation response SHALL identify template/version, data-as-of time,
+parameters, output document/version, source snapshot/provenance summary, actor,
+status, and audit correlation. Missing required authorized content SHALL return a
+field/section-addressable validation result rather than silently generating an
+incomplete formal report.
+
+---
+
+# 17.6 Reference Impact Contract Rules
+
+An authorized impact endpoint MAY list current resources affected by a canonical
+entity change using paginated typed targets, relationship/binding reason, current
+review marker, and safe navigation label. Historical snapshots are read-only and may
+offer a compare-to-current operation; there is no bulk “replace all snapshots” API.
+
+---
+
 # 18. Audit API
 
 # 18.1 GET /workspaces/{workspace_id}/audit
@@ -2287,6 +2358,11 @@ WORK-FR-*  → contract-first work/risk/issue APIs
 COM-FR-*   → contract-first thread/announcement/notification APIs
 ACC-FR-*   → contract-first acceptance/condition APIs
 CONF-FR-*  → contract-first configuration lifecycle APIs
+PARTY-FR-* → contract-first party/affiliation/selector APIs
+CTX-FR-*   → form render/instance context contracts
+ASSIST-FR-* → contract-first suggestion APIs
+REF-FR-*   → relationships and contract-first impact/compare APIs
+UX-FR-*    → generated-key creates and authorized lookup APIs
 RPT-FR-*   → /dashboards/*
 AUD-FR-*   → /audit/*
 ```

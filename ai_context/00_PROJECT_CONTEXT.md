@@ -92,6 +92,8 @@ relationships
 import profiles
 phases
 dashboards
+report templates
+suggestion and context rules
 ```
 
 without requiring software changes.
@@ -219,6 +221,40 @@ through dashboards and reports.
 
 ---
 
+## UC-008 — Contextual Project Work
+
+Users work from a project phase, deliverable, service/entity, or form context. The
+system carries known project, phase, organization, target, and permission context
+into forms, imports, reviews, and reports instead of asking users to re-enter IDs or
+select information already known.
+
+---
+
+## UC-009 — Assisted Structured Data Completion
+
+Manual and imported form completion can use explainable suggestions from configured
+project context, parent/related records, taxonomies, accepted prior values,
+deterministic rules, duplicate analysis, and separately governed AI assistance.
+
+---
+
+## UC-010 — Connected Change Awareness
+
+Canonical entities and relationships keep current project information consistent.
+Authorized users can observe the impact of service/entity changes across current
+forms, deliverables, reports, and related records while historical submitted or
+accepted snapshots remain immutable.
+
+---
+
+## UC-011 — Template-Driven Reports
+
+Authorized users configure, preview, version, and publish safe report templates that
+can require project, employer, contractor, progress, deliverable, risk, review, and
+acceptance information.
+
+---
+
 # 6. User Roles and Authority
 
 The product SHALL ship seedable baseline profiles for:
@@ -274,6 +310,10 @@ Work Item Engine
 Acceptance / Condition Engine
 Communication / Notification Engine
 Risk / Issue Engine
+Party / Organization Engine
+Context / Assistance Engine
+Impact Projection Engine
+Report Template Engine
 Reporting Engine
 Audit Engine
 Background Job Engine
@@ -301,6 +341,21 @@ advanced Gantt/critical-path scheduling
 CRM
 billing/subscriptions
 ```
+
+---
+
+# 8.1 Experience Principle
+
+The system may be technically sophisticated but SHALL feel like a coherent content
+and project administration product. The approved interaction reference is the
+straightforward administrative model associated with WordPress: clear sections,
+human-readable lists and selectors, add/edit flows, sensible defaults,
+preview/publish lifecycles, contextual guidance, and advanced technical settings
+behind progressive disclosure. This is not a visual-copy requirement.
+
+Normal users SHALL not enter UUIDs, role IDs, parent IDs, relationship direction
+codes, or stable keys. Import, form completion, relationship management, and report
+generation occur in project context. See ADR-0007 and ADR-0008.
 
 ---
 

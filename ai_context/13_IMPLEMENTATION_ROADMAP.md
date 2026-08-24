@@ -54,6 +54,9 @@ The repository uses `ai_context/`. Canonical repository guidance now references 
 | DG-07 | DR-001 | Approve production RPO/RTO (OD-013) | Operations decision and recovery plan |
 | DG-08 | Date/number-intensive frontend work | Choose Jalali/Gregorian calendar and Persian/Latin display digits (OD-015) | Localization policy update and centralized formatter tests |
 | DG-09 | GOV-DB-001 / AUTH-DB-002 | Define granular contribution, submission, monitoring, review, recommendation, sign-off, acceptance, condition-verification, and configuration permissions | Updated permission contract, seed migration, and authority-matrix tests |
+| DG-10 | UX-BE-001 | Define server-generated stable-key format, collision policy, explicit-key lifecycle, and compatibility for existing API clients | API/spec update and key-generation tests |
+| DG-11 | CTX-BE-001 | Finalize explicit live/reference/suggestion/copy/snapshot binding schema and compatibility mapping from current inheritance rules | Contract/spec update; ADR-0008 is authoritative |
+| DG-12 | RPT-BE-004 | Select restricted report renderer/output formats and resource limits; prohibit template SQL/code | Deployment/security decision and renderer contract |
 
 OD-002 is resolved for the MVP by the accepted architecture direction: JSONB is canonical. OD-003, OD-004, OD-007, OD-010, OD-011, OD-012, and OD-014 do not block foundation work and must not expand MVP scope.
 
@@ -113,7 +116,9 @@ Execution order:
 3. HIER-BE-001 and HIER-BE-002 using recursive PostgreSQL CTEs and cycle prevention.
 4. REL-DB-001 and REL-BE-001.
 5. META-FE-001, ENT-FE-001, ENT-FE-002, and REL-FE-001 once payload contracts stabilize.
-6. Complete TEST-HIER-001 and applicable workspace/security tests.
+6. Resolve DG-10 and complete UX-BE-001, UX-FE-002, and REL-FE-002 before the next
+   stakeholder demo so technical keys/IDs and relationship mechanics no longer leak.
+7. Complete TEST-HIER-001 and applicable workspace/security/UX tests.
 
 Exit gate:
 
@@ -136,7 +141,12 @@ Execution order:
 4. Implement DATA-BE-001 and DATA-BE-002 with authoritative backend validation and lock checks.
 5. Implement FORM-FE-001 through FORM-FE-004.
 6. Complete P1 versioning work FORM-BE-002 and FORM-FE-005 before production release.
-7. Complete TEST-FORM-001 across every supported field type, inheritance mode, conditional rule, and repeating table.
+7. Resolve DG-11; implement PARTY and CTX services so governed forms carry project,
+   phase, service/entity, and organization context with explicit snapshot semantics.
+8. Implement deterministic ASSIST-BE/FE-001 for explainable manual/import suggestions;
+   AI remains deferred behind AI-001.
+9. Complete TEST-FORM-001 across every supported field type, binding mode,
+   inheritance/context mode, conditional rule, and repeating table.
 
 Exit gate:
 
@@ -166,7 +176,10 @@ Import stream, started after metadata/entity validation is stable:
 3. IMP-BE-004 dry run and IMP-BE-005 explicit conflict resolution.
 4. IMP-BE-006 transactional, idempotent commit with audit summary.
 5. IMP-FE-001 through IMP-FE-005 as each backend contract stabilizes.
-6. Complete TEST-IMP-001, including rollback and duplicate-commit cases.
+6. After phase/deliverable foundations, implement IMP-BE-007/IMP-FE-006 so the wizard
+   is embedded in governed context and removed from normal top-level navigation.
+7. Complete TEST-IMP-001, including rollback, duplicate commit, contextual lock,
+   association, and relationship-preservation cases.
 
 Exit gate:
 
@@ -194,8 +207,12 @@ Execution order:
 7. Extend review with version-bound outcomes; implement ACC phase/final acceptance
    and conditions without conflating technical recommendation with acceptance.
 8. Add generic WORK, COM, and notification engines, then role-appropriate projections.
-9. Complete P1 configurable dashboard work only through a safe metadata-driven query model; arbitrary SQL is prohibited.
-10. Complete TEST-LOCK-001, QA-002, and audit/dashboard/isolation tests.
+9. Implement REF-BE-001 for current change-impact visibility and immutable snapshot
+   comparison without cascading data copies.
+10. Complete P1 configurable dashboard work only through a safe metadata-driven query model; arbitrary SQL is prohibited.
+11. Resolve DG-12 and implement versioned report templates/generation with required
+   project and contractor details and immutable provenance.
+12. Complete TEST-LOCK-001, QA-002, and audit/dashboard/isolation tests.
 
 Exit gate:
 
@@ -210,6 +227,12 @@ Exit gate:
 - Conditional phase acceptance creates verifiable obligations and cannot become full
   acceptance while mandatory conditions remain open.
 - Project Officers can monitor and flag without acquiring Project Manager decisions.
+- Current service/entity changes are observable through authorized relationships and
+  impact projections while formal historical artifacts remain stable.
+- Governed forms automatically display project/phase/service/party context and use
+  explicit live/suggestion/copy/snapshot semantics.
+- Report templates can require project and contractor information and produce
+  immutable, versioned, provenance-bearing outputs without SQL/code execution.
 
 ### M6 - Production Hardening and Release
 
@@ -249,9 +272,13 @@ Use thin, demonstrable slices within each milestone:
 7. **Control slice:** dashboard, phase lock, rejected analyst edit.
 8. **Governed deliverable slice:** contributor draft, internal review, leader
    submission, external review, revision, recommendation, and phase acceptance.
-9. **Operations slice:** personal/monitoring queues, contextual notifications,
+9. **Context and assistance slice:** project/phase/service header, live bindings,
+   explainable manual/import suggestions, and historical snapshot proof.
+10. **Connected-report slice:** service change impact, required party/project report
+   template, preview, generation, and immutable provenance.
+11. **Operations slice:** personal/monitoring queues, contextual notifications,
    risks/issues, readiness, and acceptance status.
-10. **Release slice:** full E2E, security, performance, recovery, and deployment evidence.
+12. **Release slice:** full E2E, security, performance, recovery, and deployment evidence.
 
 Each slice must preserve the API envelope, permission registry, workspace scope, audit expectations, and test traceability.
 
@@ -269,15 +296,19 @@ Each slice must preserve the API envelope, permission registry, workspace scope,
 
 ## 8. Immediate Next Actions
 
-1. Finish IMP-FE-005 so the currently implemented import workflow is demonstrable.
-2. Implement the focused import E2E and preserve TEST-WS-001 coverage.
-3. Resolve DG-09, then begin the generic governed-deliverable slice with
+1. Resolve DG-10 and complete UX-BE-001/UX-FE-002 plus REL-FE-002 as the
+   demo-blocking usability pass (no raw IDs/keys; natural relationship flow).
+2. Finish IMP-FE-005 as an embeddable wizard component and preserve focused import
+   E2E/TEST-WS-001 coverage; remove top-level navigation when IMP-FE-006 lands.
+3. Implement phase/deliverable foundations and contextual IMP-BE/FE-007/006.
+4. Resolve DG-09, then begin the generic governed-deliverable slice with
    GOV-DB-001/GOV-BE-001 rather than adding persona-specific pages.
-4. Resolve DG-08 before deadline-heavy work-planning and monitoring UI.
+5. Resolve DG-08 before deadline-heavy work-planning and monitoring UI.
 
-The next implementation handoff remains `IMP-FE-005`. The first scenario-aligned
-demo after the existing MVP slice is the governed deliverable flow defined in
-`14_PROJECT_USAGE_SCENARIOS.md` and QA-002.
+The next implementation handoff is the P0 usability remediation beginning with
+DG-10/UX-BE-001 and UX-FE-002. IMP-FE-005 follows as an embeddable component. The
+first scenario-aligned demo then integrates that component inside the governed
+phase/deliverable flow defined in `14_PROJECT_USAGE_SCENARIOS.md` and QA-002.
 
 ## 9. Roadmap Maintenance
 

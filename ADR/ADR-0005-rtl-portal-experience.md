@@ -86,4 +86,7 @@ must not expose cross-workspace cached data while route context changes.
 ## Supersedes / Superseded By
 
 Supersedes the visual composition of the initial minimal application shell.
-Superseded by: none.
+The shell composition remains accepted. Its project-versus-administration
+information architecture and contextual-capability navigation are refined by
+ADR-0007; in particular, operational import no longer belongs in normal top-level
+project navigation.

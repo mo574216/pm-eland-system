@@ -270,6 +270,50 @@ decoration that preserves contrast and content legibility.
 
 ---
 
+## 7.2 Project Workspace and Administration Console
+
+The UX SHALL follow ADR-0007 and use the straightforward administrative interaction
+model exemplified by WordPress without copying its visual design.
+
+Project workspace navigation organizes user work around:
+
+```text
+Overview
+Phases and milestones
+Deliverables
+Project structure/information
+Repository
+Reviews and comments
+Reports
+```
+
+Administration console navigation organizes configuration around:
+
+```text
+Projects
+People and organizations
+Roles and access
+Information types and fields
+Forms
+Workflows
+Templates
+Import profiles
+Dashboards
+Configuration history
+System settings
+```
+
+Common screens SHOULD use list -> add -> simple editor -> preview -> save
+draft/publish where publication applies. Primary forms expose the common case;
+technical keys, raw configuration, versions, and integration details belong in a
+clearly labelled Advanced section.
+
+No routine UI SHALL ask users to type UUIDs. People, roles, parties, parent records,
+entities, phases, deliverables, and relationship targets use authorized searchable
+selectors showing names and safe disambiguating context.
+
+---
+
 # 8. Authentication UI
 
 Required components:
@@ -603,6 +647,41 @@ normal editable
 
 UI SHALL visually distinguish read-only inherited values.
 
+Bindings SHALL also distinguish live reference, editable suggestion, copied value,
+and snapshot-on-submit. The field decoration SHALL communicate whether a value is
+current canonical context, a suggestion awaiting action, locally edited, or a
+historical snapshot. Users may inspect safe provenance through concise help/popover.
+
+---
+
+# 23.1 Form Context Header
+
+Every governed form SHALL render a reusable `FormContextHeader` above its configured
+sections. It consumes backend-authorized display items and may show project, phase,
+deliverable/work item, selected service/entity, employer, contractor, responsible
+party, dates, state, and lock status. It SHALL use human-readable links/selectors and
+never expose raw context IDs.
+
+Known route/work context is not repeated as editable fields unless the form
+definition explicitly requires a separate snapshot/editable value. A route-context
+change while dirty must trigger safe draft handling rather than save into another
+context.
+
+---
+
+# 23.2 Form Assistance UX
+
+Reusable assistance components SHALL show suggestions consistently for manual forms
+and import review. Each candidate shows suggested value, concise reason, source
+label/provenance, AI/deterministic indicator, confidence where meaningful, and
+Accept/Edit/Reject actions. Bounded bulk acceptance is permitted only when outcomes
+are visible and non-destructive.
+
+Suggestions SHALL not replace typed/imported values automatically. Accepted values
+remain visually distinguishable until saved and pass ordinary validation. Rejected
+suggestions should not repeatedly interrupt the user unless evidence changes or the
+user regenerates them.
+
 ---
 
 # 24. Dynamic Repeating Tables
@@ -649,6 +728,12 @@ PublishDialog
 Initial MVP MAY use button-based/configuration-panel design rather than sophisticated drag-and-drop if necessary.
 
 The implementation SHALL prioritize correctness and metadata quality over visual complexity.
+
+The default designer workflow SHALL ask for human labels and behavior. Section/field
+technical keys are generated automatically and hidden under Advanced settings.
+Field configuration uses plain-language choices such as “نمایش اطلاعات پروژه”،
+“نمایش مقدار جاری خدمت”، “پیشنهاد قابل ویرایش”، “کپی هنگام ایجاد”، and “ثبت مقدار
+در زمان ارسال” rather than raw binding JSON/mode codes.
 
 ---
 
@@ -747,6 +832,15 @@ Step 7 Completion Summary
 
 The wizard SHALL prevent commit before successful dry run.
 
+The wizard is an embeddable contextual capability. Normal users launch it from an
+eligible phase, deliverable, form, or output specification. The host supplies project,
+phase, deliverable, target form/entity type, permitted profiles, return path, and
+lock/read-only state. Known target choices SHALL not be requested again.
+
+Import SHALL not appear as a normal top-level Project workspace navigation item.
+Import profile/mapping administration belongs in the Administration console. A
+protected job deep link MAY support recovery, audit, or support.
+
 ---
 
 # 31. Import Mapping UI
@@ -759,6 +853,10 @@ Required capabilities:
 - configure matching keys,
 - show sample source values,
 - reuse stored import profile.
+
+Matching choices SHALL use localized intent such as “تشخیص رکورد موجود با کد” or
+“تشخیص با ترکیب این فیلدها.” Raw discriminators, attribute IDs, entity IDs, and
+parent IDs SHALL not appear in the normal mapping flow.
 
 Invalid mappings SHALL be highlighted before dry run.
 
@@ -922,6 +1020,16 @@ not unrestricted chat.
 
 Entity selectors SHALL search generic entities rather than use domain-specific pickers.
 
+Relationship UX SHALL be sentence/task oriented. From the current record it presents
+only compatible configured forward/reverse labels and target types, then searches
+authorized targets by name and contextual description. It SHALL not ask users to
+reason about source/target direction, UUIDs, or cardinality codes. Existing links are
+rendered using natural phrases and preserve identity across unrelated entity edits.
+
+An authorized impact action MAY show where the current item is referenced throughout
+active project work and which items require review after a material change. Historical
+snapshots are labelled as historical and are never offered as bulk overwrite targets.
+
 ---
 
 # 38. Dashboard Architecture
@@ -955,6 +1063,21 @@ Authorized users SHOULD configure:
 - order/layout.
 
 Configuration SHALL be metadata-driven.
+
+---
+
+# 39.1 Report Template Designer
+
+The report designer SHALL provide a WordPress-like list/add/edit/preview/publish
+experience using reusable, metadata-driven sections and widgets. Authorized users can
+select required project/party details, reporting period, progress, phases,
+deliverables, risks/issues, reviews, acceptance, narrative, branding, headers,
+footers, and signature areas through safe human-readable bindings.
+
+It SHALL show missing required content before generation, provide a realistic
+preview, identify draft/published/retired versions, and display generation provenance.
+The UI SHALL never expose SQL, executable templates, or unauthorized field paths.
+Generated formal reports link to their immutable output and template/data versions.
 
 ---
 
@@ -1436,6 +1559,11 @@ WORK-FR-*  → personal/management queues and planning components
 COM-FR-*   → contextual conversation and notification components
 ACC-FR-*   → acceptance decision/condition workspace
 CONF-FR-*  → configuration lifecycle UI
+PARTY-FR-* → people/organization administration and selectors
+CTX-FR-*   → FormContextHeader and binding-source UX
+ASSIST-FR-* → suggestion components in forms/import review
+REF-FR-*   → natural relationships and impact/snapshot comparison
+UX-FR-*    → project/admin information architecture and progressive disclosure
 RPT-FR-*   → dashboard components
 AUD-FR-*   → audit viewer
 ```

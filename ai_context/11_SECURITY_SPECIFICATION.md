@@ -819,6 +819,12 @@ Import job, profile, mapping, and commit SHALL all verify workspace access.
 
 A user SHALL not import into a workspace using another workspace's import profile.
 
+Contextual import SHALL additionally verify that the phase, deliverable/work item,
+target form/entity type, profile, source, and resulting canonical resources belong to
+the same workspace and are compatible with the configured action. Phase/resource
+locks are enforced before dry-run evidence becomes committable and again under the
+commit lock. Hiding top-level import navigation is not a security control.
+
 ---
 
 # 44. Import Idempotency
@@ -857,6 +863,12 @@ Creating/changing entity types and attributes is privileged.
 
 Changes SHALL be audited.
 
+Server-generated technical keys SHALL use collision-safe generation and uniqueness
+constraints. Selector/search endpoints for users, roles, parties, entities, phases,
+deliverables, and relationship targets SHALL enforce active membership, permission,
+object scope, bounded search, pagination, rate limiting, and safe result fields. They
+SHALL not enable user-directory or cross-workspace enumeration.
+
 ---
 
 # 48. Form Designer Security
@@ -870,6 +882,44 @@ FORM_DESIGN
 Published forms SHALL be immutable.
 
 This prevents silent reinterpretation of historical submissions.
+
+---
+
+# 48.1 Context, Assistance, and Reference Security
+
+Client context IDs, labels, and suggested values are untrusted input. The backend
+SHALL derive/reload effective project, phase, deliverable, entity, party, field,
+binding, and lock context for render, suggestion generation, acceptance, save, and
+submission.
+
+Suggestion generation SHALL reveal only values and provenance the actor may access.
+Provider queries are bounded and shall not allow arbitrary paths/code. Accept/edit
+shall independently enforce permission, field visibility/read-only state, validation,
+current binding/policy version, optimistic concurrency, and locks. Rejection/accepted
+status and provenance require appropriate audit/redaction.
+
+Optional AI providers are prohibited until AI-001 defines privacy, provider,
+workspace-aware retrieval, prompt/version, injection, retention, audit, and cost
+controls. AI suggestions never persist without explicit human approval.
+
+Impact/reference queries SHALL not leak hidden linked resources. Notifications may
+contain only safe summaries and target IDs/links whose access is rechecked when
+opened. Cascading changes SHALL not rewrite historical evidence or unrelated
+relationships.
+
+---
+
+# 48.2 Report Template and Output Security
+
+Report templates SHALL use allowlisted bindings/widgets and SHALL not contain SQL,
+server/client executable code, unsafe markup, local file paths, or unrestricted
+external URLs. Template preview and generation authorize every source at execution
+time and apply field-level redaction/classification rules.
+
+Generation is resource bounded and suitable for background-job quotas. Branding and
+attachments follow upload/object-storage controls. Generated outputs are private,
+authorized documents. Formal report provenance/snapshots are immutable and audited;
+template authors cannot use bindings to exfiltrate cross-workspace or hidden data.
 
 ---
 

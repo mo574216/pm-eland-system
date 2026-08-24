@@ -140,3 +140,37 @@ contractor contributor draft
 Dashboards, notifications, repository context, comments, and audit history should
 support that vertical slice before broad report catalogs or advanced configuration
 builders are expanded.
+
+---
+
+# 9. Accepted UX and Connected-Information Clarifications
+
+The following product clarifications were accepted after review of the detailed
+scenario catalog:
+
+- The desired administration experience is straightforward and content-oriented,
+  comparable to WordPress list/add/edit/preview/publish interaction patterns, without
+  copying WordPress visuals or technology.
+- Primary UI SHALL not ask for persistent/stable keys, UUIDs, user IDs, role IDs,
+  relationship direction/cardinality, or other implementation concepts. It uses
+  generated keys, named selectors, plain-language actions, and Advanced disclosure.
+- Operational import is embedded inside an eligible project phase,
+  deliverable/form/output specification. Import profiles remain administration
+  configuration; import is not normal top-level project navigation.
+- Form completion, whether manual or imported, may receive explainable suggestions
+  from configured context, related canonical data, validation/matching, prior accepted
+  values, and separately governed AI. Suggestions never silently persist.
+- Relationships and canonical references are preserved. A service/entity change is
+  visible through current authorized project consumers and impact projections, while
+  submitted/approved/accepted historical evidence remains immutable.
+- Forms opened under a project/service context automatically display configured
+  project, phase, service/entity, employer/contractor, and related context above the
+  form rather than asking users to enter it again.
+- Employer, contractor, reviewer, and other organizations are reusable generic party
+  records connected to projects and users.
+- Authorized users can define versioned report templates with required project,
+  contractor/party, progress, deliverable, review, acceptance, and other configured
+  content. Safe bindings, preview/publish, immutable output, and provenance are
+  mandatory.
+
+ADR-0007 and ADR-0008 define the architectural interpretation of these clarifications.

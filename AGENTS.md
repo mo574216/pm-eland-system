@@ -38,6 +38,14 @@ Before making any change:
   and employer acceptance are distinct actions.
 - Do not authorize runtime operations by literal role name; use effective permissions,
   workspace scope, assignment, lifecycle state, and configured policy.
+- Follow ADR-0007: primary UX must not require raw UUIDs, technical keys,
+  relationship direction/cardinality, or configuration payloads; use generated keys,
+  authorized named selectors, contextual actions, and progressive disclosure.
+- Follow ADR-0008: distinguish live references, inherited/read-only values, editable
+  suggestions, deliberate copies, and immutable submission/report snapshots. Never
+  propagate changes by silently rewriting historical or user-entered values.
+- Treat operational import as an embedded phase/deliverable/form capability; keep
+  import-profile configuration in administration and enforce context/locks server-side.
 - Do not modify published API contracts without updating the relevant specification and contract files.
 - Do not make database schema changes without Alembic migrations.
 - Do not modify unrelated functionality.

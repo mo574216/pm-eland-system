@@ -3413,6 +3413,85 @@ IMP-FE-005 remains the smallest demo-visible completion of the current import sl
 After import E2E, resolve DG-09 and begin the governed-deliverable vertical slice.
 ```
 
+Human-centered contextual UX and connected-information architecture entry:
+
+```text
+DATE:
+2026-08-25
+
+MILESTONE:
+Cross-cutting demo usability, contextual work, assistance, and reporting architecture
+
+TASKS_COMPLETED:
+ADR-0007 Human-Centered Contextual Experience
+ADR-0008 Live References, Assistance, and Versioned Snapshots
+UX/context/assistance/reference/report specification alignment
+
+TASKS_IN_PROGRESS:
+None
+
+SUMMARY:
+Accepted a straightforward WordPress-like administration interaction model without
+copying its visuals: separate Project workspace and Administration console,
+plain-language Persian flows, authorized named selectors, server-generated technical
+keys, progressive disclosure, and natural relationship actions. Defined import as an
+embedded phase/deliverable/form capability; contextual form headers and explicit
+live/suggestion/copy/snapshot binding semantics; explainable assistance shared by
+manual forms and import review; reusable organization/party records; project-wide
+change-impact visibility without rewriting history; and safe versioned report
+templates that can require project and contractor information.
+
+FILES_CHANGED:
+Agent instructions; ADR index and ADR-0007/0008; project context; architecture rules;
+system, database, API, backend, frontend, test, and security specifications; scenario
+interpretation; backlog and roadmap; current status.
+
+DATABASE_CHANGES:
+None. Future PARTY, CTX, ASSIST, REF, contextual-import, and report-template tasks now
+require explicit Alembic migrations and compatibility handling for existing
+inheritance/import records.
+
+API_CHANGES:
+No published OpenAPI operations changed. Narrative rules now require server-generated
+keys, authorized human-readable lookup contracts, contextual form/import requests,
+suggestion decisions, impact queries, and safe versioned report-template/generation
+contracts before implementation.
+
+TESTS_ADDED:
+No executable tests. The test specification now covers raw-ID removal, generated
+keys, natural relationships, progressive administration, context/binding semantics,
+manual/import suggestions, live propagation versus historical stability, contextual
+import locks/association/relationship preservation, and report safety/provenance.
+
+TEST_RESULTS:
+Git diff whitespace validation passes. All 18 changed/new Markdown files have
+balanced code fences; 170 requirement IDs and 136 task IDs are unique; all 16 new
+implementation tasks are present; ADR-0007/0008 are indexed and cross-referenced;
+and published shared contracts have no diff. Runtime suites are unaffected because
+this task changes no application code, schema, or published shared contract.
+
+SECURITY_IMPACT:
+Selectors are authorization-bounded; client context and suggestions remain untrusted;
+acceptance rechecks permissions/locks/concurrency; impact results and notifications
+cannot leak hidden resources; optional AI remains blocked behind AI-001; report
+templates cannot execute SQL/code or load arbitrary resources; formal snapshots and
+generated outputs are immutable and audited.
+
+KNOWN_LIMITATIONS:
+These capabilities are now architectural requirements and prioritized backlog work,
+not yet runtime behavior. The current UI still exposes raw IDs/keys and standalone
+import navigation until UX-BE-001/UX-FE-002/REL-FE-002 and contextual import tasks are
+implemented. Concrete schemas and OpenAPI payloads require DG-10 through DG-12.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+Resolve DG-10 and implement UX-BE-001/UX-FE-002 plus REL-FE-002 as the demo-blocking
+usability slice. Complete IMP-FE-005 as embeddable, then integrate it through
+IMP-BE-007/IMP-FE-006 after phase/deliverable foundations.
+```
+
 ---
 
 # 27. Related Specifications

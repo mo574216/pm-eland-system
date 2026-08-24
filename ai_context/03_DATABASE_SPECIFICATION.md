@@ -1162,6 +1162,46 @@ validated polymorphic references or a supported typed target registry.
 
 ---
 
+# 15.4 Party, Context, Assistance, and Impact Model
+
+Future PARTY/CTX/ASSIST/REF migrations SHALL provide generic records for:
+
+```text
+parties / organizations
+project-party role assignments and effective periods
+user-to-party affiliations within project membership
+versioned context/binding definitions with explicit binding mode
+formal context/source snapshots
+suggestion policies and bounded suggestion candidates/provenance/status
+material-change impact/review markers and idempotent notification keys
+```
+
+Party kinds and project roles are configuration, not separate employer/contractor
+tables. Workspace/project scope SHALL be directly queryable and enforced by foreign
+keys or service-validated composite constraints.
+
+Binding rows/configuration SHALL distinguish `LIVE_REFERENCE`,
+`READ_ONLY_INHERITED`, `EDITABLE_SUGGESTION`, `COPY_ON_CREATE`, and
+`SNAPSHOT_ON_SUBMIT`. A live binding stores a source reference/path rather than a
+duplicated canonical value. A formal snapshot stores the source resource ID/version,
+resolved value required for evidence, binding definition version, and capture time.
+
+Suggestion persistence SHALL retain policy version, target field/row, candidate,
+reason, source kind/reference/version where permitted, confidence, deterministic/AI
+classification, status, actor decision, and expiry/obsolescence information. It SHALL
+not create a second canonical value store.
+
+Impact projections SHOULD be derived from canonical relationships/bindings and may
+use indexed dependency edges/materialized markers for bounded performance. They
+SHALL NOT use cascading updates that rewrite historical or user-entered values.
+
+The existing `import_jobs` model requires a migration before contextual import to
+bind, when applicable, `phase_id`, governed deliverable/work-item ID, target entity or
+form definition, and originating context/action. All bindings must match the job
+workspace. Import history remains even if navigation context later changes.
+
+---
+
 # 16. Review and Comment Model
 
 # 16.1 review_comments
@@ -1191,6 +1231,27 @@ ON review_comments(resource_type, resource_id);
 ```
 
 Because `resource_id` is polymorphic, referential integrity SHALL be enforced in service logic.
+
+---
+
+# 16.2 Report Template and Generated Report Model
+
+`RPT-DB-002` SHALL add generic versioned persistence for:
+
+```text
+report template identity
+draft/published/retired template versions
+ordered sections/widgets and safe binding definitions
+required/optional content and generation parameters
+generated report run/provenance/status
+immutable output document/version reference
+source resource/version snapshots and data-as-of time
+```
+
+Published report-template versions and completed formal report runs are immutable.
+Bindings SHALL reference allowlisted server data-source identifiers and validated
+paths/aggregations, never raw SQL or executable template content. Branding assets use
+the authorized document/object-storage model.
 
 ---
 
@@ -1641,6 +1702,11 @@ WORK-FR-*  → generic work items/dependencies/risks/issues
 COM-FR-*   → typed threads/messages/announcements/notifications
 ACC-FR-*   → acceptance packages/decisions/conditions/evidence
 CONF-FR-*  → versioned configuration packages/change history
+PARTY-FR-* → parties/project roles/user affiliations
+CTX-FR-*   → versioned bindings/context snapshots
+ASSIST-FR-* → suggestion policies/candidates/provenance
+REF-FR-*   → canonical references/impact markers/snapshots
+UX-FR-*    → generated-key and selector-supporting constraints
 RPT-FR-*   → dashboards
 AUD-FR-*   → audit_logs
 ```
