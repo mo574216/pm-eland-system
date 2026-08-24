@@ -1298,7 +1298,7 @@ paths:
                   format: uuid
       responses:
         '202':
-          description: Import accepted
+          description: Import accepted and safely inspected within synchronous limits
           content:
             application/json:
               schema:

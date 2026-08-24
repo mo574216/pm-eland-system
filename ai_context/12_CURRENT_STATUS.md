@@ -2881,6 +2881,77 @@ include the missing authorized upload/analyze API integration required to make t
 wizard functional. IMP-BE-004 Dry Run follows that visible inspection workflow.
 ```
 
+Visible import upload/inspect implementation entry:
+
+```text
+DATE:
+2026-08-24
+
+MILESTONE:
+M4 Documents and Import / Demo-visible MVP
+
+TASKS_COMPLETED:
+IMP-FE-001 Import Wizard Upload/Inspect
+Import upload/analyze API integration required by IMP-FE-001
+
+TASKS_IN_PROGRESS:
+None
+
+SUMMARY:
+Added a working Persian RTL seven-step import wizard and activated it in the
+physical-right workspace navigation and dashboard. Users can select CSV/XLSX,
+upload it through the authenticated API, and immediately inspect real sheet names,
+row counts, headers, and bounded sample values. The backend creates an audited
+staged job and stores the source under a server-generated private workspace key;
+canonical entities remain unchanged.
+
+FILES_CHANGED:
+Import job repository/service/schemas/API, focused backend tests, import wizard
+types/API/page/test, application route, workspace navigation/dashboard, Persian
+localization, API contracts, OpenAPI test, and current status documentation.
+
+DATABASE_CHANGES:
+None. Uploads use the accepted import_jobs table from revision 0011.
+
+API_CHANGES:
+Implemented POST /workspaces/{workspace_id}/imports as multipart file upload with
+optional import_profile_id. The 202 response now includes import_job_id, UPLOADED
+status, and safe synchronous sheet/column/sample inspection. Narrative and
+canonical contracts were updated.
+
+TESTS_ADDED:
+Backend tests prove authorized private/audited upload with real parsing and reject
+missing permission or a cross-workspace profile. Frontend interaction coverage
+proves file selection, upload, workspace routing, and rendering of returned source
+metadata. Dashboard coverage reflects the newly available import capability.
+
+TEST_RESULTS:
+Focused Ruff and strict mypy pass; 11 backend import/parser/OpenAPI tests pass.
+Frontend zero-warning ESLint and TypeScript pass; the wizard and dashboard tests
+both pass.
+
+SECURITY_IMPACT:
+IMPORT_EXECUTE and active workspace membership are authoritative. Optional profiles
+must belong to the same workspace and match the file source type. Input is parsed
+under the existing archive/XML/resource limits before private storage; object keys
+are server-generated, mutations are audited, storage failures are safe, and no
+canonical entity values are changed.
+
+KNOWN_LIMITATIONS:
+Only synchronous files within the documented parser limits are accepted. The
+wizard visibly reserves mapping, dry-run, conflict, commit, and completion steps,
+but they remain disabled until their backend prerequisites are implemented. The
+running local backend must be restarted to expose the new route.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+IMP-FE-002 Mapping UI as the next demo-visible task, paired with the minimum
+profile/mapping integration needed to progress the same wizard. IMP-BE-004 Dry Run
+then unlocks the visible summary step.
+```
+
 ---
 
 # 27. Related Specifications

@@ -1630,12 +1630,25 @@ import_profile_id (optional)
   "success": true,
   "data": {
     "import_job_id": "...",
-    "status": "UPLOADED"
+    "status": "UPLOADED",
+    "sheets": [
+      {
+        "name": "Sheet1",
+        "row_count": 128,
+        "columns": [
+          {"name": "Name", "sample_values": ["Agency A", "Agency B"]}
+        ]
+      }
+    ]
   },
   "error": null,
   "meta": {}
 }
 ```
+
+For files within the synchronous parser limits, upload performs safe structural
+inspection and includes the result so the wizard can immediately enter its Inspect
+step. This does not perform a dry run or mutate canonical entity data.
 
 ---
 

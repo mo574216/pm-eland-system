@@ -53,11 +53,11 @@ export function WorkspaceDashboardPage() {
     { title: t('navigation.entities'), description: t('dashboard.entitiesDescription'), icon: <AccountTreeOutlined />, path: `/workspaces/${workspaceId}/entities` },
     { title: t('navigation.metadata'), description: t('dashboard.metadataDescription'), icon: <TuneOutlined />, path: `/workspaces/${workspaceId}/metadata` },
     { title: t('dashboard.forms'), description: t('dashboard.formsDescription'), icon: <ViewQuiltOutlined />, path: `/workspaces/${workspaceId}/forms` },
+    { title: t('dashboard.imports'), description: t('dashboard.importsDescription'), icon: <FileUploadOutlined />, path: `/workspaces/${workspaceId}/imports` },
     { title: t('navigation.settings'), description: t('dashboard.settingsDescription'), icon: <SettingsOutlined />, path: `/workspaces/${workspaceId}/settings` },
   ]
   const planned = [
     { title: t('dashboard.documents'), icon: <DescriptionOutlined /> },
-    { title: t('dashboard.imports'), icon: <FileUploadOutlined /> },
     { title: t('dashboard.reports'), icon: <DashboardCustomizeOutlined /> },
   ]
 

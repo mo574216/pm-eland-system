@@ -3,13 +3,19 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, Request, status
+from fastapi import APIRouter, Depends, File, Form, Query, Request, UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies.authentication import get_current_identity
+from app.api.dependencies.storage import get_storage_provider
 from app.api.envelopes import success_envelope
 from app.core.database import get_database_session
 from app.core.request_context import get_request_id
+from app.schemas.import_job import (
+    ImportColumnInspectionResponse,
+    ImportSheetInspectionResponse,
+    ImportUploadResponse,
+)
 from app.schemas.import_profile import (
     ImportMappingResponse,
     ImportProfileCreate,
@@ -19,7 +25,9 @@ from app.schemas.import_profile import (
 )
 from app.services.auth import AuthenticatedIdentity
 from app.services.authorization import AuditContext
+from app.services.import_job import ImportJobService, ImportUpload
 from app.services.import_profile import ImportProfileRecord, ImportProfileService
+from app.services.storage import StorageProvider
 
 router = APIRouter(tags=["Imports"])
 
@@ -48,6 +56,46 @@ def _response(record: ImportProfileRecord) -> ImportProfileResponse:
         updated_at=profile.updated_at,
         mappings=tuple(ImportMappingResponse.model_validate(item) for item in record.mappings),
     )
+
+
+@router.post("/workspaces/{workspace_id}/imports", status_code=status.HTTP_202_ACCEPTED)
+async def upload_import(
+    workspace_id: UUID,
+    request: Request,
+    file: Annotated[UploadFile, File()],
+    actor: Annotated[AuthenticatedIdentity, Depends(get_current_identity)],
+    session: Annotated[AsyncSession, Depends(get_database_session)],
+    storage: Annotated[StorageProvider, Depends(get_storage_provider)],
+    import_profile_id: Annotated[UUID | None, Form()] = None,
+) -> dict[str, object]:
+    result = await ImportJobService(session, actor, storage).upload_and_inspect(
+        workspace_id,
+        ImportUpload(
+            original_file_name=file.filename or "",
+            content_type=file.content_type or "application/octet-stream",
+            stream=file.file,
+            import_profile_id=import_profile_id,
+        ),
+        audit=_audit_context(request),
+    )
+    response = ImportUploadResponse(
+        import_job_id=result.import_job_id,
+        status=result.status,
+        sheets=tuple(
+            ImportSheetInspectionResponse(
+                name=sheet.name,
+                row_count=sheet.row_count,
+                columns=tuple(
+                    ImportColumnInspectionResponse(
+                        name=column.name, sample_values=column.sample_values
+                    )
+                    for column in sheet.columns
+                ),
+            )
+            for sheet in result.inspection.sheets
+        ),
+    )
+    return success_envelope(response.model_dump(mode="json"))
 
 
 @router.post(
