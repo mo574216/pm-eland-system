@@ -3,12 +3,23 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 
 import { renderWithProviders } from '../../test/render'
-import { uploadImport } from './importApi'
+import { createImportProfile, uploadImport } from './importApi'
 import { ImportWizardPage } from './ImportWizardPage'
 
-vi.mock('./importApi', () => ({ uploadImport: vi.fn() }))
+vi.mock('./importApi', () => ({
+  uploadImport: vi.fn(),
+  createImportProfile: vi.fn(),
+  listImportProfiles: vi.fn().mockResolvedValue({ items: [], page: 1, page_size: 200, total: 0 }),
+}))
+vi.mock('../metadata/metadataApi', () => ({
+  listEntityTypes: vi.fn().mockResolvedValue({
+    items: [{ id: 'entity-type-1', name: 'افراد' }], page: 1, page_size: 200, total: 1,
+  }),
+  listAttributes: vi.fn().mockResolvedValue([]),
+}))
 
 const mockedUpload = vi.mocked(uploadImport)
+const mockedCreateProfile = vi.mocked(createImportProfile)
 
 describe('ImportWizardPage', () => {
   it('uploads a CSV and displays real inspection metadata', async () => {
@@ -39,10 +50,40 @@ describe('ImportWizardPage', () => {
     await user.upload(screen.getByLabelText('انتخاب فایل'), file)
     await user.click(screen.getByRole('button', { name: 'بارگذاری و بررسی' }))
 
-    expect(await screen.findByText('people.csv')).toBeVisible()
+    expect(await screen.findByRole('heading', { name: 'people.csv' })).toBeVisible()
     expect(screen.getByText('Name')).toBeVisible()
     expect(screen.getByText('Ali، Sara')).toBeVisible()
     expect(mockedUpload).toHaveBeenCalledWith('workspace-1', file)
     expect(screen.getByText(/هیچ داده اصلی تغییر نکرده است/)).toBeVisible()
+    expect(screen.getByRole('heading', { name: 'نگاشت ستون‌ها و شناسایی رکوردها' })).toBeVisible()
+
+    await user.click(screen.getByLabelText('نوع موجودیت مقصد'))
+    await user.click(screen.getByRole('option', { name: 'افراد' }))
+    await user.type(screen.getByLabelText('نام پروفایل ورود'), 'ورود افراد')
+    await user.click(screen.getByLabelText('Name ← فیلد مقصد'))
+    await user.click(screen.getByRole('option', { name: 'نام موجودیت' }))
+    await user.click(screen.getByLabelText('ستون‌های کلید'))
+    await user.click(screen.getByRole('option', { name: /Name/ }))
+    mockedCreateProfile.mockResolvedValue({
+      id: 'profile-1',
+      entity_type_id: 'entity-type-1',
+      name: 'ورود افراد',
+      source_type: 'CSV',
+      matching_strategy: {
+        type: 'UNIQUE_ATTRIBUTE',
+        key: { source_sheet: 'people.csv', source_column: 'Name', system_field: 'name' },
+      },
+      mappings: [{
+        source_sheet: 'people.csv', source_column: 'Name', target_system_field: 'name',
+        transformation_config: {}, display_order: 0,
+      }],
+    })
+    await user.click(screen.getByRole('button', { name: 'ذخیره نگاشت و ادامه' }))
+
+    expect(await screen.findByText(/پروفایل «ورود افراد» ذخیره شد/)).toBeVisible()
+    expect(mockedCreateProfile).toHaveBeenCalledWith(
+      'workspace-1',
+      expect.objectContaining({ entity_type_id: 'entity-type-1', name: 'ورود افراد' }),
+    )
   })
 })

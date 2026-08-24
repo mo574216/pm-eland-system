@@ -2952,6 +2952,70 @@ profile/mapping integration needed to progress the same wizard. IMP-BE-004 Dry R
 then unlocks the visible summary step.
 ```
 
+Import mapping UI implementation entry:
+
+```text
+DATE:
+2026-08-24
+
+MILESTONE:
+M4 Documents and Import / Demo-visible MVP
+
+TASKS_COMPLETED:
+IMP-FE-002 Mapping UI
+
+TASKS_IN_PROGRESS:
+None
+
+SUMMARY:
+Extended the live Persian RTL import wizard with sheet selection, metadata-driven
+entity-type and attribute targets, source-to-target column mapping, all four
+accepted matching strategies, client-side invalid/duplicate mapping feedback, and
+creation or reuse of authorized import profiles. Saving a profile advances the
+visible wizard to the dry-run boundary.
+
+FILES_CHANGED:
+Import mapping component, wizard page and focused interaction test, frontend import
+API/types, Persian localization, import-profile validation service/test, and current
+status documentation.
+
+DATABASE_CHANGES:
+None.
+
+API_CHANGES:
+No new backend endpoint or published payload. The frontend now consumes the accepted
+import-profile create/list endpoints.
+
+TESTS_ADDED:
+The focused wizard interaction proves real inspection rendering, metadata target
+selection, a name mapping and matching key, profile creation, and visible wizard
+advancement. Backend coverage proves duplicate target mappings are rejected.
+
+TEST_RESULTS:
+Frontend focused test passes; zero-warning ESLint, strict TypeScript, and production
+build pass. Backend focused import-profile suite passes 10 tests; Ruff format/lint
+and strict mypy pass for changed backend files.
+
+SECURITY_IMPACT:
+Backend workspace membership and IMPORT_EXECUTE checks remain authoritative for
+profile listing and creation. The UI uses only backend-returned active metadata,
+does not expose read-only attributes as import targets, and adds no client-side
+authorization assumption. Duplicate targets are independently rejected server-side.
+
+KNOWN_LIMITATIONS:
+The uploaded job is not yet associated with the newly created or selected profile.
+That lifecycle transition and re-validation of source columns belong to the dry-run
+backend integration. Transform configuration remains an empty generic object until
+its dedicated UX is specified.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+IMP-BE-004 Dry Run, including the accepted job-to-mapping/profile transition, then
+IMP-FE-003 Dry-Run Summary UI for the earliest useful read-only MVP demonstration.
+```
+
 ---
 
 # 27. Related Specifications

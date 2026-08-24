@@ -27,11 +27,14 @@ import { Navigate, useParams } from 'react-router-dom'
 
 import { ApiError } from '../../api/client'
 import { uploadImport } from './importApi'
+import { ImportMappingStep } from './ImportMappingStep'
+import type { ImportProfile } from './types'
 
 export function ImportWizardPage() {
   const { t } = useTranslation()
   const { workspaceId } = useParams()
   const [file, setFile] = useState<File | null>(null)
+  const [savedProfile, setSavedProfile] = useState<ImportProfile | null>(null)
   const mutation = useMutation({
     mutationFn: (selected: File) => uploadImport(workspaceId!, selected),
   })
@@ -54,7 +57,7 @@ export function ImportWizardPage() {
         <Typography component="h1" variant="h1">{t('imports.title')}</Typography>
         <Typography color="text.secondary" sx={{ mt: 1 }}>{t('imports.description')}</Typography>
       </Box>
-      <Stepper activeStep={mutation.data ? 1 : 0} alternativeLabel sx={{ overflowX: 'auto', pb: 1 }}>
+      <Stepper activeStep={savedProfile ? 2 : mutation.data ? 1 : 0} alternativeLabel sx={{ overflowX: 'auto', pb: 1 }}>
         {steps.map((label) => <Step key={label}><StepLabel>{label}</StepLabel></Step>)}
       </Stepper>
       <Card>
@@ -70,6 +73,7 @@ export function ImportWizardPage() {
                 type="file"
                 onChange={(event) => {
                   setFile(event.target.files?.[0] ?? null)
+                  setSavedProfile(null)
                   mutation.reset()
                 }}
               />
@@ -118,7 +122,18 @@ export function ImportWizardPage() {
               </CardContent>
             </Card>
           ))}
-          <Alert severity="info">{t('imports.mappingNext')}</Alert>
+          {savedProfile ? (
+            <Alert severity="success">
+              {t('imports.profileSaved', { name: savedProfile.name })} {t('imports.dryRunNext')}
+            </Alert>
+          ) : (
+            <ImportMappingStep
+              inspection={mutation.data}
+              onSaved={setSavedProfile}
+              sourceType={file?.name.toLowerCase().endsWith('.xlsx') ? 'XLSX' : 'CSV'}
+              workspaceId={workspaceId}
+            />
+          )}
         </Stack>
       ) : null}
     </Stack>

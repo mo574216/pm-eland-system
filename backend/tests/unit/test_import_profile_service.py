@@ -272,6 +272,35 @@ async def test_foreign_or_wrong_type_attribute_is_rejected() -> None:
 
 
 @pytest.mark.asyncio
+async def test_duplicate_mapping_target_is_rejected() -> None:
+    actor = identity(PermissionCode.IMPORT_EXECUTE)
+    workspace = Workspace(id=uuid4(), name="A", slug="a", owner_id=actor.user.id)
+    import_service, repository, _ = service(actor, workspace)
+    duplicate_name_mappings = (
+        ImportMappingInput(source_column="Name", target_system_field="name"),
+        ImportMappingInput(source_column="Title", target_system_field="name"),
+    )
+    strategy = UniqueAttributeMatchingStrategy.model_validate(
+        {"type": "UNIQUE_ATTRIBUTE", "key": {"source_column": "Name", "system_field": "name"}}
+    )
+
+    with pytest.raises(InvalidMetadataError) as raised:
+        await import_service.create_profile(
+            workspace.id,
+            entity_type_id=repository.entity_type.id,
+            name="Invalid duplicate",
+            description=None,
+            source_type="CSV",
+            matching_strategy=strategy,
+            configuration={},
+            mappings=duplicate_name_mappings,
+            audit=audit(),
+        )
+
+    assert raised.value.details["reason"] == "duplicate_target"
+
+
+@pytest.mark.asyncio
 async def test_mapping_replacement_is_atomic_and_audited() -> None:
     actor = identity(PermissionCode.IMPORT_EXECUTE)
     workspace = Workspace(id=uuid4(), name="A", slug="a", owner_id=actor.user.id)
