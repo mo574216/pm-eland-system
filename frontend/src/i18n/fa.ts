@@ -255,7 +255,10 @@ export const fa = {
     version: 'نسخه',
   },
   relationships: {
+    action: 'چه ارتباطی دارد؟',
     create: 'ایجاد رابطه',
+    createHelp: 'رابطه را مانند یک جمله کامل کنید.',
+    currentItem: 'مورد جاری',
     delete: 'حذف رابطه',
     direction: {
       incoming: 'ورودی',
@@ -265,6 +268,8 @@ export const fa = {
     invalid: 'این رابطه با محدودیت‌های تعریف‌شده سازگار نیست.',
     loadFailed: 'دریافت روابط انجام نشد.',
     loading: 'در حال دریافت روابط',
+    relatedItem: 'با کدام مورد؟',
+    relatedTo: 'مرتبط است با',
     saveFailed: 'ذخیره رابطه انجام نشد.',
     target: 'موجودیت مقصد',
     type: 'نوع رابطه',

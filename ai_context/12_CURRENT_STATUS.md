@@ -3615,6 +3615,63 @@ relationship and target selectors.
 
 ---
 
+Natural relationship UX entry:
+
+```text
+DATE:
+2026-08-25
+
+MILESTONE:
+Demo usability remediation
+
+TASKS_COMPLETED:
+REL-FE-002 natural relationship creation and display slice
+
+TASKS_IN_PROGRESS:
+REL-FE-002 impact-panel portion awaits REF-BE-001
+
+SUMMARY:
+Relationship creation now reads as a sentence from the current entity. It filters
+relationship types by compatible source metadata, filters targets by the selected
+target type, uses a searchable named target with entity-type context, and displays
+incoming/outgoing records as sentences without direction codes, cardinality, or IDs.
+
+FILES_CHANGED:
+Relationship panel, Persian relationship labels, focused relationship component test,
+and current status.
+
+DATABASE_CHANGES:
+None.
+
+API_CHANGES:
+None. Existing workspace-scoped relationship and entity contracts are reused.
+
+TESTS_ADDED:
+The relationship component test now verifies sentence rendering, hidden technical
+direction, compatible-type filtering, named target selection, create, and delete.
+
+TEST_RESULTS:
+Focused relationship test, frontend lint, type check, and production build pass.
+
+SECURITY_IMPACT:
+Frontend filtering is UX only. Existing backend workspace authorization and
+relationship source/target compatibility checks remain authoritative.
+
+KNOWN_LIMITATIONS:
+Generic impact projection and its authorized panel require REF-BE-001. Dedicated
+reverse display labels are not yet metadata fields; incoming relationships preserve
+the configured forward sentence by displaying source -> relation -> target.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+Complete IMP-FE-005 by extracting the verified import workflow into an embeddable
+component while retaining its protected recovery route.
+```
+
+---
+
 # 27. Related Specifications
 
 ```text
