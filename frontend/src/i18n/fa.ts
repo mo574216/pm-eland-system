@@ -20,6 +20,16 @@ export const fa = {
     primary: 'راهبری اصلی',
   },
   dashboard: {
+    kpi: {
+      documents: 'اسناد فعال',
+      entities: 'موجودیت‌های فعال',
+      pendingDeliverables: 'تحویل‌دادنی‌های در انتظار',
+      phaseCount: '{{completed}} مرحله از {{total}} مرحله تکمیل شده است.',
+      phaseProgress: 'پیشرفت مراحل پروژه',
+    },
+    kpiSection: 'شاخص‌های پروژه',
+    kpisLoadFailed: 'دریافت شاخص‌های پروژه انجام نشد.',
+    loadingKpis: 'در حال دریافت شاخص‌های پروژه',
     title: 'صفحه کاری',
     welcome: 'نمای یکپارچه فضای کاری شما',
     description: 'از این صفحه به قابلیت‌های فعال سامانه دسترسی دارید.',

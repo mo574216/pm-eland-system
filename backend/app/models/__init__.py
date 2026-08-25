@@ -1,5 +1,6 @@
 """Stable platform persistence models."""
 
+from app.models.dashboard import Dashboard
 from app.models.document import Document, DocumentVersion
 from app.models.entity import EntityObject
 from app.models.form import FormDefinition, FormField, FormInstance
@@ -22,6 +23,7 @@ __all__ = [
     "AttributeDefinition",
     "AuditLog",
     "AuthSession",
+    "Dashboard",
     "Document",
     "DocumentVersion",
     "EntityObject",

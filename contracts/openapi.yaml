@@ -1567,6 +1567,21 @@ paths:
                 $ref: '#/components/schemas/SuccessEnvelope'
         '403': {$ref: '#/components/responses/Forbidden'}
 
+  /workspaces/{workspaceId}/dashboard-summary:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+    get:
+      tags: [Dashboards]
+      operationId: getDashboardSummary
+      summary: Return safe server-defined workspace KPIs
+      responses:
+        '200':
+          description: Entity, document, phase, and deliverable KPI summary
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SuccessEnvelope'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+
   /jobs/{jobId}:
     get:
       tags: [Jobs]

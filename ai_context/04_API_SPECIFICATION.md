@@ -2093,6 +2093,16 @@ query code, or polymorphic target kinds outside server allowlists.
 
 # 17. Dashboard API
 
+# 17.0 GET /workspaces/{workspace_id}/dashboard-summary
+
+Return the server-defined MVP KPI projection for an accessible workspace:
+active entity count, active document count, non-archived/completed phase totals and
+percentage, and pending/completed phase-deliverable totals. Requires
+`DASHBOARD_READ`. Every aggregate is constrained by the authorized workspace ID;
+clients cannot provide SQL, field paths, filters, or executable expressions.
+
+---
+
 # 17.1 POST /workspaces/{workspace_id}/dashboards
 
 Create dashboard definition.

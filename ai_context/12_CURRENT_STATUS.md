@@ -3804,6 +3804,74 @@ entities, and contextual imports to phases.
 
 ---
 
+Server-defined KPI dashboard entry:
+
+```text
+DATE:
+2026-08-25
+
+MILESTONE:
+M5 project visibility
+
+TASKS_COMPLETED:
+RPT-DB-001 Dashboard Schema
+RPT-BE-001 Basic KPI Dashboard API
+RPT-FE-001 Dashboard Viewer
+
+TASKS_IN_PROGRESS:
+None
+
+SUMMARY:
+The project landing page now displays live workspace-scoped counts for active
+entities, active documents, pending deliverables, and phase completion. Aggregates
+are fixed safe server projections; the browser cannot supply SQL, paths, or filters.
+The dashboard table establishes the metadata-defined configuration foundation for
+later authorized custom dashboards.
+
+FILES_CHANGED:
+Dashboard model/migration, schema, safe aggregate repository, authorization service,
+API/router and contract/specification, dashboard frontend API/KPI component, project
+landing page, Persian labels, focused tests, and current status.
+
+DATABASE_CHANGES:
+Migration 0013 creates workspace-scoped metadata-defined dashboards with JSONB
+configuration, creator provenance, optimistic version, and workspace index.
+
+API_CHANGES:
+Added GET /workspaces/{workspace_id}/dashboard-summary requiring DASHBOARD_READ.
+
+TESTS_ADDED:
+Backend tests cover DASHBOARD_READ enforcement, deterministic counts/percentage, and
+dashboard workspace/schema constraints. Frontend coverage verifies Persian-numbered
+KPI cards and progress projection.
+
+TEST_RESULTS:
+Backend Ruff, focused mypy, four dashboard/OpenAPI tests, and synchronized OpenAPI
+pass. Migration 0012 -> 0013 succeeds against local PostgreSQL. File-scoped frontend
+ESLint, type check, focused KPI test, and production build pass. A chained frontend
+process exceeded the configured timeout due to a polling-wrapper failure and was
+terminated; direct single-worker checks then completed.
+
+SECURITY_IMPACT:
+Active workspace access and DASHBOARD_READ are required before all aggregates. Every
+query includes the authorized workspace ID and only allowlisted predicates; no
+cross-workspace totals or arbitrary query inputs are exposed.
+
+KNOWN_LIMITATIONS:
+Pending/completed deliverable counts remain zero until phase-deliverable association
+workflows are exposed. Custom dashboard builder, table/chart widgets, and export are
+later RPT tasks.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+Complete the shared audit query/viewer slice in accepted M5 dependency order before
+resolving DG-09 and exposing governed workflow transitions.
+```
+
+---
+
 # 27. Related Specifications
 
 ```text
