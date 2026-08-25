@@ -6,6 +6,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from app.schemas.workflow import WorkflowInstanceResponse
+
 
 class DeliverableRequirement(BaseModel):
     key: Annotated[str, Field(pattern=r"^[a-z][a-z0-9_]{0,119}$")]
@@ -19,7 +21,7 @@ class DeliverableCreate(BaseModel):
     description: Annotated[str | None, Field(max_length=5000)] = None
     owner_id: UUID
     contributor_ids: Annotated[list[UUID], Field(max_length=100)] = []
-    internal_reviewer_id: UUID | None = None
+    internal_reviewer_id: UUID
     internal_due_at: datetime | None = None
     official_due_at: datetime | None = None
     requirements: Annotated[list[DeliverableRequirement], Field(max_length=100)] = []
@@ -134,6 +136,7 @@ class DeliverableResponse(BaseModel):
     readiness: DeliverableReadiness
     latest_version: DeliverableVersionResponse | None = None
     latest_submission: SubmissionResponse | None = None
+    workflow: WorkflowInstanceResponse | None = None
     created_at: datetime
     updated_at: datetime
     version: int

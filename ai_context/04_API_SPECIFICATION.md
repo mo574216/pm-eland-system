@@ -2106,6 +2106,7 @@ POST /phases/{phase_id}/deliverables
 GET  /deliverables/{deliverable_id}
 GET  /deliverables/{deliverable_id}/package-options
 POST /deliverables/{deliverable_id}/versions
+POST /deliverables/{deliverable_id}/actions/{action_key}
 POST /deliverables/{deliverable_id}/submissions
 POST /submissions/{submission_id}/withdrawals
 ```
@@ -2119,6 +2120,13 @@ requires `SUBMISSION_CREATE`, the owner assignment, readiness, active same-works
 recipients, an immutable package version, correct prior-submission provenance, and
 an idempotency key. Only the latest formal submission may be withdrawn, with a
 non-empty retained reason and audit record. Locked phases reject every mutation.
+
+Every deliverable is bound to an immutable published version of the installable
+`system_deliverable_lifecycle` metadata profile. Responses include the current
+localized state and only the caller's permission-, assignment-, state-, and
+readiness-eligible actions. Internal review actions use the deliverable action route;
+formal submit and withdrawal remain distinct evidence-producing routes and execute
+their workflow transition in the same transaction.
 
 ---
 

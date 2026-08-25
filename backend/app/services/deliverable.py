@@ -1,5 +1,6 @@
 """Deliverable preparation, readiness, submission, and withdrawal policy."""
 
+from datetime import UTC, datetime
 from typing import Literal
 from uuid import UUID, uuid4
 
@@ -7,6 +8,12 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.deliverable_workflow import (
+    DELIVERABLE_STATES,
+    DELIVERABLE_TRANSITIONS,
+    DELIVERABLE_WORKFLOW_KEY,
+    DELIVERABLE_WORKFLOW_NAME,
+)
 from app.core.exceptions import (
     FormValidationError,
     PermissionDeniedError,
@@ -28,8 +35,18 @@ from app.models.document import Document, DocumentVersion
 from app.models.entity import EntityObject
 from app.models.form import FormDefinition, FormInstance
 from app.models.identity import AuditLog
+from app.models.workflow import (
+    WorkflowAssignment,
+    WorkflowDefinition,
+    WorkflowDefinitionVersion,
+    WorkflowInstance,
+    WorkflowStateDefinition,
+    WorkflowTransitionDefinition,
+    WorkflowTransitionEvent,
+)
 from app.repositories.deliverable import DeliverableRepository
 from app.repositories.phase import PhaseRepository
+from app.repositories.workflow import WorkflowRepository
 from app.repositories.workspace import WorkspaceRepository
 from app.schemas.deliverable import (
     DeliverableCreate,
@@ -43,9 +60,11 @@ from app.schemas.deliverable import (
     SubmissionResponse,
     SubmissionWithdrawalCreate,
 )
+from app.schemas.workflow import WorkflowTransitionRequest
 from app.services.auth import AuthenticatedIdentity
 from app.services.authorization import AuditContext, AuthorizationService
 from app.services.phase import LockPolicyService
+from app.services.workflow import WorkflowService
 
 
 class DeliverableService:
@@ -56,7 +75,143 @@ class DeliverableService:
         self.repository = DeliverableRepository(session)
         self.phase_repository = PhaseRepository(session)
         self.workspace_repository = WorkspaceRepository(session)
+        self.workflow_repository = WorkflowRepository(session)
+        self.workflow_service = WorkflowService(session, actor)
         self.lock_policy = LockPolicyService(session, actor)
+
+    async def _ensure_workflow_profile(
+        self, workspace_id: UUID
+    ) -> tuple[WorkflowDefinitionVersion, WorkflowStateDefinition]:
+        definition = await self.workflow_repository.definition_by_key(
+            workspace_id, DELIVERABLE_WORKFLOW_KEY
+        )
+        version = (
+            await self.workflow_repository.latest_published_version(definition.id)
+            if definition is not None
+            else None
+        )
+        if definition is not None and version is not None:
+            initial = await self.workflow_repository.initial_state(version.id)
+            if initial is None:
+                raise ResourceConflictError
+            return version, initial
+        if definition is not None:
+            raise ResourceConflictError
+        definition = WorkflowDefinition(
+            id=uuid4(),
+            workspace_id=workspace_id,
+            key=DELIVERABLE_WORKFLOW_KEY,
+            name=DELIVERABLE_WORKFLOW_NAME,
+            description="پروفایل پایه قابل نسخه‌بندی برای تحویل، بازبینی و ارسال رسمی",
+            created_by=self.actor.user.id,
+            version=1,
+        )
+        version = WorkflowDefinitionVersion(
+            id=uuid4(),
+            workspace_id=workspace_id,
+            definition_id=definition.id,
+            version_number=1,
+            status="PUBLISHED",
+            configuration={"system_profile": "DELIVERABLE_BASELINE"},
+            created_by=self.actor.user.id,
+            published_by=self.actor.user.id,
+            published_at=datetime.now(UTC),
+        )
+        states = {
+            key: WorkflowStateDefinition(
+                id=uuid4(),
+                workspace_id=workspace_id,
+                definition_version_id=version.id,
+                key=key,
+                label=label,
+                sequence_number=sequence,
+                is_initial=is_initial,
+                is_terminal=is_terminal,
+                configuration={},
+            )
+            for key, label, sequence, is_initial, is_terminal in DELIVERABLE_STATES
+        }
+        transitions = [
+            WorkflowTransitionDefinition(
+                id=uuid4(),
+                workspace_id=workspace_id,
+                definition_version_id=version.id,
+                key=key,
+                label=label,
+                from_state_id=states[from_key].id,
+                to_state_id=states[to_key].id,
+                required_permission=permission,
+                authority_kind=authority,
+                assignment_kind=assignment,
+                reason_required=reason_required,
+                policy=policy,
+            )
+            for (
+                key,
+                label,
+                from_key,
+                to_key,
+                permission,
+                authority,
+                assignment,
+                reason_required,
+                policy,
+            ) in DELIVERABLE_TRANSITIONS
+        ]
+        self.workflow_repository.add_all([definition, version, *states.values(), *transitions])
+        return version, states["preparation"]
+
+    def _create_workflow_instance(
+        self,
+        deliverable: Deliverable,
+        definition_version: WorkflowDefinitionVersion,
+        initial: WorkflowStateDefinition,
+        assignments: list[DeliverableAssignment],
+    ) -> WorkflowInstance:
+        instance = WorkflowInstance(
+            id=uuid4(),
+            workspace_id=deliverable.workspace_id,
+            definition_version_id=definition_version.id,
+            current_state_id=initial.id,
+            target_kind="DELIVERABLE",
+            target_id=deliverable.id,
+            target_version=1,
+            started_by=self.actor.user.id,
+            version=1,
+        )
+        assignment_pairs = {(item.user_id, item.assignment_kind) for item in assignments}
+        if deliverable.owner_id is not None:
+            assignment_pairs.add((deliverable.owner_id, "CONTRIBUTOR"))
+        workflow_assignments = [
+            WorkflowAssignment(
+                id=uuid4(),
+                workspace_id=deliverable.workspace_id,
+                instance_id=instance.id,
+                user_id=user_id,
+                assignment_kind=kind,
+                assigned_by=self.actor.user.id,
+            )
+            for user_id, kind in assignment_pairs
+        ]
+        event = WorkflowTransitionEvent(
+            id=uuid4(),
+            workspace_id=deliverable.workspace_id,
+            instance_id=instance.id,
+            transition_id=None,
+            definition_version_id=definition_version.id,
+            previous_state_id=None,
+            resulting_state_id=initial.id,
+            action_key="START",
+            authority_kind="CONFIGURATION",
+            actor_id=self.actor.user.id,
+            target_version=1,
+            resulting_instance_version=1,
+            reason=None,
+            context={"profile": DELIVERABLE_WORKFLOW_KEY},
+            idempotency_key=f"deliverable-start:{deliverable.id}",
+        )
+        self.workflow_repository.add_all([instance, *workflow_assignments, event])
+        return instance
 
     async def _effective_permissions(self, workspace_id: UUID) -> frozenset[str]:
         if (
@@ -207,6 +362,9 @@ class DeliverableService:
         latest_version = await self.repository.latest_version(value.id)
         items = await self.repository.package_items(latest_version.id) if latest_version else ()
         latest_submission = await self.repository.latest_submission(value.id)
+        workflow_instance = await self.workflow_repository.instance_for_target(
+            value.workspace_id, "DELIVERABLE", value.id
+        )
         return DeliverableResponse(
             id=value.id,
             workspace_id=value.workspace_id,
@@ -226,6 +384,11 @@ class DeliverableService:
             latest_version=await self._version_response(latest_version) if latest_version else None,
             latest_submission=(
                 await self._submission_response(latest_submission) if latest_submission else None
+            ),
+            workflow=(
+                await self.workflow_service.get_instance(workflow_instance.id)
+                if workflow_instance is not None
+                else None
             ),
             created_at=value.created_at,
             updated_at=value.updated_at,
@@ -295,7 +458,13 @@ class DeliverableService:
                         assigned_by=self.actor.user.id,
                     )
                 )
+            workflow_version, initial_state = await self._ensure_workflow_profile(
+                phase.workspace_id
+            )
             self.repository.add_all([value, *assignments])
+            workflow_instance = self._create_workflow_instance(
+                value, workflow_version, initial_state, assignments
+            )
             self.repository.add_audit_log(
                 self._audit(
                     phase.workspace_id,
@@ -303,6 +472,16 @@ class DeliverableService:
                     value.id,
                     "DELIVERABLE_CREATED",
                     {"phase_id": str(phase.id), "name": value.name},
+                    audit,
+                )
+            )
+            self.repository.add_audit_log(
+                self._audit(
+                    phase.workspace_id,
+                    "workflow_instance",
+                    workflow_instance.id,
+                    "WORKFLOW_INSTANCE_STARTED",
+                    {"state": initial_state.key, "target_kind": "DELIVERABLE"},
                     audit,
                 )
             )
@@ -403,6 +582,16 @@ class DeliverableService:
             await self._require(value.workspace_id, PermissionCode.DELIVERABLE_CONTRIBUTE)
             await self._require_assignment(value.id, {"OWNER", "CONTRIBUTOR"})
             await self.lock_policy.assert_phase_mutable(value.phase_id)
+            workflow_instance = await self.workflow_repository.instance_for_target(
+                value.workspace_id, "DELIVERABLE", value.id
+            )
+            if workflow_instance is None:
+                raise ResourceConflictError
+            workflow_state = await self.workflow_repository.state(
+                workflow_instance.current_state_id
+            )
+            if workflow_state is None or workflow_state.key != "preparation":
+                raise ResourceConflictError
             requirement_by_key = {str(item["key"]): item for item in value.requirements}
             records: list[DeliverablePackageItem] = []
             version = DeliverableVersion(
@@ -454,6 +643,30 @@ class DeliverableService:
                 )
             )
             await self.repository.flush()
+        return await self._response(value)
+
+    async def transition_review(
+        self,
+        deliverable_id: UUID,
+        action_key: str,
+        payload: WorkflowTransitionRequest,
+        audit: AuditContext,
+    ) -> DeliverableResponse:
+        if action_key not in {"request_internal_review", "request_correction", "mark_ready"}:
+            raise ResourceNotFoundError
+        async with self.session.begin():
+            value = await self.repository.accessible(deliverable_id, self.actor.user.id, lock=True)
+            if value is None:
+                raise ResourceNotFoundError
+            await self.lock_policy.assert_phase_mutable(value.phase_id)
+            workflow_instance = await self.workflow_repository.instance_for_target(
+                value.workspace_id, "DELIVERABLE", value.id
+            )
+            if workflow_instance is None:
+                raise ResourceConflictError
+            await self.workflow_service.transition_instance(
+                workflow_instance.id, action_key, payload, audit
+            )
         return await self._response(value)
 
     async def submit(
@@ -514,6 +727,22 @@ class DeliverableService:
                 for user_id in recipient_ids
             ]
             self.repository.add_all([submission, *recipients])
+            await self.repository.flush()
+            workflow_instance = await self.workflow_repository.instance_for_target(
+                value.workspace_id, "DELIVERABLE", value.id
+            )
+            if workflow_instance is None:
+                raise ResourceConflictError
+            await self.workflow_service.transition_instance(
+                workflow_instance.id,
+                "formal_submit",
+                WorkflowTransitionRequest(
+                    expected_version=workflow_instance.version,
+                    idempotency_key=f"{payload.idempotency_key}:workflow",
+                    target_version=version.version_number,
+                ),
+                audit,
+            )
             self.repository.add_audit_log(
                 self._audit(
                     value.workspace_id,
@@ -568,6 +797,23 @@ class DeliverableService:
                 idempotency_key=payload.idempotency_key,
             )
             self.repository.add_all([withdrawal])
+            await self.repository.flush()
+            workflow_instance = await self.workflow_repository.instance_for_target(
+                submission.workspace_id, "DELIVERABLE", deliverable.id
+            )
+            if workflow_instance is None:
+                raise ResourceConflictError
+            await self.workflow_service.transition_instance(
+                workflow_instance.id,
+                "withdraw_submission",
+                WorkflowTransitionRequest(
+                    expected_version=workflow_instance.version,
+                    idempotency_key=f"{payload.idempotency_key}:workflow",
+                    reason=payload.reason,
+                    target_version=workflow_instance.target_version,
+                ),
+                audit,
+            )
             self.repository.add_audit_log(
                 self._audit(
                     submission.workspace_id,

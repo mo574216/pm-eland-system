@@ -10,6 +10,7 @@ import {
   listDeliverables,
   searchPackageOptions,
   submitDeliverable,
+  transitionDeliverableReview,
   withdrawSubmission,
 } from './deliverableApi'
 
@@ -17,6 +18,7 @@ vi.mock('../workspaces/workspaceApi', () => ({ listWorkspaceMembers: vi.fn() }))
 vi.mock('./deliverableApi', () => ({
   createDeliverable: vi.fn(), createDeliverableVersion: vi.fn(), listDeliverables: vi.fn(),
   searchPackageOptions: vi.fn(), submitDeliverable: vi.fn(), withdrawSubmission: vi.fn(),
+  transitionDeliverableReview: vi.fn(),
 }))
 
 const member = {
@@ -30,7 +32,7 @@ const deliverable = {
   owner_id: member.user_id, internal_reviewer_id: null, contributor_ids: [],
   internal_due_at: null, official_due_at: null, requirements: [],
   readiness: { ready: false, total_required: 0, completed_required: 0, missing: [] },
-  latest_version: null, latest_submission: null, created_at: '2026-08-25T00:00:00Z',
+  latest_version: null, latest_submission: null, workflow: null, created_at: '2026-08-25T00:00:00Z',
   updated_at: '2026-08-25T00:00:00Z', version: 1,
 }
 
@@ -42,6 +44,7 @@ describe('DeliverablesPanel', () => {
     vi.mocked(createDeliverableVersion).mockResolvedValue(deliverable)
     vi.mocked(searchPackageOptions).mockResolvedValue([])
     vi.mocked(submitDeliverable).mockResolvedValue(deliverable)
+    vi.mocked(transitionDeliverableReview).mockResolvedValue(deliverable)
     vi.mocked(withdrawSubmission).mockRejectedValue(new Error('unused'))
   })
 
@@ -54,11 +57,33 @@ describe('DeliverablesPanel', () => {
     await user.type(screen.getByRole('textbox', { name: 'نام تحویل‌دادنی' }), 'گزارش مرحله')
     await user.click(screen.getByRole('combobox', { name: /مسئول تحویل‌دادنی/ }))
     await user.click(screen.getByRole('option', { name: 'رهبر پروژه' }))
+    await user.click(screen.getByRole('combobox', { name: 'بازبین داخلی' }))
+    await user.click(screen.getByRole('option', { name: 'رهبر پروژه' }))
     await user.click(screen.getByRole('button', { name: 'ایجاد تحویل‌دادنی' }))
 
     expect(createDeliverable).toHaveBeenCalledWith('phase-1', expect.objectContaining({
       name: 'گزارش مرحله', owner_id: member.user_id,
     }))
     expect(screen.queryByText('deliverable_generated')).not.toBeInTheDocument()
+  })
+
+  it('renders and executes only the backend-returned review action', async () => {
+    const user = userEvent.setup()
+    vi.mocked(listDeliverables).mockResolvedValue([{
+      ...deliverable,
+      readiness: { ready: true, total_required: 0, completed_required: 0, missing: [] },
+      workflow: {
+        id: 'workflow-1', current_state_key: 'preparation', current_state_label: 'در حال آماده‌سازی',
+        version: 1, target_version: 1,
+        available_actions: [{ key: 'request_internal_review', label: 'ارسال برای بازبینی داخلی', authority_kind: 'CONTRIBUTION', reason_required: false }],
+      },
+    }])
+    renderWithProviders(<DeliverablesPanel locked={false} phaseId="phase-1" workspaceId="workspace-1" />)
+
+    await user.click(await screen.findByRole('button', { name: 'ارسال برای بازبینی داخلی' }))
+    expect(transitionDeliverableReview).toHaveBeenCalledWith(
+      deliverable.id, 1, 'request_internal_review', null,
+    )
+    expect(screen.queryByRole('button', { name: 'تأیید آمادگی برای ارسال' })).not.toBeInTheDocument()
   })
 })

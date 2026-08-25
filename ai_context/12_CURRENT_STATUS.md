@@ -4188,6 +4188,81 @@ correction, readiness, submission, and withdrawal from backend-returned actions.
 
 ---
 
+Workflow-bound internal-review entry:
+
+```text
+DATE:
+2026-08-26
+
+MILESTONE:
+M5A governed deliverable vertical slice
+
+TASKS_COMPLETED:
+DEL-BE-001 Deliverable Preparation and Internal Review API
+DEL-FE-001 backend-action-driven preparation/internal-review portion
+
+TASKS_IN_PROGRESS:
+SUB-BE-001 external revision integration
+DEL-FE-001 external review/revision presentation
+
+SUMMARY:
+Every new deliverable is now atomically bound to an immutable published version of
+the generic baseline deliverable workflow. Existing deliverables are backfilled.
+Owners, contributors, and internal reviewers receive distinct scoped assignments;
+the backend returns only eligible actions and enforces package readiness, current
+state, assignment, permission, reason, optimistic version, idempotency, and phase
+lock. Formal submission and withdrawal create evidence and transition the same
+workflow transactionally. The phase UI renders localized workflow state and only
+the actions returned by the backend.
+
+FILES_CHANGED:
+Installable lifecycle metadata profile, workflow repository/policy service,
+deliverable response/service/action API, migration 0017, OpenAPI/database/API
+specifications, phase deliverable UI/API/localization/tests, and current status.
+
+DATABASE_CHANGES:
+Migration 0017 installs the baseline lifecycle as ordinary versioned workflow data,
+creates target instances and assignments for existing deliverables, and appends
+their START events. Downgrade removes only deliverable instances and the marked
+system profile. New workspaces install the profile lazily on first deliverable.
+
+API_CHANGES:
+Added POST /deliverables/{deliverable_id}/actions/{action_key} for the allowlisted
+internal-review commands. Deliverable responses now include current workflow state,
+optimistic version, and permission/assignment/readiness-filtered available actions.
+
+TESTS_ADDED:
+Backend tests prove baseline metadata retains distinct contribution, internal-review,
+and formal-submission lanes and that configured readiness policy blocks transition.
+Frontend coverage proves the UI executes only the action returned by the backend.
+
+TEST_RESULTS:
+Focused backend Ruff and full app mypy pass; eight workflow/deliverable/OpenAPI tests
+pass. Migration 0017 upgrade, downgrade, and restored upgrade pass against PostgreSQL.
+Focused frontend type/lint checks and two deliverable interaction tests pass.
+
+SECURITY_IMPACT:
+The browser cannot invent authority from persona names. Every action is re-evaluated
+server-side against active workspace access, stable permission, scoped assignment,
+current state, configured condition, reason, version, idempotency, and lock state.
+Generic workflow endpoints enforce the same readiness/evidence policy, preventing a
+caller from bypassing the deliverable route.
+
+KNOWN_LIMITATIONS:
+External version-bound technical/project review outcomes and revision requests are
+the next REV-BE-002/SUB-BE-001 dependency. Employer acceptance remains separate and
+is not implied by internal readiness or formal submission.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+Implement version-bound external review outcomes and the revision-request path so a
+submitted package can return to preparation and be resubmitted with provenance.
+```
+
+---
+
 # 27. Related Specifications
 
 ```text

@@ -49,6 +49,22 @@ export interface Submission {
   withdrawal_reason: string | null
 }
 
+export interface WorkflowAction {
+  key: string
+  label: string
+  authority_kind: string
+  reason_required: boolean
+}
+
+export interface WorkflowProjection {
+  id: string
+  current_state_key: string
+  current_state_label: string
+  version: number
+  target_version: number | null
+  available_actions: WorkflowAction[]
+}
+
 export interface Deliverable {
   id: string
   workspace_id: string
@@ -65,6 +81,7 @@ export interface Deliverable {
   readiness: { ready: boolean; total_required: number; completed_required: number; missing: string[] }
   latest_version: DeliverableVersion | null
   latest_submission: Submission | null
+  workflow: WorkflowProjection | null
   created_at: string
   updated_at: string
   version: number
@@ -75,7 +92,7 @@ export interface DeliverableCreate {
   description: string | null
   owner_id: string
   contributor_ids: string[]
-  internal_reviewer_id: string | null
+  internal_reviewer_id: string
   internal_due_at: string | null
   official_due_at: string | null
   requirements: DeliverableRequirement[]
@@ -126,5 +143,21 @@ export function submitDeliverable(
 export function withdrawSubmission(submissionId: string, reason: string): Promise<Submission> {
   return apiRequest<Submission>(`/submissions/${submissionId}/withdrawals`, {
     method: 'POST', body: JSON.stringify({ reason, idempotency_key: crypto.randomUUID() }),
+  })
+}
+
+export function transitionDeliverableReview(
+  deliverableId: string,
+  workflowVersion: number,
+  actionKey: string,
+  reason: string | null,
+): Promise<Deliverable> {
+  return apiRequest<Deliverable>(`/deliverables/${deliverableId}/actions/${actionKey}`, {
+    method: 'POST',
+    body: JSON.stringify({
+      expected_version: workflowVersion,
+      idempotency_key: crypto.randomUUID(),
+      reason,
+    }),
   })
 }

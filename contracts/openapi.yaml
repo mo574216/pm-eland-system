@@ -1659,6 +1659,30 @@ paths:
         '422': {$ref: '#/components/responses/ValidationError'}
         '423': {$ref: '#/components/responses/Locked'}
 
+  /deliverables/{deliverableId}/actions/{actionKey}:
+    post:
+      tags: [Deliverables]
+      operationId: transitionDeliverableReview
+      summary: Execute an authorized internal-review lifecycle action
+      parameters:
+        - {name: deliverableId, in: path, required: true, schema: {type: string, format: uuid}}
+        - {name: actionKey, in: path, required: true, schema: {type: string}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/WorkflowTransitionRequest'}
+      responses:
+        '200':
+          description: Deliverable transitioned and refreshed authorized actions returned
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SuccessEnvelope'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '423': {$ref: '#/components/responses/Locked'}
+
   /deliverables/{deliverableId}/submissions:
     post:
       tags: [Deliverables]
@@ -2668,7 +2692,7 @@ components:
     DeliverableCreate:
       type: object
       additionalProperties: false
-      required: [name, owner_id]
+      required: [name, owner_id, internal_reviewer_id]
       properties:
         name: {type: string, minLength: 1, maxLength: 255}
         description: {type: [string, 'null'], maxLength: 5000}

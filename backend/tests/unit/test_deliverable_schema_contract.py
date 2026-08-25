@@ -8,6 +8,7 @@ from pydantic import ValidationError
 from sqlalchemy import ForeignKeyConstraint
 
 from app.core.database import Base
+from app.core.deliverable_workflow import DELIVERABLE_STATES, DELIVERABLE_TRANSITIONS
 from app.models.deliverable import Deliverable, DeliverablePackageItem
 from app.schemas.deliverable import DeliverableCreate
 from app.services.deliverable import DeliverableService
@@ -44,6 +45,7 @@ def test_create_contract_rejects_reversed_dates_and_duplicate_requirements() -> 
     base = {
         "name": "خروجی مرحله",
         "owner_id": uuid4(),
+        "internal_reviewer_id": uuid4(),
         "internal_due_at": now + timedelta(days=2),
         "official_due_at": now + timedelta(days=1),
     }
@@ -55,6 +57,7 @@ def test_create_contract_rejects_reversed_dates_and_duplicate_requirements() -> 
             {
                 "name": "خروجی مرحله",
                 "owner_id": uuid4(),
+                "internal_reviewer_id": uuid4(),
                 "requirements": [
                     {"key": "spec", "label": "مشخصات", "resource_kind": "FORM_INSTANCE"},
                     {"key": "spec", "label": "سند", "resource_kind": "DOCUMENT_VERSION"},
@@ -100,3 +103,25 @@ def test_readiness_reports_named_missing_requirements() -> None:
     assert readiness.ready is False
     assert readiness.completed_required == 1
     assert readiness.missing == ["سند پیوست"]
+
+
+def test_baseline_lifecycle_keeps_authority_lanes_and_policy_as_metadata() -> None:
+    state_keys = {state[0] for state in DELIVERABLE_STATES}
+    assert state_keys == {"preparation", "internal_review", "ready", "submitted"}
+    transitions = {transition[0]: transition for transition in DELIVERABLE_TRANSITIONS}
+    assert transitions["request_internal_review"][4:7] == (
+        "DELIVERABLE_CONTRIBUTE",
+        "CONTRIBUTION",
+        "CONTRIBUTOR",
+    )
+    assert transitions["mark_ready"][4:7] == (
+        "DELIVERABLE_INTERNAL_REVIEW",
+        "INTERNAL_REVIEW",
+        "INTERNAL_REVIEWER",
+    )
+    assert transitions["formal_submit"][4:7] == (
+        "SUBMISSION_CREATE",
+        "FORMAL_SUBMISSION",
+        "OWNER",
+    )
+    assert transitions["formal_submit"][8] == {"requires_active_submission": True}

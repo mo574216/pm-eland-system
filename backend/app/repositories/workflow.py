@@ -3,10 +3,16 @@
 from typing import cast
 from uuid import UUID
 
-from sqlalchemy import func, select, update
+from sqlalchemy import exists, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.deliverable import Deliverable
+from app.models.deliverable import (
+    Deliverable,
+    DeliverablePackageItem,
+    DeliverableVersion,
+    Submission,
+    SubmissionWithdrawal,
+)
 from app.models.document import Document
 from app.models.entity import EntityObject
 from app.models.form import FormInstance
@@ -47,6 +53,36 @@ class WorkflowRepository:
                 select(WorkflowDefinition).where(
                     WorkflowDefinition.workspace_id == workspace_id,
                     WorkflowDefinition.key == key,
+                )
+            ),
+        )
+
+    async def latest_published_version(
+        self, definition_id: UUID
+    ) -> WorkflowDefinitionVersion | None:
+        return cast(
+            WorkflowDefinitionVersion | None,
+            await self.session.scalar(
+                select(WorkflowDefinitionVersion)
+                .where(
+                    WorkflowDefinitionVersion.definition_id == definition_id,
+                    WorkflowDefinitionVersion.status == "PUBLISHED",
+                )
+                .order_by(WorkflowDefinitionVersion.version_number.desc())
+                .limit(1)
+            ),
+        )
+
+    async def instance_for_target(
+        self, workspace_id: UUID, target_kind: str, target_id: UUID
+    ) -> WorkflowInstance | None:
+        return cast(
+            WorkflowInstance | None,
+            await self.session.scalar(
+                select(WorkflowInstance).where(
+                    WorkflowInstance.workspace_id == workspace_id,
+                    WorkflowInstance.target_kind == target_kind,
+                    WorkflowInstance.target_id == target_id,
                 )
             ),
         )
@@ -231,6 +267,78 @@ class WorkflowRepository:
         else:
             return False
         return await self.session.scalar(statement) is not None
+
+    async def deliverable_package_is_ready(self, deliverable_id: UUID) -> bool:
+        deliverable = await self.session.get(Deliverable, deliverable_id)
+        if deliverable is None:
+            return False
+        version = await self.session.scalar(
+            select(DeliverableVersion)
+            .where(DeliverableVersion.deliverable_id == deliverable.id)
+            .order_by(DeliverableVersion.version_number.desc())
+            .limit(1)
+        )
+        if version is None:
+            return False
+        items = tuple(
+            (
+                await self.session.scalars(
+                    select(DeliverablePackageItem).where(
+                        DeliverablePackageItem.deliverable_version_id == version.id
+                    )
+                )
+            ).all()
+        )
+        completed = {
+            str(item.metadata_snapshot.get("requirement_key"))
+            for item in items
+            if item.metadata_snapshot.get("requirement_key")
+        }
+        required = {
+            str(item.get("key")) for item in deliverable.requirements if item.get("required", True)
+        }
+        return bool(items) and required <= completed
+
+    async def has_active_submission_version(
+        self, deliverable_id: UUID, version_number: int | None
+    ) -> bool:
+        if version_number is None:
+            return False
+        statement = (
+            select(Submission.id)
+            .join(
+                DeliverableVersion,
+                DeliverableVersion.id == Submission.deliverable_version_id,
+            )
+            .where(
+                Submission.deliverable_id == deliverable_id,
+                DeliverableVersion.version_number == version_number,
+                ~exists(
+                    select(SubmissionWithdrawal.id).where(
+                        SubmissionWithdrawal.submission_id == Submission.id
+                    )
+                ),
+            )
+        )
+        return await self.session.scalar(statement) is not None
+
+    async def latest_submission_is_withdrawn(self, deliverable_id: UUID) -> bool:
+        latest_id = await self.session.scalar(
+            select(Submission.id)
+            .where(Submission.deliverable_id == deliverable_id)
+            .order_by(Submission.sequence_number.desc())
+            .limit(1)
+        )
+        if latest_id is None:
+            return False
+        return (
+            await self.session.scalar(
+                select(SubmissionWithdrawal.id).where(
+                    SubmissionWithdrawal.submission_id == latest_id
+                )
+            )
+            is not None
+        )
 
     async def update_instance_state(
         self, instance_id: UUID, expected_version: int, state_id: UUID, target_version: int | None

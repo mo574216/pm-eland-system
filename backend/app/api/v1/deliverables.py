@@ -16,6 +16,7 @@ from app.schemas.deliverable import (
     SubmissionCreate,
     SubmissionWithdrawalCreate,
 )
+from app.schemas.workflow import WorkflowTransitionRequest
 from app.services.auth import AuthenticatedIdentity
 from app.services.authorization import AuditContext
 from app.services.deliverable import DeliverableService
@@ -93,6 +94,21 @@ async def create_deliverable_version(
 ) -> dict[str, object]:
     value = await DeliverableService(session, actor).create_version(
         deliverable_id, payload, _audit_context(request)
+    )
+    return success_envelope(value.model_dump(mode="json"))
+
+
+@router.post("/deliverables/{deliverable_id}/actions/{action_key}")
+async def transition_deliverable_review(
+    deliverable_id: UUID,
+    action_key: str,
+    payload: WorkflowTransitionRequest,
+    request: Request,
+    actor: Annotated[AuthenticatedIdentity, Depends(get_current_identity)],
+    session: Annotated[AsyncSession, Depends(get_database_session)],
+) -> dict[str, object]:
+    value = await DeliverableService(session, actor).transition_review(
+        deliverable_id, action_key, payload, _audit_context(request)
     )
     return success_envelope(value.model_dump(mode="json"))
 

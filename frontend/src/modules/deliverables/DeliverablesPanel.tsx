@@ -26,6 +26,7 @@ import {
   listDeliverables,
   searchPackageOptions,
   submitDeliverable,
+  transitionDeliverableReview,
   withdrawSubmission,
   type Deliverable,
   type DeliverableCreate,
@@ -62,6 +63,7 @@ function DeliverableActions({ item, members, locked, refresh }: { item: Delivera
   const [statement, setStatement] = useState('')
   const [recipients, setRecipients] = useState<WorkspaceMember[]>([])
   const [reason, setReason] = useState('')
+  const [reviewReason, setReviewReason] = useState('')
   const [error, setError] = useState<string | null>(null)
   const options = useQuery({
     queryKey: ['deliverable-package-options', item.id, kind, search],
@@ -88,6 +90,12 @@ function DeliverableActions({ item, members, locked, refresh }: { item: Delivera
     mutationFn: () => withdrawSubmission(item.latest_submission?.id ?? '', reason.trim()),
     onSuccess: async () => { setReason(''); await refresh() },
   })
+  const reviewMutation = useMutation({
+    mutationFn: (actionKey: string) => transitionDeliverableReview(
+      item.id, item.workflow?.version ?? 0, actionKey, reviewReason.trim() || null,
+    ),
+    onSuccess: async () => { setReviewReason(''); await refresh() },
+  })
   const run = async (operation: () => Promise<unknown>) => {
     setError(null)
     try { await operation() } catch (caught) {
@@ -100,9 +108,13 @@ function DeliverableActions({ item, members, locked, refresh }: { item: Delivera
     <Stack spacing={1.5}>
       {error ? <Alert severity="error">{error}</Alert> : null}
       <Stack direction="row" sx={{ flexWrap: 'wrap', gap: 1 }}>
-        <Button disabled={locked} onClick={() => setMode(mode === 'PACKAGE' ? null : 'PACKAGE')} size="small" variant="outlined">{t('deliverables.preparePackage')}</Button>
-        <Button disabled={locked || item.latest_version === null || !item.readiness.ready} onClick={() => setMode(mode === 'SUBMIT' ? null : 'SUBMIT')} size="small" variant="contained">{item.latest_submission ? t('deliverables.resubmit') : t('deliverables.formalSubmit')}</Button>
+        <Button disabled={locked || item.workflow?.current_state_key !== 'preparation'} onClick={() => setMode(mode === 'PACKAGE' ? null : 'PACKAGE')} size="small" variant="outlined">{t('deliverables.preparePackage')}</Button>
+        {item.workflow?.available_actions.filter((action) => !['formal_submit', 'withdraw_submission'].includes(action.key)).map((action) => (
+          <Button disabled={locked || reviewMutation.isPending || (action.reason_required && reviewReason.trim() === '')} key={action.key} onClick={() => void run(() => reviewMutation.mutateAsync(action.key))} size="small" variant={action.key === 'mark_ready' ? 'contained' : 'outlined'}>{action.label}</Button>
+        ))}
+        <Button disabled={locked || !item.workflow?.available_actions.some((action) => action.key === 'formal_submit')} onClick={() => setMode(mode === 'SUBMIT' ? null : 'SUBMIT')} size="small" variant="contained">{item.latest_submission ? t('deliverables.resubmit') : t('deliverables.formalSubmit')}</Button>
       </Stack>
+      {item.workflow?.available_actions.some((action) => action.reason_required && !['withdraw_submission'].includes(action.key)) ? <TextField label={t('deliverables.reviewReason')} onChange={(event) => setReviewReason(event.target.value)} size="small" value={reviewReason} /> : null}
       <Collapse in={mode === 'PACKAGE'}>
         <Stack spacing={1.5} sx={{ bgcolor: 'action.hover', borderRadius: 2, p: 1.5 }}>
           <TextField label={t('deliverables.contentType')} onChange={(event) => { setKind(event.target.value as PackageResourceKind); setResource(null); setSearch('') }} select value={kind}>
@@ -123,7 +135,7 @@ function DeliverableActions({ item, members, locked, refresh }: { item: Delivera
           <Button disabled={recipients.length === 0 || statement.trim() === '' || submitMutation.isPending} onClick={() => void run(() => submitMutation.mutateAsync())} variant="contained">{t('deliverables.confirmSubmit')}</Button>
         </Stack>
       </Collapse>
-      {item.latest_submission && !item.latest_submission.withdrawn_at ? (
+      {item.latest_submission && !item.latest_submission.withdrawn_at && item.workflow?.available_actions.some((action) => action.key === 'withdraw_submission') ? (
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
           <TextField fullWidth label={t('deliverables.withdrawReason')} onChange={(event) => setReason(event.target.value)} size="small" value={reason} />
           <Button color="warning" disabled={locked || reason.trim() === '' || withdrawMutation.isPending} onClick={() => void run(() => withdrawMutation.mutateAsync())}>{t('deliverables.withdraw')}</Button>
@@ -170,7 +182,7 @@ export function DeliverablesPanel({ phaseId, workspaceId, locked }: { phaseId: s
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setError(null)
-    if (form.owner === null || form.name.trim() === '') {
+    if (form.owner === null || form.reviewer === null || form.name.trim() === '') {
       setError(t('deliverables.requiredFields'))
       return
     }
@@ -179,7 +191,7 @@ export function DeliverablesPanel({ phaseId, workspaceId, locked }: { phaseId: s
         name: form.name.trim(), description: form.description.trim() || null,
         owner_id: form.owner.user_id,
         contributor_ids: form.contributors.map((member) => member.user_id),
-        internal_reviewer_id: form.reviewer?.user_id ?? null,
+        internal_reviewer_id: form.reviewer.user_id,
         internal_due_at: form.internalDue ? new Date(form.internalDue).toISOString() : null,
         official_due_at: form.officialDue ? new Date(form.officialDue).toISOString() : null,
         requirements: [],
@@ -239,6 +251,7 @@ export function DeliverablesPanel({ phaseId, workspaceId, locked }: { phaseId: s
               {item.description ? <Typography color="text.secondary" variant="body2">{item.description}</Typography> : null}
               <Typography variant="body2">{t('deliverables.ownerValue', { name: owner ? memberLabel(owner) : t('deliverables.unassigned') })}</Typography>
               <LinearProgress value={progress} variant="determinate" />
+              {item.workflow ? <Chip color="primary" label={item.workflow.current_state_label} size="small" sx={{ alignSelf: 'flex-start' }} /> : null}
               <Typography color="text.secondary" variant="caption">
                 {item.latest_version ? t('deliverables.latestVersion', { number: item.latest_version.version_number.toLocaleString('fa-IR') }) : t('deliverables.noVersion')}
               </Typography>
