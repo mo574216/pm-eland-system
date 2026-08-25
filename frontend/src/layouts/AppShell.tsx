@@ -149,14 +149,14 @@ export function AppShell() {
     <Box sx={{ minHeight: '100vh' }}>
       {workspaceId ? (
         <Drawer
-          anchor="left"
+          anchor="right"
           ModalProps={{ keepMounted: true }}
           onClose={() => setMobileOpen(false)}
           open={desktop || mobileOpen}
           variant={desktop ? 'permanent' : 'temporary'}
           sx={{
             '& .MuiDrawer-paper': {
-              borderRight: '1px solid',
+              borderLeft: '1px solid',
               borderColor: 'divider',
               width: drawerWidth,
             },
@@ -165,7 +165,7 @@ export function AppShell() {
           {drawer}
         </Drawer>
       ) : null}
-      <Box sx={{ minHeight: '100vh', ml: { lg: workspaceId ? `${drawerWidth}px` : 0 } }}>
+      <Box sx={{ minHeight: '100vh', mr: { lg: workspaceId ? `${drawerWidth}px` : 0 } }}>
         <AppBar
           color="inherit"
           elevation={0}

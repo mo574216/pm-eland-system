@@ -3872,6 +3872,68 @@ resolving DG-09 and exposing governed workflow transitions.
 
 ---
 
+Workspace audit history viewer entry:
+
+```text
+DATE:
+2026-08-25
+
+MILESTONE:
+M5 project visibility
+
+TASKS_COMPLETED:
+AUD-BE-002 Audit Query API
+AUD-FE-001 Audit Viewer
+
+TASKS_IN_PROGRESS:
+None
+
+SUMMARY:
+Authorized project managers can now open a Persian, paginated change-history screen
+from the workspace navigation and see what changed, who performed it, and when. The
+application shell is restored to the approved physical-right navigation layout.
+
+FILES_CHANGED:
+Read-only audit repository/service/schema/API, public contract and router, Persian
+audit page/API/navigation/localization, right-side shell correction, focused tests,
+and current status.
+
+DATABASE_CHANGES:
+None. The accepted append-only audit_logs schema is queried without modification.
+
+API_CHANGES:
+Implemented GET /workspaces/{workspace_id}/audit with resource, actor, action, date,
+and pagination filters. The endpoint requires AUDIT_READ and has no mutation method.
+
+TESTS_ADDED:
+Backend coverage proves permission enforcement and actor projection. Frontend
+coverage proves the workspace route and friendly Persian event presentation.
+
+TEST_RESULTS:
+Focused Ruff and mypy pass; audit and OpenAPI tests pass (3 tests). Frontend
+file-scoped ESLint, typecheck, and the focused audit viewer test pass.
+
+SECURITY_IMPACT:
+Active workspace membership and effective AUDIT_READ permission are required. All
+queries are constrained to the authorized workspace and audit history remains
+read-only. Existing sensitive-value exclusion rules remain authoritative at write
+time.
+
+KNOWN_LIMITATIONS:
+The first viewer prioritizes a clear reverse-chronological history. Interactive
+filter controls and before/after comparison presentation can be added as later UI
+polish; the API already supports the specified filters.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+Reproduce and fix the current pull-request CI failures before beginning the next
+demo-visible backlog slice.
+```
+
+---
+
 # 27. Related Specifications
 
 ```text

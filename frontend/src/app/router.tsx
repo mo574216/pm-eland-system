@@ -1,6 +1,7 @@
 import { Navigate, createBrowserRouter } from 'react-router-dom'
 
 import { AppShell } from '../layouts/AppShell'
+import { AuditHistoryPage } from '../modules/audit/AuditHistoryPage'
 import { LoginPage } from '../modules/auth/LoginPage'
 import { ProtectedRoute } from '../modules/auth/ProtectedRoute'
 import { EntityExplorerPage } from '../modules/entities/EntityExplorerPage'
@@ -26,6 +27,7 @@ export const router = createBrowserRouter([
         children: [
           { path: '/workspaces', element: <WorkspaceListPage /> },
           { path: '/workspaces/:workspaceId', element: <WorkspaceDashboardPage /> },
+          { path: '/workspaces/:workspaceId/audit', element: <AuditHistoryPage /> },
           { path: '/workspaces/:workspaceId/entities', element: <EntityExplorerPage /> },
           { path: '/workspaces/:workspaceId/forms', element: <FormDesignerPage /> },
           { path: '/workspaces/:workspaceId/phases', element: <PhaseListPage /> },
