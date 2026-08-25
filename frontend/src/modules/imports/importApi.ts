@@ -3,6 +3,7 @@ import type {
   ImportDryRunResult,
   ImportConflictList,
   ImportConflictResolution,
+  ImportCommitResult,
   ImportJobStatus,
   ImportProfile,
   ImportProfileCreate,
@@ -49,6 +50,16 @@ export function assignImportProfile(
 export function dryRunImport(importJobId: string): Promise<ImportDryRunResult> {
   return apiRequest<ImportDryRunResult>(`/imports/${importJobId}/dry-run`, {
     method: 'POST',
+  })
+}
+
+export function commitImport(
+  importJobId: string,
+  idempotencyKey: string,
+): Promise<ImportCommitResult> {
+  return apiRequest<ImportCommitResult>(`/imports/${importJobId}/commit`, {
+    method: 'POST',
+    headers: { 'Idempotency-Key': idempotencyKey },
   })
 }
 

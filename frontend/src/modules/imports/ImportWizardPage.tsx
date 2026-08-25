@@ -7,6 +7,10 @@ import {
   CardContent,
   Chip,
   CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Divider,
   Stack,
   Step,
@@ -26,20 +30,38 @@ import { useTranslation } from 'react-i18next'
 import { Navigate, useParams } from 'react-router-dom'
 
 import { ApiError } from '../../api/client'
-import { assignImportProfile, dryRunImport, uploadImport } from './importApi'
+import { assignImportProfile, commitImport, dryRunImport, uploadImport } from './importApi'
 import { ImportConflictResolver } from './ImportConflictResolver'
 import { ImportDryRunSummary } from './ImportDryRunSummary'
 import { ImportMappingStep } from './ImportMappingStep'
-import type { ImportProfile, ImportResolutionResult } from './types'
+import type { ImportCommitSummary, ImportProfile, ImportResolutionResult } from './types'
 
-export function ImportWizardPage() {
+const commitSummaryKeys: Array<keyof ImportCommitSummary> = [
+  'rows_read',
+  'records_created',
+  'records_updated',
+  'records_unchanged',
+  'records_skipped',
+  'conflicts_resolved',
+  'invalid_rows',
+]
+
+interface ImportWizardProps {
+  workspaceId: string
+  title?: string
+  description?: string
+  onComplete?: (importJobId: string) => void
+}
+
+export function ImportWizard({ workspaceId, title, description, onComplete }: ImportWizardProps) {
   const { t } = useTranslation()
-  const { workspaceId } = useParams()
   const [file, setFile] = useState<File | null>(null)
   const [savedProfile, setSavedProfile] = useState<ImportProfile | null>(null)
   const [resolutionState, setResolutionState] = useState<ImportResolutionResult | null>(null)
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [idempotencyKey, setIdempotencyKey] = useState(() => globalThis.crypto.randomUUID())
   const mutation = useMutation({
-    mutationFn: (selected: File) => uploadImport(workspaceId!, selected),
+    mutationFn: (selected: File) => uploadImport(workspaceId, selected),
   })
   const profileAssignment = useMutation({
     mutationFn: async (profile: ImportProfile) => {
@@ -55,7 +77,16 @@ export function ImportWizardPage() {
       return dryRunImport(mutation.data.import_job_id)
     },
   })
-  if (workspaceId === undefined) return <Navigate replace to="/workspaces" />
+  const commit = useMutation({
+    mutationFn: () => {
+      if (!dryRun.data) throw new Error('Reviewed dry run is required')
+      return commitImport(dryRun.data.import_job_id, idempotencyKey)
+    },
+    onSuccess: (result) => {
+      setConfirmOpen(false)
+      onComplete?.(result.import_job_id)
+    },
+  })
 
   const steps = [
     t('imports.steps.upload'),
@@ -71,10 +102,10 @@ export function ImportWizardPage() {
   return (
     <Stack spacing={3}>
       <Box>
-        <Typography component="h1" variant="h1">{t('imports.title')}</Typography>
-        <Typography color="text.secondary" sx={{ mt: 1 }}>{t('imports.description')}</Typography>
+        <Typography component="h1" variant="h1">{title ?? t('imports.title')}</Typography>
+        <Typography color="text.secondary" sx={{ mt: 1 }}>{description ?? t('imports.description')}</Typography>
       </Box>
-      <Stepper activeStep={resolutionState?.unresolved === 0 || dryRun.data?.status === 'READY_TO_COMMIT' ? 4 : dryRun.data ? 3 : savedProfile ? 2 : mutation.data ? 1 : 0} alternativeLabel sx={{ overflowX: 'auto', pb: 1 }}>
+      <Stepper activeStep={commit.data ? 6 : resolutionState?.unresolved === 0 || dryRun.data?.status === 'READY_TO_COMMIT' ? 5 : dryRun.data ? 3 : savedProfile ? 2 : mutation.data ? 1 : 0} alternativeLabel sx={{ overflowX: 'auto', pb: 1 }}>
         {steps.map((label) => <Step key={label}><StepLabel>{label}</StepLabel></Step>)}
       </Stepper>
       <Card>
@@ -94,6 +125,8 @@ export function ImportWizardPage() {
                   profileAssignment.reset()
                   dryRun.reset()
                   setResolutionState(null)
+                  commit.reset()
+                  setIdempotencyKey(globalThis.crypto.randomUUID())
                   mutation.reset()
                 }}
               />
@@ -190,10 +223,72 @@ export function ImportWizardPage() {
             />
           ) : null}
           {resolutionState?.unresolved === 0 || dryRun.data?.status === 'READY_TO_COMMIT' ? (
-            <Alert severity="success">{t('imports.conflictsResolved')}</Alert>
+            <Stack spacing={2}>
+              <Alert severity="success">{t('imports.conflictsResolved')}</Alert>
+              {!commit.data ? (
+                <Button
+                  disabled={commit.isPending}
+                  onClick={() => setConfirmOpen(true)}
+                  variant="contained"
+                >
+                  {t('imports.reviewCommit')}
+                </Button>
+              ) : null}
+              {commit.isError ? <Alert severity="error">{t('imports.commitFailed')}</Alert> : null}
+            </Stack>
+          ) : null}
+          {commit.data ? (
+            <Card variant="outlined">
+              <CardContent>
+                <Stack spacing={2}>
+                  <Alert severity="success">{t('imports.commitComplete')}</Alert>
+                  <Typography component="h2" variant="h2">{t('imports.commitSummary')}</Typography>
+                  <Stack
+                    direction={{ xs: 'column', sm: 'row' }}
+                    spacing={1}
+                    sx={{ flexWrap: 'wrap' }}
+                    useFlexGap
+                  >
+                    {commitSummaryKeys.map((key) => (
+                      <Chip key={key} label={`${t(`imports.commit.${key}`)}: ${commit.data.summary[key].toLocaleString('fa-IR')}`} />
+                    ))}
+                  </Stack>
+                </Stack>
+              </CardContent>
+            </Card>
           ) : null}
         </Stack>
       ) : null}
+      <Dialog onClose={() => setConfirmOpen(false)} open={confirmOpen}>
+        <DialogTitle>{t('imports.commitConfirmTitle')}</DialogTitle>
+        <DialogContent>
+          <Alert severity="warning">{t('imports.commitConfirmWarning')}</Alert>
+          {dryRun.data ? (
+            <Typography sx={{ mt: 2 }}>
+              {t('imports.commitConfirmCounts', {
+                create: dryRun.data.summary.records_to_create,
+                update: dryRun.data.summary.records_to_update,
+              })}
+            </Typography>
+          ) : null}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setConfirmOpen(false)}>{t('imports.cancel')}</Button>
+          <Button
+            disabled={commit.isPending}
+            onClick={() => commit.mutate()}
+            variant="contained"
+          >
+            {commit.isPending ? t('imports.committing') : t('imports.confirmCommit')}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Stack>
   )
+}
+
+export function ImportWizardPage() {
+  const { workspaceId } = useParams()
+  if (workspaceId === undefined) return <Navigate replace to="/workspaces" />
+  return <ImportWizard workspaceId={workspaceId} />
 }

@@ -5,15 +5,17 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { renderWithProviders } from '../../test/render'
 import {
   assignImportProfile,
+  commitImport,
   createImportProfile,
   dryRunImport,
   resolveImportConflict,
   uploadImport,
 } from './importApi'
-import { ImportWizardPage } from './ImportWizardPage'
+import { ImportWizard, ImportWizardPage } from './ImportWizardPage'
 
 vi.mock('./importApi', () => ({
   uploadImport: vi.fn(),
+  commitImport: vi.fn(),
   createImportProfile: vi.fn(),
   listImportProfiles: vi.fn().mockResolvedValue({ items: [], page: 1, page_size: 200, total: 0 }),
   assignImportProfile: vi.fn().mockResolvedValue({
@@ -53,8 +55,22 @@ const mockedCreateProfile = vi.mocked(createImportProfile)
 const mockedAssignProfile = vi.mocked(assignImportProfile)
 const mockedDryRun = vi.mocked(dryRunImport)
 const mockedResolveConflict = vi.mocked(resolveImportConflict)
+const mockedCommit = vi.mocked(commitImport)
 
 describe('ImportWizardPage', () => {
+  it('renders as an embeddable workflow with contextual heading', () => {
+    renderWithProviders(
+      <ImportWizard
+        description="ورود خروجی این مرحله"
+        title="ورود مشخصات فرایند"
+        workspaceId="workspace-1"
+      />,
+    )
+
+    expect(screen.getByRole('heading', { name: 'ورود مشخصات فرایند' })).toBeVisible()
+    expect(screen.getByText('ورود خروجی این مرحله')).toBeVisible()
+  })
+
   it('uploads a CSV and displays real inspection metadata', async () => {
     mockedUpload.mockResolvedValue({
       import_job_id: 'f1cb5ce2-64b5-4726-a653-acb73af7e9cc',
@@ -158,6 +174,30 @@ describe('ImportWizardPage', () => {
       'f1cb5ce2-64b5-4726-a653-acb73af7e9cc',
       'conflict-1',
       'MERGE',
+    )
+
+    mockedCommit.mockResolvedValue({
+      import_job_id: 'f1cb5ce2-64b5-4726-a653-acb73af7e9cc',
+      status: 'COMPLETED',
+      summary: {
+        rows_read: 2,
+        records_created: 1,
+        records_updated: 1,
+        records_unchanged: 0,
+        records_skipped: 0,
+        conflicts_resolved: 1,
+        invalid_rows: 0,
+      },
+    })
+    await user.click(screen.getByRole('button', { name: 'بررسی و تأیید نهایی' }))
+    expect(screen.getByRole('dialog', { name: 'تأیید نهایی ورود اطلاعات' })).toBeVisible()
+    await user.click(screen.getByRole('button', { name: 'تأیید و ثبت نهایی' }))
+
+    expect(await screen.findByText('ورود اطلاعات با موفقیت انجام شد.')).toBeVisible()
+    expect(screen.getByText('رکوردهای ایجادشده: ۱')).toBeVisible()
+    expect(mockedCommit).toHaveBeenCalledWith(
+      'f1cb5ce2-64b5-4726-a653-acb73af7e9cc',
+      expect.any(String),
     )
   }, 15_000)
 })

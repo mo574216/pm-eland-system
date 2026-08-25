@@ -3672,6 +3672,69 @@ component while retaining its protected recovery route.
 
 ---
 
+Import commit and embeddable workflow entry:
+
+```text
+DATE:
+2026-08-25
+
+MILESTONE:
+M4 safe import frontend completion
+
+TASKS_COMPLETED:
+IMP-FE-005 Commit Confirmation and Summary
+Embeddable import-wizard preparation for IMP-FE-006
+
+TASKS_IN_PROGRESS:
+None
+
+SUMMARY:
+The import workflow now continues from reviewed dry-run/conflict decisions through
+an explicit material-change confirmation, idempotent transactional commit, and a
+human-readable final summary. The workflow is exported as an embeddable component
+with contextual title/description and completion callback; the existing protected
+workspace route remains a thin recovery/deep-link wrapper.
+
+FILES_CHANGED:
+Import API/types, wizard/page, Persian translations, focused import workflow test,
+and current status.
+
+DATABASE_CHANGES:
+None.
+
+API_CHANGES:
+No backend/OpenAPI change. The frontend now consumes the existing
+POST /imports/{import_job_id}/commit contract with a stable per-job Idempotency-Key.
+
+TESTS_ADDED:
+Focused UI coverage verifies direct component embedding, final confirmation,
+transactional commit request, idempotency key presence, and rendered commit summary.
+
+TEST_RESULTS:
+Two focused import workflow tests pass. Frontend lint, type check, and production
+build pass. One earlier combined Vitest run had a Windows worker-start timeout; the
+isolated threaded rerun passed both tests.
+
+SECURITY_IMPACT:
+Commit remains backend-authoritative. The UI requires explicit confirmation, sends
+a bounded opaque idempotency key, and does not imply that preview or conflict UI
+authorization replaces backend permission, lock, or concurrency enforcement.
+
+KNOWN_LIMITATIONS:
+Operational import remains reachable in normal workspace navigation until phase and
+deliverable foundations allow IMP-BE-007/IMP-FE-006 contextual binding. The protected
+deep link is intentionally retained.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+Begin the governed-delivery foundation required for contextual phase/deliverable
+import, prioritizing the smallest phase vertical slice defined by the roadmap.
+```
+
+---
+
 # 27. Related Specifications
 
 ```text
