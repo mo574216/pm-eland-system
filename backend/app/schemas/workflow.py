@@ -9,7 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 from app.core.permissions import PermissionCode
 from app.schemas.metadata import STABLE_KEY_PATTERN
 
-TargetKind = Literal["ENTITY", "DOCUMENT", "FORM_INSTANCE", "PHASE"]
+TargetKind = Literal["ENTITY", "DOCUMENT", "FORM_INSTANCE", "PHASE", "DELIVERABLE"]
 
 
 class WorkflowStateCreate(BaseModel):

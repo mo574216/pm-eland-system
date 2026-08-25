@@ -6,6 +6,7 @@ from uuid import UUID
 from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.models.deliverable import Deliverable
 from app.models.document import Document
 from app.models.entity import EntityObject
 from app.models.form import FormInstance
@@ -219,10 +220,16 @@ class WorkflowRepository:
             statement = select(FormInstance.id).where(
                 FormInstance.id == target_id, FormInstance.workspace_id == workspace_id
             )
-        else:
+        elif kind == "PHASE":
             statement = select(Phase.id).where(
                 Phase.id == target_id, Phase.workspace_id == workspace_id
             )
+        elif kind == "DELIVERABLE":
+            statement = select(Deliverable.id).where(
+                Deliverable.id == target_id, Deliverable.workspace_id == workspace_id
+            )
+        else:
+            return False
         return await self.session.scalar(statement) is not None
 
     async def update_instance_state(

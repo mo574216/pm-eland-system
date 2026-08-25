@@ -9,6 +9,9 @@ import { createPhase, listPhases, setPhaseLocked, updatePhaseStatus } from './ph
 vi.mock('./phaseApi', () => ({
   createPhase: vi.fn(), listPhases: vi.fn(), setPhaseLocked: vi.fn(), updatePhaseStatus: vi.fn(),
 }))
+vi.mock('../deliverables/DeliverablesPanel', () => ({
+  DeliverablesPanel: () => <div data-testid="deliverables-panel" />,
+}))
 
 const phase = {
   id: '10000000-0000-0000-0000-000000000001', workspace_id: 'workspace-1', key: 'phase_demo',

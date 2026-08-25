@@ -4108,6 +4108,86 @@ vertical slice on this generic workflow engine.
 
 ---
 
+Governed deliverable preparation and submission entry:
+
+```text
+DATE:
+2026-08-26
+
+MILESTONE:
+M5A governed deliverable vertical slice
+
+TASKS_COMPLETED:
+DEL-DB-001 Generic Deliverable and Submission Schema
+DEL-BE-001 preparation/readiness portion
+SUB-BE-001 formal submission/resubmission/withdrawal portion
+DEL-FE-001 phase-context preparation/submission portion
+
+TASKS_IN_PROGRESS:
+DEL-BE-001 internal-review workflow integration
+DEL-FE-001 backend-action-driven lifecycle presentation
+
+SUMMARY:
+Each project phase now contains a Persian deliverables workspace. Managers create a
+deliverable with named owner, contributors, internal reviewer, and dates; assigned
+contributors assemble append-only package versions from bounded named entity,
+document-version, or form-instance choices. The backend computes missing required
+content. Assigned leaders can formally submit/resubmit an exact immutable version to
+active workspace recipients and append a reasoned withdrawal. Dashboard counts now
+project the governed records rather than the legacy phase-resource association.
+
+FILES_CHANGED:
+Deliverable models/migration, schemas, repository, policy service, API/router,
+workflow target registry, dashboard aggregate, OpenAPI/narrative contracts, phase
+frontend workspace/API/localization, focused backend/frontend tests, and status.
+
+DATABASE_CHANGES:
+Migration 0016 adds deliverables, generic assignments, immutable versions/package
+items, submissions, recipients, and append-only idempotent withdrawals. Composite
+workspace foreign keys prevent cross-workspace evidence wiring. The original
+phase_deliverables association is preserved for compatibility/resource requirements.
+
+API_CHANGES:
+Added phase deliverable create/list, deliverable read, bounded package-option search,
+immutable package-version creation, formal submit/resubmit, and reasoned withdrawal.
+DELIVERABLE is now an allowlisted generic workflow target kind.
+
+TESTS_ADDED:
+Backend contract coverage verifies schema scope, date/requirement validation,
+human-readable readiness gaps, and route publication. Frontend coverage verifies
+phase-context creation with named people and no displayed technical key.
+
+TEST_RESULTS:
+Focused backend Ruff and full app mypy pass; nine deliverable/dashboard/workflow/
+OpenAPI tests pass. Migration 0016 upgrade, downgrade, and restored upgrade pass on
+PostgreSQL. Two focused frontend tests, full type check, file-scoped ESLint, and the
+production build pass. Canonical OpenAPI YAML parses successfully.
+
+SECURITY_IMPACT:
+Every operation requires active workspace access and a distinct stable permission.
+Contribution and submission also require scoped assignments. Package search is
+two-character minimum, capped at 20, safe-field-only, and same-workspace. Participant
+and resource references are revalidated server-side; phase locks block mutations;
+formal evidence is immutable, idempotent, version-addressed, and audited.
+
+KNOWN_LIMITATIONS:
+Internal-review/correction/ready transitions must next bind these records to the
+generic workflow instance/action engine. The current UI exposes preparation and
+formal submission but does not yet render the configurable review lifecycle or
+backend-returned available actions. Contextual import binding remains dependent on
+that completed lifecycle integration.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+Complete DEL-BE-001/DEL-FE-001 by creating or selecting a published deliverable
+workflow, binding an instance to each deliverable, and driving internal review,
+correction, readiness, submission, and withdrawal from backend-returned actions.
+```
+
+---
+
 # 27. Related Specifications
 
 ```text

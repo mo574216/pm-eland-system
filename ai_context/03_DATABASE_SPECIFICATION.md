@@ -1181,6 +1181,33 @@ Transition events retain the prior/resulting state, action, authority kind, acto
 target artifact version, resulting instance version, reason, context, idempotency
 key, and occurrence time. No ordinary update/delete API exists for event history.
 
+`DEL-DB-001` implements governed delivery evidence through:
+
+```text
+deliverables
+deliverable_assignments
+deliverable_versions
+deliverable_package_items
+submissions
+submission_recipients
+submission_withdrawals
+```
+
+Deliverables belong directly to one phase and workspace, use server-generated stable
+keys, and retain generic owner/contributor/internal-reviewer assignments, configured
+required-content metadata, and internal/official dates. Deliverable versions and
+their package items are append-only snapshots. Package items identify an allowlisted
+generic resource kind (`ENTITY`, `DOCUMENT_VERSION`, or `FORM_INSTANCE`), the exact
+resource/version, a display-label snapshot, and requirement binding; service policy
+validates same-workspace ownership before insertion.
+
+Each formal submission binds one immutable deliverable version, submitter, bounded
+recipient set, statement, related comment references, context snapshot, sequence,
+idempotency key, and prior submission when resubmitting. Withdrawal is a separate
+append-only reasoned event; submission evidence is never updated or deleted in
+place. Composite workspace foreign keys prevent cross-workspace deliverable,
+version, prior-submission, recipient, or withdrawal associations.
+
 `WORK-DB-001` and `COM-DB-001` SHALL similarly use generic workspace-scoped work
 items/dependencies/risks/issues and explicit-kind communication/notification records.
 Dependencies require cycle prevention. Notification and thread targets require

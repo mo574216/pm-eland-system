@@ -2098,6 +2098,28 @@ require `expected_version`, an `idempotency_key`, and a reason when configured;
 returned `available_actions` are permission/assignment-filtered UX hints and never
 replace server-side transition authorization.
 
+Implemented phase-context deliverable and submission routes:
+
+```text
+GET  /phases/{phase_id}/deliverables
+POST /phases/{phase_id}/deliverables
+GET  /deliverables/{deliverable_id}
+GET  /deliverables/{deliverable_id}/package-options
+POST /deliverables/{deliverable_id}/versions
+POST /deliverables/{deliverable_id}/submissions
+POST /submissions/{submission_id}/withdrawals
+```
+
+Creation uses named-selector IDs resolved by the frontend but revalidates active
+same-workspace membership in the backend. Package-option search requires at least
+two characters, is capped at 20 safe results, and requires both contribution
+permission and a deliverable owner/contributor assignment. Creating a package
+version snapshots exact allowlisted resources and their versions. Formal submission
+requires `SUBMISSION_CREATE`, the owner assignment, readiness, active same-workspace
+recipients, an immutable package version, correct prior-submission provenance, and
+an idempotency key. Only the latest formal submission may be withdrawn, with a
+non-empty retained reason and audit record. Locked phases reject every mutation.
+
 ---
 
 # 16.5 Work, Communication, and Notification Contract Rules

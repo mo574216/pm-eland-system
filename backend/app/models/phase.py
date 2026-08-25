@@ -23,6 +23,7 @@ class Phase(Base):
     __table_args__ = (
         UniqueConstraint("workspace_id", "key", name="uq_phases_workspace_key"),
         UniqueConstraint("workspace_id", "sequence_number", name="uq_phases_workspace_sequence"),
+        UniqueConstraint("id", "workspace_id", name="uq_phases_id_workspace"),
         CheckConstraint(
             "status IN ('PLANNED', 'IN_PROGRESS', 'COMPLETED', 'ARCHIVED')",
             name="ck_phases_status",

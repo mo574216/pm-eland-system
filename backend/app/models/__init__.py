@@ -1,6 +1,15 @@
 """Stable platform persistence models."""
 
 from app.models.dashboard import Dashboard
+from app.models.deliverable import (
+    Deliverable,
+    DeliverableAssignment,
+    DeliverablePackageItem,
+    DeliverableVersion,
+    Submission,
+    SubmissionRecipient,
+    SubmissionWithdrawal,
+)
 from app.models.document import Document, DocumentVersion
 from app.models.entity import EntityObject
 from app.models.form import FormDefinition, FormField, FormInstance
@@ -33,6 +42,10 @@ __all__ = [
     "AuditLog",
     "AuthSession",
     "Dashboard",
+    "Deliverable",
+    "DeliverableAssignment",
+    "DeliverablePackageItem",
+    "DeliverableVersion",
     "Document",
     "DocumentVersion",
     "EntityObject",
@@ -50,6 +63,9 @@ __all__ = [
     "PhaseDeliverable",
     "RelationshipType",
     "Role",
+    "Submission",
+    "SubmissionRecipient",
+    "SubmissionWithdrawal",
     "User",
     "WorkflowAssignment",
     "WorkflowDefinition",
