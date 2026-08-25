@@ -123,9 +123,7 @@ class FakeWorkspaceRepository:
     async def role_permission_codes(self, _: UUID) -> tuple[str, ...]:
         return self.permissions_by_role.get(_, self.role_permissions)
 
-    async def search_member_candidates(
-        self, _: UUID, __: str, ___: int
-    ) -> tuple[User, ...]:
+    async def search_member_candidates(self, _: UUID, __: str, ___: int) -> tuple[User, ...]:
         return self.candidates
 
     async def list_roles(self) -> tuple[Role, ...]:

@@ -3934,6 +3934,45 @@ demo-visible backlog slice.
 
 ---
 
+Pull-request CI repair entry:
+
+```text
+DATE:
+2026-08-25
+
+TASKS_COMPLETED:
+Repository housekeeping for PR backend-quality and frontend-tests failures
+
+SUMMARY:
+Reproduced both reported CI failures locally. Applied the pinned Ruff formatter to
+the five nonconforming backend files and updated the stale workspace-dashboard test
+to reflect six active capability links and phase-first navigation.
+
+DATABASE_CHANGES:
+None.
+
+API_CHANGES:
+None.
+
+TESTS_ADDED:
+None; corrected an existing UI expectation to match implemented behavior.
+
+TEST_RESULTS:
+Full backend Ruff format check and lint pass; full backend mypy passes. The exact
+frontend test command passes all 21 files and 36 tests in 28 seconds.
+
+SECURITY_IMPACT:
+None.
+
+KNOWN_LIMITATIONS:
+Remote PR checks require the local commits to be pushed before GitHub can rerun them.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+```
+
+---
+
 # 27. Related Specifications
 
 ```text

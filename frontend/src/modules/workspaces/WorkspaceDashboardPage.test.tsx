@@ -24,12 +24,12 @@ describe('WorkspaceDashboardPage', () => {
     )
 
     expect(screen.getByRole('heading', { name: 'نمای یکپارچه فضای کاری شما' })).toBeVisible()
-    expect(screen.getAllByRole('button', { name: 'ورود به بخش' })).toHaveLength(5)
+    expect(screen.getAllByRole('button', { name: 'ورود به بخش' })).toHaveLength(6)
     expect(screen.getByRole('heading', { name: 'فرم‌های پویا' })).toBeVisible()
     expect(screen.getAllByText('در برنامه توسعه')).toHaveLength(2)
     expect(screen.getByText('اعلان جدیدی برای نمایش وجود ندارد.')).toBeVisible()
 
     await user.click(screen.getAllByRole('button', { name: 'ورود به بخش' })[0])
-    expect(screen.getByTestId('location')).toHaveTextContent(`/workspaces/${workspaceId}/entities`)
+    expect(screen.getByTestId('location')).toHaveTextContent(`/workspaces/${workspaceId}/phases`)
   })
 })

@@ -94,9 +94,7 @@ class MetadataService:
         async with self.session.begin():
             await self._require_manage(workspace_id)
             key = (
-                str(values["key"])
-                if values.get("key") is not None
-                else self._generated_key("type")
+                str(values["key"]) if values.get("key") is not None else self._generated_key("type")
             )
             values["key"] = key
             if await self.repository.entity_type_by_key(workspace_id, key) is not None:
