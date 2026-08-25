@@ -5,14 +5,18 @@ import { renderWithProviders } from '../../test/render'
 import { WorkspaceMemberManager } from './WorkspaceMemberManager'
 import {
   addWorkspaceMember,
+  listWorkspaceRoleOptions,
   listWorkspaceMembers,
   removeWorkspaceMember,
+  searchWorkspaceMemberOptions,
 } from './workspaceApi'
 
 vi.mock('./workspaceApi', () => ({
   addWorkspaceMember: vi.fn(),
+  listWorkspaceRoleOptions: vi.fn(),
   listWorkspaceMembers: vi.fn(),
   removeWorkspaceMember: vi.fn(),
+  searchWorkspaceMemberOptions: vi.fn(),
 }))
 
 const workspaceId = '6ab93847-d2b3-43b8-aae1-15662031feb8'
@@ -22,6 +26,12 @@ const roleId = '233f9764-03b4-4b01-a9bb-76ee894bfc97'
 describe('WorkspaceMemberManager', () => {
   beforeEach(() => {
     vi.mocked(listWorkspaceMembers).mockResolvedValue([])
+    vi.mocked(searchWorkspaceMemberOptions).mockResolvedValue([
+      { id: userId, username: 'analyst1', display_name: null },
+    ])
+    vi.mocked(listWorkspaceRoleOptions).mockResolvedValue([
+      { id: roleId, code: 'ANALYST', name: 'تحلیلگر', description: null },
+    ])
     vi.mocked(addWorkspaceMember).mockResolvedValue({
       id: '06e9e0d9-262a-428b-809d-fd14c6960567',
       user_id: userId,
@@ -35,12 +45,14 @@ describe('WorkspaceMemberManager', () => {
     vi.mocked(removeWorkspaceMember).mockResolvedValue()
   })
 
-  it('adds a member using the contract identifiers', async () => {
+  it('adds a member using human-readable person and role selectors', async () => {
     const user = userEvent.setup()
     renderWithProviders(<WorkspaceMemberManager workspaceId={workspaceId} />)
 
-    await user.type(screen.getByLabelText('شناسه کاربر'), userId)
-    await user.type(screen.getByLabelText('شناسه نقش'), roleId)
+    await user.type(screen.getByLabelText('کاربر'), 'ali')
+    await user.click(await screen.findByRole('option', { name: 'analyst1' }))
+    await user.click(screen.getByLabelText('نقش'))
+    await user.click(await screen.findByRole('option', { name: 'تحلیلگر' }))
     await user.click(screen.getByRole('button', { name: 'افزودن عضو' }))
 
     expect(addWorkspaceMember).toHaveBeenCalledWith(workspaceId, {

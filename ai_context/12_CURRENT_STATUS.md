@@ -3277,6 +3277,915 @@ NEXT_TASK:
 IMP-BE-006 Transactional Commit, then IMP-FE-005 Commit Confirmation and Summary.
 ```
 
+Transactional import commit implementation entry:
+
+```text
+DATE:
+2026-08-25
+
+MILESTONE:
+M4 Documents and Import / Demo-visible MVP
+
+TASKS_COMPLETED:
+IMP-BE-006 Transactional Commit
+
+TASKS_IN_PROGRESS:
+None
+
+SUMMARY:
+Added a synchronous, idempotent transactional commit endpoint that revalidates the
+reviewed import evidence, rejects unresolved or changed inputs, and applies create,
+update, unchanged, and skip outcomes to generic entity records as one atomic unit.
+MERGE, REPLACE, and SKIP now have explicit field-level write semantics, and every
+material entity change plus the completed import job receives an audit record.
+
+FILES_CHANGED:
+Import API, commit service, import repository and schemas, domain exceptions,
+focused backend tests, OpenAPI contract, API specification, and this status file.
+
+DATABASE_CHANGES:
+None.
+
+API_CHANGES:
+POST /imports/{import_job_id}/commit now accepts an optional bounded
+Idempotency-Key and returns a completed import summary. The OpenAPI contract and API
+specification document the synchronous 200 response and commit failure responses.
+
+TESTS_ADDED:
+Focused tests cover generic entity creation/update/skip behavior and audits,
+unresolved-conflict rejection, completed-job idempotent retry behavior, and rollback
+of a forced failure after a simulated canonical write.
+
+TEST_RESULTS:
+Focused Ruff, strict mypy, import commit tests, and OpenAPI validation pass. Full
+backend verification is recorded in the implementation handoff.
+
+SECURITY_IMPACT:
+Workspace access and IMPORT_EXECUTE are checked before source access and again under
+the final job lock. The private stored source and reviewed evidence are revalidated,
+unresolved conflicts cannot commit, silent overwrite is prevented, hierarchy parent
+changes use cycle protection, optimistic versions protect updates, and mutations
+are audited.
+
+KNOWN_LIMITATIONS:
+Commit is synchronous and partial commit is intentionally unsupported. No phase
+association or phase-lock schema exists in this milestone; when that model lands,
+the shared lock policy must be integrated before imports can mutate phase-associated
+entities.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+Paused at user request before IMP-FE-005; awaiting usage-scenario guidance.
+```
+
+Usage-scenario specification alignment entry:
+
+```text
+DATE:
+2026-08-25
+
+MILESTONE:
+Cross-cutting product scope and governed-delivery planning
+
+TASKS_COMPLETED:
+Usage scenario incorporation and specification alignment
+GOV-ADR-001 Governance Authority Model
+
+TASKS_IN_PROGRESS:
+None
+
+SUMMARY:
+Incorporated the user-provided catalog of 343 scenarios across Administrator,
+Project Manager, Project Officer, Technical Reviewer, Contractor Project Leader,
+Contractor Team Member, and Employer Representative. Accepted an architecture
+decision that keeps baseline personas configurable while separating contractor
+internal review, formal submission, monitoring, project review/recommendation,
+technical recommendation/sign-off, and employer acceptance. Expanded requirements,
+technical specifications, security rules, tests, backlog, and roadmap around a
+generic governed-deliverable vertical slice.
+
+FILES_CHANGED:
+Project context; system, database, API, backend, frontend, test, and security
+specifications; backlog and roadmap; complete scenario catalog and its traceability
+baseline; ADR-0006 and ADR index; agent instructions; current status.
+
+DATABASE_CHANGES:
+None. Future GOV/DEL/WORK/COM/ACC tasks now explicitly require Alembic migrations.
+
+API_CHANGES:
+No published OpenAPI operations changed. Narrative contract rules now require typed,
+versioned, idempotent governance APIs and prohibit an ambiguous generic approval
+endpoint. Concrete paths/payloads remain a contract-first step of their backlog tasks.
+
+TESTS_ADDED:
+No executable tests. The test specification now defines authority-matrix,
+transition/version/audit integrity, governed-resource isolation, acceptance-gate,
+conditional-closure, communication-visibility, and governed-delivery E2E cases.
+
+TEST_RESULTS:
+Git diff whitespace validation passes. All 16 changed/new Markdown files have
+balanced code fences; the system requirements and backlog contain no duplicate IDs;
+the detailed catalog contains all 343 unique scenario IDs and exactly preserves the
+source body; and published shared contracts have no diff. Runtime suites are
+unaffected because no code, schema, or published contract was changed.
+
+SECURITY_IMPACT:
+Formal authority lanes, immutable/version-bound decisions, workspace-constrained
+participants and targets, safe notification visibility, server-side acceptance
+gates, and audit requirements are now explicit. Permission-contract/seed expansion
+is gated by AUTH-DB-002 and DG-09 so current runtime authorization is not silently
+changed by documentation alone.
+
+KNOWN_LIMITATIONS:
+The scenario baseline establishes product scope and delivery order; the new P1
+governance, activity, communication, monitoring, and acceptance capabilities are not
+yet implemented. The detailed permission codes and public API schemas require DG-09
+and contract-first task work. Advanced ERP, budgeting, payroll, timesheets, resource
+optimization, and unrestricted chat remain out of scope.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+IMP-FE-005 remains the smallest demo-visible completion of the current import slice.
+After import E2E, resolve DG-09 and begin the governed-deliverable vertical slice.
+```
+
+Human-centered contextual UX and connected-information architecture entry:
+
+```text
+DATE:
+2026-08-25
+
+MILESTONE:
+Cross-cutting demo usability, contextual work, assistance, and reporting architecture
+
+TASKS_COMPLETED:
+ADR-0007 Human-Centered Contextual Experience
+ADR-0008 Live References, Assistance, and Versioned Snapshots
+UX/context/assistance/reference/report specification alignment
+
+TASKS_IN_PROGRESS:
+None
+
+SUMMARY:
+Accepted a straightforward WordPress-like administration interaction model without
+copying its visuals: separate Project workspace and Administration console,
+plain-language Persian flows, authorized named selectors, server-generated technical
+keys, progressive disclosure, and natural relationship actions. Defined import as an
+embedded phase/deliverable/form capability; contextual form headers and explicit
+live/suggestion/copy/snapshot binding semantics; explainable assistance shared by
+manual forms and import review; reusable organization/party records; project-wide
+change-impact visibility without rewriting history; and safe versioned report
+templates that can require project and contractor information.
+
+FILES_CHANGED:
+Agent instructions; ADR index and ADR-0007/0008; project context; architecture rules;
+system, database, API, backend, frontend, test, and security specifications; scenario
+interpretation; backlog and roadmap; current status.
+
+DATABASE_CHANGES:
+None. Future PARTY, CTX, ASSIST, REF, contextual-import, and report-template tasks now
+require explicit Alembic migrations and compatibility handling for existing
+inheritance/import records.
+
+API_CHANGES:
+No published OpenAPI operations changed. Narrative rules now require server-generated
+keys, authorized human-readable lookup contracts, contextual form/import requests,
+suggestion decisions, impact queries, and safe versioned report-template/generation
+contracts before implementation.
+
+TESTS_ADDED:
+No executable tests. The test specification now covers raw-ID removal, generated
+keys, natural relationships, progressive administration, context/binding semantics,
+manual/import suggestions, live propagation versus historical stability, contextual
+import locks/association/relationship preservation, and report safety/provenance.
+
+TEST_RESULTS:
+Git diff whitespace validation passes. All 18 changed/new Markdown files have
+balanced code fences; 170 requirement IDs and 136 task IDs are unique; all 16 new
+implementation tasks are present; ADR-0007/0008 are indexed and cross-referenced;
+and published shared contracts have no diff. Runtime suites are unaffected because
+this task changes no application code, schema, or published shared contract.
+
+SECURITY_IMPACT:
+Selectors are authorization-bounded; client context and suggestions remain untrusted;
+acceptance rechecks permissions/locks/concurrency; impact results and notifications
+cannot leak hidden resources; optional AI remains blocked behind AI-001; report
+templates cannot execute SQL/code or load arbitrary resources; formal snapshots and
+generated outputs are immutable and audited.
+
+KNOWN_LIMITATIONS:
+These capabilities are now architectural requirements and prioritized backlog work,
+not yet runtime behavior. The current UI still exposes raw IDs/keys and standalone
+import navigation until UX-BE-001/UX-FE-002/REL-FE-002 and contextual import tasks are
+implemented. Concrete schemas and OpenAPI payloads require DG-10 through DG-12.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+Resolve DG-10 and implement UX-BE-001/UX-FE-002 plus REL-FE-002 as the demo-blocking
+usability slice. Complete IMP-FE-005 as embeddable, then integrate it through
+IMP-BE-007/IMP-FE-006 after phase/deliverable foundations.
+```
+
+---
+
+Generated metadata-key usability entry:
+
+```text
+DATE:
+2026-08-25
+
+MILESTONE:
+Demo usability remediation
+
+TASKS_COMPLETED:
+UX-BE-001/UX-FE-002 first vertical slice: metadata keys
+
+TASKS_IN_PROGRESS:
+DG-10/UX-BE-001/UX-FE-002 remaining human-readable selectors and form metadata
+
+SUMMARY:
+Entity-type and attribute creation no longer asks normal administrators for stable
+technical keys. The server creates opaque immutable UUID-based keys, while advanced
+API clients retain backward-compatible explicit-key support. Metadata list/editor
+views no longer expose those keys as primary information.
+
+FILES_CHANGED:
+Metadata request schemas and service; OpenAPI and API specification; metadata admin
+API types, create/list/editor components and focused backend/frontend tests.
+
+DATABASE_CHANGES:
+None. Existing unique constraints remain the final collision guard.
+
+API_CHANGES:
+EntityTypeCreate.key and AttributeCreate.key are now optional. Omission generates
+type_<uuidhex> or attribute_<uuidhex>; explicit valid keys remain supported and all
+keys remain immutable.
+
+TESTS_ADDED:
+Focused service tests verify opaque generated keys for Persian entity and attribute
+labels; the existing frontend creation test now verifies key-free submission.
+
+TEST_RESULTS:
+Focused backend Ruff and 14 metadata/schema/OpenAPI tests pass. The focused frontend
+test, full frontend lint, type check, and production build pass.
+
+SECURITY_IMPACT:
+Generated keys are server-controlled, do not derive identifiers from user-authored
+labels, preserve authorization, and remain protected by existing uniqueness rules.
+
+KNOWN_LIMITATIONS:
+Form-designer keys and raw member/role selectors remain pending in the next bounded
+UX-BE-001/UX-FE-002 slices.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+Implement authorization-bounded people and role lookup contracts and replace raw
+workspace membership IDs with human-readable selectors.
+```
+
+---
+
+Human-readable workspace membership entry:
+
+```text
+DATE:
+2026-08-25
+
+MILESTONE:
+Demo usability remediation
+
+TASKS_COMPLETED:
+UX-BE-001/UX-FE-002 workspace people and role selector slice
+
+TASKS_IN_PROGRESS:
+UX-BE-001/UX-FE-002 remaining entity/parent/form selector remediation
+
+SUMMARY:
+Workspace administrators now search for an active person by name or username and
+choose a human-readable assignable role instead of entering User ID and Role ID.
+The people search excludes existing members and is bounded; role options are
+filtered to permissions the acting manager possesses.
+
+FILES_CHANGED:
+Workspace schemas, repository, service and API; OpenAPI/API specification; workspace
+frontend API and member manager; Persian translations; focused tests; current status.
+
+DATABASE_CHANGES:
+None.
+
+API_CHANGES:
+Added GET /workspaces/{workspace_id}/member-options with required bounded search and
+GET /workspaces/{workspace_id}/role-options. Existing membership mutation payloads
+remain compatible and IDs are resolved internally by the selector.
+
+TESTS_ADDED:
+Backend tests cover permission-gated people search, bounded/excluding candidate SQL,
+and assignable-role filtering. Frontend tests cover named person/role selection and
+the resulting unchanged membership contract.
+
+TEST_RESULTS:
+Focused backend Ruff, mypy, and 14 workspace/schema/OpenAPI tests pass. The focused
+frontend membership tests, full frontend lint, and type check pass.
+
+SECURITY_IMPACT:
+Both lookups require active workspace access and WORKSPACE_MANAGE. People search
+requires 2-120 characters, returns at most 20 safe fields with no total count, and
+excludes inactive/existing members. Roles exceeding the manager's authority are not
+returned, and add-member repeats authority and active-user validation.
+
+KNOWN_LIMITATIONS:
+Organization/affiliation context depends on the future generic party model. Other
+entity, parent, reference, and form-designer technical selectors remain pending.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+Implement REL-FE-002 sentence-style relationship creation using compatible named
+relationship and target selectors.
+```
+
+---
+
+Natural relationship UX entry:
+
+```text
+DATE:
+2026-08-25
+
+MILESTONE:
+Demo usability remediation
+
+TASKS_COMPLETED:
+REL-FE-002 natural relationship creation and display slice
+
+TASKS_IN_PROGRESS:
+REL-FE-002 impact-panel portion awaits REF-BE-001
+
+SUMMARY:
+Relationship creation now reads as a sentence from the current entity. It filters
+relationship types by compatible source metadata, filters targets by the selected
+target type, uses a searchable named target with entity-type context, and displays
+incoming/outgoing records as sentences without direction codes, cardinality, or IDs.
+
+FILES_CHANGED:
+Relationship panel, Persian relationship labels, focused relationship component test,
+and current status.
+
+DATABASE_CHANGES:
+None.
+
+API_CHANGES:
+None. Existing workspace-scoped relationship and entity contracts are reused.
+
+TESTS_ADDED:
+The relationship component test now verifies sentence rendering, hidden technical
+direction, compatible-type filtering, named target selection, create, and delete.
+
+TEST_RESULTS:
+Focused relationship test, frontend lint, type check, and production build pass.
+
+SECURITY_IMPACT:
+Frontend filtering is UX only. Existing backend workspace authorization and
+relationship source/target compatibility checks remain authoritative.
+
+KNOWN_LIMITATIONS:
+Generic impact projection and its authorized panel require REF-BE-001. Dedicated
+reverse display labels are not yet metadata fields; incoming relationships preserve
+the configured forward sentence by displaying source -> relation -> target.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+Complete IMP-FE-005 by extracting the verified import workflow into an embeddable
+component while retaining its protected recovery route.
+```
+
+---
+
+Import commit and embeddable workflow entry:
+
+```text
+DATE:
+2026-08-25
+
+MILESTONE:
+M4 safe import frontend completion
+
+TASKS_COMPLETED:
+IMP-FE-005 Commit Confirmation and Summary
+Embeddable import-wizard preparation for IMP-FE-006
+
+TASKS_IN_PROGRESS:
+None
+
+SUMMARY:
+The import workflow now continues from reviewed dry-run/conflict decisions through
+an explicit material-change confirmation, idempotent transactional commit, and a
+human-readable final summary. The workflow is exported as an embeddable component
+with contextual title/description and completion callback; the existing protected
+workspace route remains a thin recovery/deep-link wrapper.
+
+FILES_CHANGED:
+Import API/types, wizard/page, Persian translations, focused import workflow test,
+and current status.
+
+DATABASE_CHANGES:
+None.
+
+API_CHANGES:
+No backend/OpenAPI change. The frontend now consumes the existing
+POST /imports/{import_job_id}/commit contract with a stable per-job Idempotency-Key.
+
+TESTS_ADDED:
+Focused UI coverage verifies direct component embedding, final confirmation,
+transactional commit request, idempotency key presence, and rendered commit summary.
+
+TEST_RESULTS:
+Two focused import workflow tests pass. Frontend lint, type check, and production
+build pass. One earlier combined Vitest run had a Windows worker-start timeout; the
+isolated threaded rerun passed both tests.
+
+SECURITY_IMPACT:
+Commit remains backend-authoritative. The UI requires explicit confirmation, sends
+a bounded opaque idempotency key, and does not imply that preview or conflict UI
+authorization replaces backend permission, lock, or concurrency enforcement.
+
+KNOWN_LIMITATIONS:
+Operational import remains reachable in normal workspace navigation until phase and
+deliverable foundations allow IMP-BE-007/IMP-FE-006 contextual binding. The protected
+deep link is intentionally retained.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+Begin the governed-delivery foundation required for contextual phase/deliverable
+import, prioritizing the smallest phase vertical slice defined by the roadmap.
+```
+
+---
+
+Phase foundation entry:
+
+```text
+DATE:
+2026-08-25
+
+MILESTONE:
+M5 phase control foundation
+
+TASKS_COMPLETED:
+PHASE-DB-001 Phase Schema
+PHASE-BE-001 Phase CRUD
+PHASE-BE-002 Lock Policy Service
+PHASE-FE-001 Phase UI
+
+TASKS_IN_PROGRESS:
+None
+
+SUMMARY:
+Projects now have ordered metadata-neutral phases with generated technical keys,
+centrally constrained lifecycle states, optimistic concurrency, and a visible RTL
+management page. Explicit lock/unlock permissions are backend-enforced, material
+transitions are audited, and locked updates return RESOURCE_LOCKED. A reusable lock
+policy provides the boundary for subsequent phase-associated resources.
+
+FILES_CHANGED:
+Phase models/migration, schemas, repository, service/lock policy, API/router, shared
+contract/specification, phase frontend API/page/navigation/dashboard, Persian labels,
+focused tests, and current status.
+
+DATABASE_CHANGES:
+Migration 0012 creates phases and the specification-defined MVP phase_deliverables
+association with uniqueness, lifecycle/resource checks, foreign keys, and indexes.
+
+API_CHANGES:
+Added create/list workspace phases, optimistic phase update, and explicit lock/unlock
+operations. Create keys are optional and server-generated when omitted.
+
+TESTS_ADDED:
+Backend schema tests cover constraints/cascades; service tests cover audited
+lock/unlock and shared locked-phase rejection. Frontend coverage exercises named
+create, status progression, and lock actions without technical keys.
+
+TEST_RESULTS:
+Backend Ruff, focused mypy, five phase/OpenAPI tests, and OpenAPI synchronization
+pass. Alembic reports a single 0012 head and migration 0011 -> 0012 succeeds against
+the healthy local PostgreSQL service. File-scoped frontend ESLint, full type check,
+focused phase UI test, and production build pass.
+
+SECURITY_IMPACT:
+Reads/mutations require active workspace scope. Management, lock, and unlock use
+distinct permissions; transition rows are locked and material lock changes audit in
+the same transaction. Frontend state is UX only.
+
+KNOWN_LIMITATIONS:
+Deliverable association CRUD and governed evolution belong to DEL tasks. Existing
+resource mutations cannot be phase-bound until those APIs land, so they do not yet
+invoke the shared phase lock policy.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+Implement the generic deliverable foundation required to bind forms, documents,
+entities, and contextual imports to phases.
+```
+
+---
+
+Server-defined KPI dashboard entry:
+
+```text
+DATE:
+2026-08-25
+
+MILESTONE:
+M5 project visibility
+
+TASKS_COMPLETED:
+RPT-DB-001 Dashboard Schema
+RPT-BE-001 Basic KPI Dashboard API
+RPT-FE-001 Dashboard Viewer
+
+TASKS_IN_PROGRESS:
+None
+
+SUMMARY:
+The project landing page now displays live workspace-scoped counts for active
+entities, active documents, pending deliverables, and phase completion. Aggregates
+are fixed safe server projections; the browser cannot supply SQL, paths, or filters.
+The dashboard table establishes the metadata-defined configuration foundation for
+later authorized custom dashboards.
+
+FILES_CHANGED:
+Dashboard model/migration, schema, safe aggregate repository, authorization service,
+API/router and contract/specification, dashboard frontend API/KPI component, project
+landing page, Persian labels, focused tests, and current status.
+
+DATABASE_CHANGES:
+Migration 0013 creates workspace-scoped metadata-defined dashboards with JSONB
+configuration, creator provenance, optimistic version, and workspace index.
+
+API_CHANGES:
+Added GET /workspaces/{workspace_id}/dashboard-summary requiring DASHBOARD_READ.
+
+TESTS_ADDED:
+Backend tests cover DASHBOARD_READ enforcement, deterministic counts/percentage, and
+dashboard workspace/schema constraints. Frontend coverage verifies Persian-numbered
+KPI cards and progress projection.
+
+TEST_RESULTS:
+Backend Ruff, focused mypy, four dashboard/OpenAPI tests, and synchronized OpenAPI
+pass. Migration 0012 -> 0013 succeeds against local PostgreSQL. File-scoped frontend
+ESLint, type check, focused KPI test, and production build pass. A chained frontend
+process exceeded the configured timeout due to a polling-wrapper failure and was
+terminated; direct single-worker checks then completed.
+
+SECURITY_IMPACT:
+Active workspace access and DASHBOARD_READ are required before all aggregates. Every
+query includes the authorized workspace ID and only allowlisted predicates; no
+cross-workspace totals or arbitrary query inputs are exposed.
+
+KNOWN_LIMITATIONS:
+Pending/completed deliverable counts remain zero until phase-deliverable association
+workflows are exposed. Custom dashboard builder, table/chart widgets, and export are
+later RPT tasks.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+Complete the shared audit query/viewer slice in accepted M5 dependency order before
+resolving DG-09 and exposing governed workflow transitions.
+```
+
+---
+
+Workspace audit history viewer entry:
+
+```text
+DATE:
+2026-08-25
+
+MILESTONE:
+M5 project visibility
+
+TASKS_COMPLETED:
+AUD-BE-002 Audit Query API
+AUD-FE-001 Audit Viewer
+
+TASKS_IN_PROGRESS:
+None
+
+SUMMARY:
+Authorized project managers can now open a Persian, paginated change-history screen
+from the workspace navigation and see what changed, who performed it, and when. The
+application shell is restored to the approved physical-right navigation layout.
+
+FILES_CHANGED:
+Read-only audit repository/service/schema/API, public contract and router, Persian
+audit page/API/navigation/localization, right-side shell correction, focused tests,
+and current status.
+
+DATABASE_CHANGES:
+None. The accepted append-only audit_logs schema is queried without modification.
+
+API_CHANGES:
+Implemented GET /workspaces/{workspace_id}/audit with resource, actor, action, date,
+and pagination filters. The endpoint requires AUDIT_READ and has no mutation method.
+
+TESTS_ADDED:
+Backend coverage proves permission enforcement and actor projection. Frontend
+coverage proves the workspace route and friendly Persian event presentation.
+
+TEST_RESULTS:
+Focused Ruff and mypy pass; audit and OpenAPI tests pass (3 tests). Frontend
+file-scoped ESLint, typecheck, and the focused audit viewer test pass.
+
+SECURITY_IMPACT:
+Active workspace membership and effective AUDIT_READ permission are required. All
+queries are constrained to the authorized workspace and audit history remains
+read-only. Existing sensitive-value exclusion rules remain authoritative at write
+time.
+
+KNOWN_LIMITATIONS:
+The first viewer prioritizes a clear reverse-chronological history. Interactive
+filter controls and before/after comparison presentation can be added as later UI
+polish; the API already supports the specified filters.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+Reproduce and fix the current pull-request CI failures before beginning the next
+demo-visible backlog slice.
+```
+
+---
+
+Pull-request CI repair entry:
+
+```text
+DATE:
+2026-08-25
+
+TASKS_COMPLETED:
+Repository housekeeping for PR backend-quality and frontend-tests failures
+
+SUMMARY:
+Reproduced both reported CI failures locally. Applied the pinned Ruff formatter to
+the five nonconforming backend files and updated the stale workspace-dashboard test
+to reflect six active capability links and phase-first navigation.
+
+DATABASE_CHANGES:
+None.
+
+API_CHANGES:
+None.
+
+TESTS_ADDED:
+None; corrected an existing UI expectation to match implemented behavior.
+
+TEST_RESULTS:
+Full backend Ruff format check and lint pass; full backend mypy passes. The exact
+frontend test command passes all 21 files and 36 tests in 28 seconds.
+
+SECURITY_IMPACT:
+None.
+
+KNOWN_LIMITATIONS:
+Remote PR checks require the local commits to be pushed before GitHub can rerun them.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+```
+
+---
+
+Governance authority permission gate entry:
+
+```text
+DATE:
+2026-08-25
+
+MILESTONE:
+M5 governed delivery
+
+TASKS_COMPLETED:
+DG-09 Governance permission decision gate
+AUTH-DB-002 Governance Permission and Baseline Role Expansion
+
+TASKS_IN_PROGRESS:
+None
+
+SUMMARY:
+The distinct authority lanes accepted by ADR-0006 are now executable permission
+contracts rather than role-name assumptions. Seven scenario personas are available
+as database-backed baseline role profiles while legacy ANALYST and VIEWER roles are
+retained for compatibility.
+
+FILES_CHANGED:
+Permission contract/enum, idempotent governance seed migration, identity verifier,
+authority-matrix and seed-contract tests, database/security specifications, roadmap,
+and current status.
+
+DATABASE_CHANGES:
+Migration 0014 adds twelve generic governance permissions and five additional
+baseline role profiles. Existing SYSTEM_ADMIN, PROJECT_MANAGER, and ANALYST grants
+are extended without removing assignments or legacy permissions.
+
+API_CHANGES:
+None. The stable permission codes are available to subsequent governed APIs.
+
+TESTS_ADDED:
+Contract tests prove migration/YAML/enum agreement and the required negative
+authority boundaries: contributors cannot formally submit, officers cannot decide,
+technical sign-off cannot accept, and employer acceptance does not grant project
+review.
+
+TEST_RESULTS:
+Focused Ruff and mypy pass; four identity/governance contract tests pass. Migration
+0013 -> 0014 and the canonical idempotent identity-schema verifier pass against the
+running PostgreSQL container.
+
+SECURITY_IMPACT:
+Formal submission, internal review, monitoring, project recommendation, technical
+sign-off, contractual acceptance, and condition verification now require separate
+permissions. Services remain prohibited from authorizing by literal role name.
+
+KNOWN_LIMITATIONS:
+The permissions intentionally expose no governed transitions until GOV-DB-001 and
+GOV-BE-001 enforce workflow definition, assignment, version, and state policy.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+Implement the generic versioned workflow schema and transition policy foundation
+before exposing the deliverable lifecycle.
+```
+
+---
+
+Generic governed-workflow foundation entry:
+
+```text
+DATE:
+2026-08-25
+
+MILESTONE:
+M5 governed delivery
+
+TASKS_COMPLETED:
+GOV-DB-001 Versioned Workflow and Transition Schema
+GOV-BE-001 Workflow Policy and Transition Engine
+
+TASKS_IN_PROGRESS:
+None
+
+SUMMARY:
+The platform now stores configurable workflow graphs as immutable published versions
+and runs workspace-bound instances without hard-coded project states or persona
+branches. Authorized configuration supports draft creation, successor versions, and
+publication. Runtime responses expose only the caller's permission-and-assignment
+eligible actions; every transition rechecks policy server-side.
+
+FILES_CHANGED:
+Workflow models/migration, request/response schemas, workspace-safe repository,
+policy service, API/router and OpenAPI/narrative contracts, focused schema/service
+tests, database specification, and current status.
+
+DATABASE_CHANGES:
+Migration 0015 creates workflow definitions/versions, states, transitions, instances,
+assignments, and append-only transition events. Composite workspace/version foreign
+keys prohibit cross-workspace and cross-definition state wiring. Events retain
+definition, target and resulting-instance versions plus idempotency provenance.
+
+API_CHANGES:
+Added draft/new-version/publish operations, workspace target instance start, current
+state and authorized-action projection, paginated history, and typed action execution.
+Transition requests require optimistic version and idempotency inputs.
+
+TESTS_ADDED:
+Focused tests cover graph validation, stable permission codes, composite workspace
+integrity, distinct permission and assignment enforcement, hidden inaccessible
+instances, idempotent retry conflict behavior, version-bound events, and audit output.
+
+TEST_RESULTS:
+Focused Ruff and mypy pass. Eight workflow, governance, and OpenAPI tests pass.
+Migration 0015 upgrades PostgreSQL after a clean 0014 downgrade. The restarted
+backend is live and the new protected route returns 401 to an anonymous request.
+
+SECURITY_IMPACT:
+All configuration is gated by WORKFLOW_CONFIGURE. Transition authorization combines
+active workspace membership, the stable required permission, optional same-workspace
+assignment, current state, optimistic version, configured reason requirement, and
+idempotency key. Cross-workspace targets/assignees use safe not-found behavior.
+
+KNOWN_LIMITATIONS:
+The workflow engine currently targets existing generic entities, documents, form
+instances, and phases. DEL-DB-001 will add governed deliverables to the allowlisted
+target registry and provide the first end-user lifecycle workspace.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+Implement DEL-DB-001 and the first preparation/internal-review/formal-submission
+vertical slice on this generic workflow engine.
+```
+
+---
+
+Governed deliverable preparation and submission entry:
+
+```text
+DATE:
+2026-08-26
+
+MILESTONE:
+M5A governed deliverable vertical slice
+
+TASKS_COMPLETED:
+DEL-DB-001 Generic Deliverable and Submission Schema
+DEL-BE-001 preparation/readiness portion
+SUB-BE-001 formal submission/resubmission/withdrawal portion
+DEL-FE-001 phase-context preparation/submission portion
+
+TASKS_IN_PROGRESS:
+DEL-BE-001 internal-review workflow integration
+DEL-FE-001 backend-action-driven lifecycle presentation
+
+SUMMARY:
+Each project phase now contains a Persian deliverables workspace. Managers create a
+deliverable with named owner, contributors, internal reviewer, and dates; assigned
+contributors assemble append-only package versions from bounded named entity,
+document-version, or form-instance choices. The backend computes missing required
+content. Assigned leaders can formally submit/resubmit an exact immutable version to
+active workspace recipients and append a reasoned withdrawal. Dashboard counts now
+project the governed records rather than the legacy phase-resource association.
+
+FILES_CHANGED:
+Deliverable models/migration, schemas, repository, policy service, API/router,
+workflow target registry, dashboard aggregate, OpenAPI/narrative contracts, phase
+frontend workspace/API/localization, focused backend/frontend tests, and status.
+
+DATABASE_CHANGES:
+Migration 0016 adds deliverables, generic assignments, immutable versions/package
+items, submissions, recipients, and append-only idempotent withdrawals. Composite
+workspace foreign keys prevent cross-workspace evidence wiring. The original
+phase_deliverables association is preserved for compatibility/resource requirements.
+
+API_CHANGES:
+Added phase deliverable create/list, deliverable read, bounded package-option search,
+immutable package-version creation, formal submit/resubmit, and reasoned withdrawal.
+DELIVERABLE is now an allowlisted generic workflow target kind.
+
+TESTS_ADDED:
+Backend contract coverage verifies schema scope, date/requirement validation,
+human-readable readiness gaps, and route publication. Frontend coverage verifies
+phase-context creation with named people and no displayed technical key.
+
+TEST_RESULTS:
+Focused backend Ruff and full app mypy pass; nine deliverable/dashboard/workflow/
+OpenAPI tests pass. Migration 0016 upgrade, downgrade, and restored upgrade pass on
+PostgreSQL. Two focused frontend tests, full type check, file-scoped ESLint, and the
+production build pass. Canonical OpenAPI YAML parses successfully.
+
+SECURITY_IMPACT:
+Every operation requires active workspace access and a distinct stable permission.
+Contribution and submission also require scoped assignments. Package search is
+two-character minimum, capped at 20, safe-field-only, and same-workspace. Participant
+and resource references are revalidated server-side; phase locks block mutations;
+formal evidence is immutable, idempotent, version-addressed, and audited.
+
+KNOWN_LIMITATIONS:
+Internal-review/correction/ready transitions must next bind these records to the
+generic workflow instance/action engine. The current UI exposes preparation and
+formal submission but does not yet render the configurable review lifecycle or
+backend-returned available actions. Contextual import binding remains dependent on
+that completed lifecycle integration.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+Complete DEL-BE-001/DEL-FE-001 by creating or selecting a published deliverable
+workflow, binding an instance to each deliverable, and driving internal review,
+correction, readiness, submission, and withdrawal from backend-returned actions.
+```
+
 ---
 
 # 27. Related Specifications
@@ -3294,4 +4203,7 @@ IMP-BE-006 Transactional Commit, then IMP-FE-005 Commit Confirmation and Summary
 09_TEST_SPECIFICATION.md
 10_DEPLOYMENT_GUIDE.md
 11_SECURITY_SPECIFICATION.md
+13_IMPLEMENTATION_ROADMAP.md
+14_PROJECT_USAGE_SCENARIOS.md
+15_DETAILED_USAGE_SCENARIOS.md
 ```

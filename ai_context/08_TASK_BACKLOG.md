@@ -699,6 +699,56 @@ entity_relationships
 
 ---
 
+# TASK UX-BE-001 — Generated Keys and Human-Readable Lookup Contracts
+
+**Priority:** P0 for demo usability
+**Owner:** Backend Agent + Security Agent
+**Requirements:** UX-FR-002, UX-FR-003
+**Dependencies:** META-BE-001, AUTH-BE-002, ENT-BE-002
+
+Deliver server-generated collision-safe stable keys and bounded authorized lookup
+contracts for users, roles, entities, parents, relationship targets, and other
+implemented selectors. Preserve explicit advanced-key compatibility and stable-key
+immutability.
+
+---
+
+# TASK UX-FE-002 — Administration Usability Remediation
+
+**Priority:** P0 before next stakeholder demo
+**Owner:** Frontend Agent
+**Requirements:** UX-FR-001 through UX-FR-008
+**Dependencies:** UX-BE-001, existing M1/M2 frontend modules
+
+Replace raw User ID, Role ID, persistent-key, parent/reference ID, and similar fields
+with human-readable search/select flows. Separate Project workspace from
+Administration console; use plain-language Persian labels, generated keys, Advanced
+disclosure, contextual help, and consistent list/add/edit patterns.
+
+Acceptance criteria:
+
+- [ ] ordinary users type no UUIDs,
+- [ ] stable keys are generated and hidden from primary forms,
+- [ ] membership uses people/role selectors and displays affiliation context,
+- [ ] metadata/form configuration uses task-oriented labels and preview,
+- [ ] current permissions and backend enforcement are unchanged,
+- [ ] responsive RTL and keyboard behavior pass.
+
+---
+
+# TASK REL-FE-002 — Natural Relationship and Impact UX
+
+**Priority:** P0 before next stakeholder demo
+**Owner:** Frontend Agent
+**Requirements:** UX-FR-004, REF-FR-002, REF-FR-003
+**Dependencies:** REL-FE-001, UX-BE-001
+
+Render sentence-style forward/reverse relations, filter compatible configured types,
+use named target search, hide direction/cardinality/IDs, and reserve an authorized
+impact panel for REF-BE-001.
+
+---
+
 # 7. M3 — Dynamic Forms and Structured Data
 
 # TASK FORM-DB-001 — Form Schema
@@ -880,6 +930,56 @@ Drag-and-drop is optional.
 **Priority:** P1  
 **Owner:** Frontend Agent  
 **Dependencies:** FORM-BE-002
+
+---
+
+# TASK CTX-BE-001 — Authorized Form Context and Binding Semantics
+
+**Priority:** P0 for governed-form demo
+**Owner:** Backend Agent + Security Agent
+**Requirements:** CTX-FR-001 through CTX-FR-006, REF-FR-001, REF-FR-005
+**Dependencies:** FORM-BE-004, DATA-BE-002, PHASE-BE-002, PARTY-BE-001
+
+Extend the render/submission contracts with an authorized context header and explicit
+live/read-only/suggestion/copy/snapshot binding modes. Capture formal context
+snapshots transactionally and reject forged, stale, cross-workspace, or locked
+context.
+
+---
+
+# TASK CTX-FE-001 — Context Header and Binding UX
+
+**Priority:** P0 for governed-form demo
+**Owner:** Frontend Agent
+**Dependencies:** CTX-BE-001
+
+Render project/phase/service/party context above forms, distinguish binding/value
+sources, preserve host context and return path, and protect dirty drafts when context
+changes.
+
+---
+
+# TASK ASSIST-BE-001 — Deterministic Form and Import Assistance Engine
+
+**Priority:** P1
+**Owner:** Backend Agent + Security Agent
+**Requirements:** ASSIST-FR-001 through ASSIST-FR-006, ASSIST-FR-008
+**Dependencies:** CTX-BE-001, META-BE-003, IMP-BE-004
+
+Implement bounded metadata-driven providers, explainable provenance, candidate
+lifecycle, and accept/edit/reject commands shared by manual forms and import review.
+Do not implement an AI provider in this task.
+
+---
+
+# TASK ASSIST-FE-001 — Explainable Suggestion UX
+
+**Priority:** P1
+**Owner:** Frontend Agent
+**Dependencies:** ASSIST-BE-001, CTX-FE-001
+
+Show value/reason/source/confidence and explicit Accept/Edit/Reject actions in forms
+and import review without silently replacing user data.
 
 ---
 
@@ -1138,6 +1238,32 @@ SKIP
 
 ---
 
+# TASK IMP-BE-007 — Contextual Phase/Deliverable Import
+
+**Priority:** P0 for governed-delivery demo
+**Owner:** Backend Agent + Security Agent
+**Requirements:** IMP-FR-013, REF-FR-002
+**Dependencies:** IMP-BE-006, PHASE-BE-002, DEL-BE-001
+
+Bind import jobs to an authorized phase/deliverable/form or output specification,
+derive allowed target/profile choices, enforce lock/context at create and commit,
+associate imported records/history, and preserve unrelated relationships. Requires
+an Alembic migration and canonical OpenAPI update.
+
+---
+
+# TASK IMP-FE-006 — Embedded Contextual Import
+
+**Priority:** P0 for governed-delivery demo
+**Owner:** Frontend Agent
+**Dependencies:** IMP-FE-005, IMP-BE-007, PHASE-FE-001, DEL-FE-001
+
+Remove Import from normal project navigation, launch the reusable wizard from eligible
+phase/deliverable/form actions with inherited context, hide known technical target
+choices, preserve return path, and retain a protected job/history deep link.
+
+---
+
 # 9. M5 — Phase Control, Review, Audit, Dashboard
 
 # TASK PHASE-DB-001 — Phase Schema
@@ -1297,6 +1423,377 @@ Arbitrary browser SQL prohibited.
 **Priority:** P1  
 **Owner:** Frontend Agent  
 **Dependencies:** RPT-BE-002
+
+---
+
+# TASK RPT-DB-002 — Versioned Report Template and Generation Schema
+
+**Priority:** P1
+**Owner:** Database Agent
+**Requirements:** RPT-FR-007 through RPT-FR-012
+**Dependencies:** DOC-DB-001, AUD-DB-001, PARTY-DB-001
+
+Persist immutable published template versions, safe section/widget/binding
+configuration, generation parameters/status/provenance, source snapshots, and output
+document/version references.
+
+---
+
+# TASK RPT-BE-004 — Safe Report Template and Generation Service
+
+**Priority:** P1
+**Owner:** Backend Agent + Security Agent
+**Dependencies:** RPT-DB-002, RPT-BE-002, DOC-BE-003
+
+Implement draft/preview/publish/new-version/retire/generate operations, required
+project/party content validation, allowlisted bindings, data-as-of/source snapshots,
+restricted rendering, immutable output, authorization, and audit. Reject SQL/code and
+unsafe resources.
+
+---
+
+# TASK RPT-FE-004 — Report Template Designer and Generation UX
+
+**Priority:** P1
+**Owner:** Frontend Agent
+**Dependencies:** RPT-BE-004, UX-FE-002
+
+Provide a simple list/add/edit/preview/publish experience with reusable sections,
+required project/contractor details, version state, missing-content guidance,
+generation progress, and immutable output/provenance display.
+
+---
+
+# 9.1 M5A — Governed Deliverable Vertical Slice
+
+These tasks implement the first scenario-aligned demo from
+`14_PROJECT_USAGE_SCENARIOS.md`. They SHALL use generic configurable workflow and
+deliverable engines; persona names are permission profiles, not code branches.
+
+# TASK PARTY-DB-001 — Generic Organization and Project Party Schema
+
+**Priority:** P1
+**Owner:** Database Agent
+**Requirements:** PARTY-FR-001 through PARTY-FR-005
+**Dependencies:** WS-DB-001, AUTH-DB-001
+
+Store generic parties/organizations, project-role assignments/effective periods,
+contacts, and optional membership affiliations. Do not create employer- or
+contractor-specific tables.
+
+---
+
+# TASK PARTY-BE-001 — Party, Affiliation, and Selector API
+
+**Priority:** P1
+**Owner:** Backend Agent + Security Agent
+**Dependencies:** PARTY-DB-001, UX-BE-001
+
+Provide authorized party/project-role CRUD, searchable selectors, membership
+affiliation, history/audit, and snapshot-friendly projections.
+
+---
+
+# TASK PARTY-FE-001 — People and Organizations Administration
+
+**Priority:** P1
+**Owner:** Frontend Agent
+**Dependencies:** PARTY-BE-001, UX-FE-002
+
+Use human-readable people, organization, project-role, effective-date, status, and
+assignment views; never expose UUID entry.
+
+---
+
+# TASK REF-BE-001 — Reference Impact and Review Marker Service
+
+**Priority:** P1
+**Owner:** Backend Agent + Security Agent
+**Requirements:** REF-FR-001 through REF-FR-006
+**Dependencies:** REL-BE-001, CTX-BE-001, COM-BE-001
+
+Provide authorized current dependency projections, snapshot comparison, and
+idempotent configured review markers/notifications without cascading value/history
+mutation.
+
+---
+
+# TASK GOV-ADR-001 — Governance Authority Model
+
+**Priority:** P0 before governed-delivery implementation
+**Owner:** Architecture Agent
+**Requirements:** GOV-FR-001 through GOV-FR-008
+
+Accepted by `ADR-0006`.
+
+---
+
+# TASK AUTH-DB-002 — Governance Permission and Baseline Role Expansion
+
+**Priority:** P0 before governed-delivery implementation
+**Owner:** Database Agent + Backend Agent + Security Agent
+**Dependencies:** GOV-ADR-001, AUTH-DB-001
+
+Update `contracts/permissions.yaml`, the backend permission enum, and an idempotent
+seed migration with separate generic permissions for contribution, formal
+submission, monitoring, project review/recommendation, technical review/sign-off,
+employer acceptance, condition verification, communication, and configuration.
+Seed the seven scenario personas as editable baseline profiles while retaining a
+documented compatibility/migration path for existing assignments.
+
+Acceptance criteria:
+
+- [ ] no service authorizes by literal role name,
+- [ ] baseline grants implement the ADR-0006 authority matrix,
+- [ ] Team Member preparation does not grant formal submission,
+- [ ] technical review/sign-off does not grant employer acceptance,
+- [ ] Project Officer monitoring does not grant Project Manager decisions,
+- [ ] contract, enum, seed migration, and authorization tests agree.
+
+---
+
+# TASK GOV-DB-001 — Versioned Workflow and Transition Schema
+
+**Priority:** P1
+**Owner:** Database Agent
+**Dependencies:** GOV-ADR-001, AUTH-DB-002, WS-DB-001, AUD-DB-001
+
+Store generic workflow definitions/versions, states, transitions, instances, and
+immutable transition events. Do not create persona- or deliverable-type-specific
+tables.
+
+---
+
+# TASK GOV-BE-001 — Workflow Policy and Transition Engine
+
+**Priority:** P1
+**Owner:** Backend Agent + Security Agent
+**Dependencies:** GOV-DB-001, AUTH-BE-002
+
+Acceptance criteria:
+
+- [ ] published definition version is retained by each instance,
+- [ ] transition eligibility is enforced server-side from permission, assignment,
+  state, and configured policy,
+- [ ] invalid and cross-workspace transitions reveal no protected target,
+- [ ] every transition is transactional and audited,
+- [ ] internal review, submission, recommendation, and acceptance cannot substitute
+  for one another.
+
+---
+
+# TASK DEL-DB-001 — Generic Deliverable and Submission Schema
+
+**Priority:** P1
+**Owner:** Database Agent
+**Dependencies:** GOV-DB-001, DOC-DB-001, PHASE-DB-001
+
+Store metadata-defined deliverables, assignments, package contents, immutable
+submission/resubmission records, recipients, and withdrawal history.
+
+---
+
+# TASK DEL-BE-001 — Deliverable Preparation and Internal Review API
+
+**Priority:** P1
+**Owner:** Backend Agent
+**Dependencies:** DEL-DB-001, GOV-BE-001, DOC-BE-003
+
+Supports contributor drafts, required-content validation, contractor internal
+review, correction, and ready-for-submission transition.
+
+---
+
+# TASK SUB-BE-001 — Formal Submission and Revision API
+
+**Priority:** P1
+**Owner:** Backend Agent + Security Agent
+**Dependencies:** DEL-BE-001, REV-BE-001
+
+Supports leader-controlled submission, permitted withdrawal, version-bound review,
+revision packages, and resubmission with complete provenance.
+
+---
+
+# TASK DEL-FE-001 — Role-Aware Deliverable Workspace
+
+**Priority:** P1
+**Owner:** Frontend Agent
+**Dependencies:** DEL-BE-001, SUB-BE-001
+
+One metadata-driven workspace SHALL render preparation, internal review, formal
+submission, external review, and revision states according to backend-returned
+actions. It SHALL not hard-code a page per persona.
+
+---
+
+# 9.2 M5B — Work Planning, Monitoring, and Communication
+
+# TASK WORK-DB-001 — Generic Work Item, Dependency, Risk, and Issue Schema
+
+**Priority:** P1
+**Owner:** Database Agent
+**Requirements:** WORK-FR-001 through WORK-FR-003
+**Dependencies:** WS-DB-001, PHASE-DB-001
+
+---
+
+# TASK WORK-BE-001 — Work Planning and Monitoring API
+
+**Priority:** P1
+**Owner:** Backend Agent
+**Dependencies:** WORK-DB-001
+
+Provide assignment, progress, cycle-safe dependencies, baseline/revised dates,
+extensions, risk/issue escalation, and permission-aware monitoring projections.
+
+---
+
+# TASK WORK-FE-001 — Personal and Management Work Queues
+
+**Priority:** P1
+**Owner:** Frontend Agent
+**Dependencies:** WORK-BE-001
+
+---
+
+# TASK COM-DB-001 — Contextual Communication and Notification Schema
+
+**Priority:** P1
+**Owner:** Database Agent
+**Requirements:** COM-FR-001 through COM-FR-004
+**Dependencies:** WS-DB-001
+
+Internal notes, formal review comments, conversations, announcements, reminders,
+and notifications SHALL retain explicit kind and visibility scope.
+
+---
+
+# TASK COM-BE-001 — Contextual Threads and Event Notification Service
+
+**Priority:** P1
+**Owner:** Backend Agent + Security Agent
+**Dependencies:** COM-DB-001
+
+---
+
+# TASK COM-FE-001 — Notification Center and Contextual Conversation UI
+
+**Priority:** P1
+**Owner:** Frontend Agent
+**Dependencies:** COM-BE-001
+
+---
+
+# 9.3 M5C — Technical Review and Contractual Acceptance
+
+# TASK REV-BE-002 — Version-Bound Review Outcomes and Sign-Off
+
+**Priority:** P1
+**Owner:** Backend Agent + Security Agent
+**Dependencies:** REV-BE-001, SUB-BE-001, GOV-BE-001
+
+Add technical clarification, revision, recommendation, conditional recommendation,
+rejection, and authorized sign-off without treating any as employer acceptance.
+
+---
+
+# TASK ACC-DB-001 — Acceptance Package, Decision, and Condition Schema
+
+**Priority:** P1
+**Owner:** Database Agent
+**Requirements:** ACC-FR-001 through ACC-FR-006
+**Dependencies:** PHASE-DB-001, DEL-DB-001, GOV-DB-001
+
+---
+
+# TASK ACC-BE-001 — Phase and Final Acceptance Engine
+
+**Priority:** P1
+**Owner:** Backend Agent + Security Agent
+**Dependencies:** ACC-DB-001, REV-BE-002
+
+Acceptance criteria:
+
+- [ ] packages reference immutable evidence versions,
+- [ ] accept/conditional/reject authority is explicit,
+- [ ] final acceptance cannot bypass mandatory phase/condition gates,
+- [ ] condition verification and closure authority is configurable,
+- [ ] all decisions are immutable and audited.
+
+---
+
+# TASK ACC-FE-001 — Acceptance Decision Workspace
+
+**Priority:** P1
+**Owner:** Frontend Agent
+**Dependencies:** ACC-BE-001
+
+---
+
+# 9.4 M5D — Configuration Lifecycle and Scenario Reporting
+
+# TASK CONF-BE-001 — Configuration Package, Clone, Impact, and History API
+
+**Priority:** P1
+**Owner:** Backend Agent + Database Agent
+**Requirements:** CONF-FR-001 through CONF-FR-004
+**Dependencies:** Metadata, form, workflow, dashboard, and template contracts
+
+---
+
+# TASK CONF-FE-001 — Configuration Lifecycle UI
+
+**Priority:** P1
+**Owner:** Frontend Agent
+**Dependencies:** CONF-BE-001
+
+---
+
+# TASK RPT-BE-003 — Role-Appropriate Monitoring and Readiness Projections
+
+**Priority:** P1
+**Owner:** Backend Agent
+**Dependencies:** GOV-BE-001, WORK-BE-001, SUB-BE-001, ACC-BE-001
+
+Provide safe projections for personal work, project monitoring, technical review,
+contractor delivery, employer oversight, completeness, timeline, and acceptance.
+
+---
+
+# TASK RPT-FE-003 — Scenario-Aligned Dashboards and Reports
+
+**Priority:** P1
+**Owner:** Frontend Agent
+**Dependencies:** RPT-BE-003
+
+Use reusable widgets and backend-authorized datasets rather than separate data
+models or hard-coded business dashboards.
+
+---
+
+# TASK QA-002 — Governed Delivery and Acceptance E2E
+
+**Priority:** P0 before governed-delivery release
+**Owner:** QA Agent
+**Dependencies:** DEL-FE-001, REV-BE-002, ACC-FE-001, COM-FE-001
+
+Scenario:
+
+```text
+contractor member prepares version
+→ contractor leader performs internal review
+→ contractor leader formally submits
+→ project manager / technical reviewer requests revision
+→ contractor corrects and leader resubmits
+→ project manager recommends acceptance
+→ employer conditionally accepts phase
+→ evidence is verified
+→ employer closes acceptance
+```
+
+Negative cases SHALL prove authority separation and cross-workspace denial at every
+transition.
 
 ---
 
@@ -1629,4 +2126,6 @@ FOLLOW_UP_TASKS:
 10_DEPLOYMENT_GUIDE.md
 11_SECURITY_SPECIFICATION.md
 12_CURRENT_STATUS.md
+13_IMPLEMENTATION_ROADMAP.md
+14_PROJECT_USAGE_SCENARIOS.md
 ```

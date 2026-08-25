@@ -67,3 +67,16 @@ class WorkspaceMemberResponse(BaseModel):
     role_code: str | None
     status: str
     created_at: datetime
+
+
+class WorkspacePersonOptionResponse(BaseModel):
+    id: UUID
+    username: str
+    display_name: str | None
+
+
+class WorkspaceRoleOptionResponse(BaseModel):
+    id: UUID
+    code: str
+    name: str
+    description: str | None

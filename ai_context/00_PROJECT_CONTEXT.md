@@ -92,6 +92,8 @@ relationships
 import profiles
 phases
 dashboards
+report templates
+suggestion and context rules
 ```
 
 without requiring software changes.
@@ -150,19 +152,24 @@ through dynamic metadata/forms.
 
 ---
 
-## UC-003 — Project Deliverable Monitoring
+## UC-003 — Governed Project Delivery
 
-Define:
+Plan and govern:
 
 ```text
 phases
+milestones
+activities and dependencies
 deliverables
-completion state
-reviews
+internal contractor review
+formal submissions and revisions
+technical review and recommendations
+phase and final acceptance
+acceptance conditions
 locks
 ```
 
-without implementing full project scheduling/resource management.
+without embedding project-specific structures or workflows in code.
 
 ---
 
@@ -214,44 +221,71 @@ through dashboards and reports.
 
 ---
 
-# 6. User Roles
+## UC-008 — Contextual Project Work
 
-Initial roles:
+Users work from a project phase, deliverable, service/entity, or form context. The
+system carries known project, phase, organization, target, and permission context
+into forms, imports, reviews, and reports instead of asking users to re-enter IDs or
+select information already known.
 
-## System Administrator
+---
 
-Responsible for:
+## UC-009 — Assisted Structured Data Completion
 
-- users,
-- roles,
-- permissions,
-- metadata,
-- forms,
-- system configuration.
+Manual and imported form completion can use explainable suggestions from configured
+project context, parent/related records, taxonomies, accepted prior values,
+deterministic rules, duplicate analysis, and separately governed AI assistance.
 
-## Project Manager / Employer Representative
+---
 
-Responsible for:
+## UC-010 — Connected Change Awareness
 
-- monitoring,
-- review,
-- dashboards,
-- deliverables,
-- phase locking/unlocking.
+Canonical entities and relationships keep current project information consistent.
+Authorized users can observe the impact of service/entity changes across current
+forms, deliverables, reports, and related records while historical submitted or
+accepted snapshots remain immutable.
 
-## Analyst / Designer
+---
 
-Responsible for:
+## UC-011 — Template-Driven Reports
 
-- structured data entry,
-- entities,
-- documents,
-- Excel/CSV import,
-- revisions.
+Authorized users configure, preview, version, and publish safe report templates that
+can require project, employer, contractor, progress, deliverable, risk, review, and
+acceptance information.
 
-## Viewer
+---
 
-Read-only access to authorized content.
+# 6. User Roles and Authority
+
+The product SHALL ship seedable baseline profiles for:
+
+- Administrator,
+- Project Manager,
+- Project Officer,
+- Technical Reviewer,
+- Contractor Project Leader,
+- Contractor Team Member,
+- Employer Representative.
+
+These profiles describe common responsibilities, not hard-coded role checks.
+Administrators may define additional roles and project-specific grants.
+Legacy examples using Analyst/Designer/Viewer refer to configurable contributor or
+read-only profiles and remain valid compatibility examples, not extra authority
+lanes.
+
+Authority remains intentionally separated:
+
+- administrators configure capabilities;
+- project managers govern execution and recommendations;
+- project officers monitor and report without replacing manager authority;
+- technical reviewers assess quality without granting contractual acceptance;
+- contractor leaders control internal QA and formal contractor submissions;
+- contractor team members prepare and revise assigned work;
+- employer representatives provide oversight and formal phase/final acceptance.
+
+Internal readiness, formal submission, technical recommendation, project-manager
+recommendation, and employer acceptance SHALL remain distinct auditable actions.
+See `14_PROJECT_USAGE_SCENARIOS.md` and `ADR-0006`.
 
 ---
 
@@ -271,6 +305,15 @@ Document Engine
 Import Engine
 Phase / Lock Engine
 Review Engine
+Workflow / Submission Engine
+Work Item Engine
+Acceptance / Condition Engine
+Communication / Notification Engine
+Risk / Issue Engine
+Party / Organization Engine
+Context / Assistance Engine
+Impact Projection Engine
+Report Template Engine
 Reporting Engine
 Audit Engine
 Background Job Engine
@@ -280,21 +323,39 @@ Background Job Engine
 
 # 8. Non-Goals
 
-The product is NOT intended to become a general-purpose project management suite.
+The product is NOT intended to become a general-purpose ERP, scheduling optimizer,
+or unrestricted collaboration suite. Lightweight activities, dependencies,
+deadlines, workload views, contextual communication, risks/issues, submissions, and
+acceptance are in scope when they support governed project delivery.
 
 MVP SHALL NOT include unless separately approved:
 
 ```text
-resource allocation
+resource optimization
 budget management
 timesheets
 payroll
-team chat
+unrestricted team chat
 real-time collaboration
-Gantt scheduling
+advanced Gantt/critical-path scheduling
 CRM
 billing/subscriptions
 ```
+
+---
+
+# 8.1 Experience Principle
+
+The system may be technically sophisticated but SHALL feel like a coherent content
+and project administration product. The approved interaction reference is the
+straightforward administrative model associated with WordPress: clear sections,
+human-readable lists and selectors, add/edit flows, sensible defaults,
+preview/publish lifecycles, contextual guidance, and advanced technical settings
+behind progressive disclosure. This is not a visual-copy requirement.
+
+Normal users SHALL not enter UUIDs, role IDs, parent IDs, relationship direction
+codes, or stable keys. Import, form completion, relationship management, and report
+generation occur in project context. See ADR-0007 and ADR-0008.
 
 ---
 
@@ -641,6 +702,8 @@ All contributors SHALL preserve:
 10_DEPLOYMENT_GUIDE.md
 11_SECURITY_SPECIFICATION.md
 12_CURRENT_STATUS.md
+13_IMPLEMENTATION_ROADMAP.md
+14_PROJECT_USAGE_SCENARIOS.md
 contracts/
 ADR/
 ```

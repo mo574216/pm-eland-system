@@ -1,18 +1,15 @@
 import DeleteIcon from '@mui/icons-material/Delete'
 import {
   Alert,
+  Autocomplete,
   Button,
   Card,
   CardActions,
   CardContent,
-  Chip,
   CircularProgress,
-  FormControl,
   IconButton,
-  InputLabel,
-  MenuItem,
-  Select,
   Stack,
+  TextField,
   Typography,
 } from '@mui/material'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -37,8 +34,8 @@ interface RelationshipPanelProps {
 export function RelationshipPanel({ canManage, entityId, workspaceId }: RelationshipPanelProps) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
-  const [relationshipTypeId, setRelationshipTypeId] = useState('')
-  const [targetEntityId, setTargetEntityId] = useState('')
+  const [relationshipTypeId, setRelationshipTypeId] = useState<string | null>(null)
+  const [targetEntityId, setTargetEntityId] = useState<string | null>(null)
   const [mutationError, setMutationError] = useState<string | null>(null)
   const relationships = useQuery({
     queryKey: ['relationships', entityId],
@@ -53,12 +50,16 @@ export function RelationshipPanel({ canManage, entityId, workspaceId }: Relation
     queryFn: () => listEntities(workspaceId),
   })
   const create = useMutation({
-    mutationFn: () =>
-      createRelationship(workspaceId, {
+    mutationFn: () => {
+      if (relationshipTypeId === null || targetEntityId === null) {
+        throw new Error('Relationship selection is incomplete.')
+      }
+      return createRelationship(workspaceId, {
         relationship_type_id: relationshipTypeId,
         source_entity_id: entityId,
         target_entity_id: targetEntityId,
-      }),
+      })
+    },
     onSuccess: async () => {
       setTargetEntityId('')
       await queryClient.invalidateQueries({ queryKey: ['relationships', entityId] })
@@ -74,7 +75,18 @@ export function RelationshipPanel({ canManage, entityId, workspaceId }: Relation
     relationshipTypes.data?.items.map((type) => [type.id, type]) ?? [],
   )
   const entityById = new Map(entities.data?.items.map((entity) => [entity.id, entity]) ?? [])
-  const availableTargets = entities.data?.items.filter((entity) => entity.id !== entityId) ?? []
+  const currentEntity = entityById.get(entityId)
+  const compatibleTypes = relationshipTypes.data?.items.filter(
+    (type) => type.source_type_id === null || type.source_type_id === currentEntity?.entity_type_id,
+  ) ?? []
+  const selectedType = compatibleTypes.find((type) => type.id === relationshipTypeId) ?? null
+  const availableTargets = entities.data?.items.filter(
+    (entity) => entity.id !== entityId
+      && (selectedType?.target_type_id === null
+        || selectedType?.target_type_id === undefined
+        || entity.entity_type_id === selectedType.target_type_id),
+  ) ?? []
+  const selectedTarget = availableTargets.find((entity) => entity.id === targetEntityId) ?? null
 
   const submit = async () => {
     setMutationError(null)
@@ -93,33 +105,30 @@ export function RelationshipPanel({ canManage, entityId, workspaceId }: Relation
     <Stack spacing={2}>
       <Typography component="h2" variant="h5">{t('entities.tabs.relationships')}</Typography>
       {canManage ? (
-        <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ alignItems: 'stretch' }}>
-          <FormControl sx={{ minWidth: 180 }}>
-            <InputLabel id="relationship-type-label">{t('relationships.type')}</InputLabel>
-            <Select
-              label={t('relationships.type')}
-              labelId="relationship-type-label"
-              onChange={(event) => setRelationshipTypeId(event.target.value)}
-              value={relationshipTypeId}
-            >
-              {relationshipTypes.data?.items.map((type) => (
-                <MenuItem key={type.id} value={type.id}>{type.name}</MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-          <FormControl sx={{ minWidth: 220 }}>
-            <InputLabel id="relationship-target-label">{t('relationships.target')}</InputLabel>
-            <Select
-              label={t('relationships.target')}
-              labelId="relationship-target-label"
-              onChange={(event) => setTargetEntityId(event.target.value)}
-              value={targetEntityId}
-            >
-              {availableTargets.map((entity) => (
-                <MenuItem key={entity.id} value={entity.id}>{entity.name}</MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+        <Stack spacing={2}>
+          <Typography color="text.secondary">{t('relationships.createHelp')}</Typography>
+          <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ alignItems: 'center' }}>
+          <Typography sx={{ minWidth: 120 }}>{currentEntity?.name ?? t('relationships.currentItem')}</Typography>
+          <Autocomplete
+            getOptionLabel={(option) => option.name}
+            onChange={(_, value) => {
+              setRelationshipTypeId(value?.id ?? null)
+              setTargetEntityId(null)
+            }}
+            options={compatibleTypes}
+            renderInput={(params) => <TextField {...params} label={t('relationships.action')} />}
+            sx={{ minWidth: 220 }}
+            value={selectedType}
+          />
+          <Autocomplete
+            disabled={selectedType === null}
+            getOptionLabel={(option) => `${option.name} — ${option.entity_type.name}`}
+            onChange={(_, value) => setTargetEntityId(value?.id ?? null)}
+            options={availableTargets}
+            renderInput={(params) => <TextField {...params} label={t('relationships.relatedItem')} />}
+            sx={{ minWidth: 280 }}
+            value={selectedTarget}
+          />
           <Button
             disabled={!relationshipTypeId || !targetEntityId || create.isPending}
             onClick={() => void submit()}
@@ -127,6 +136,7 @@ export function RelationshipPanel({ canManage, entityId, workspaceId }: Relation
           >
             {t('relationships.create')}
           </Button>
+          </Stack>
         </Stack>
       ) : null}
       {mutationError ? <Alert severity="error">{mutationError}</Alert> : null}
@@ -147,18 +157,13 @@ export function RelationshipPanel({ canManage, entityId, workspaceId }: Relation
         return (
           <Card key={relationship.id} variant="outlined">
             <CardContent>
-              <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-                <Typography component="h3" variant="h6">
-                  {typeById.get(relationship.relationship_type_id)?.name ??
-                    relationship.relationship_type_id}
-                </Typography>
-                <Chip
-                  label={t(`relationships.direction.${outgoing ? 'outgoing' : 'incoming'}`)}
-                  size="small"
-                  variant="outlined"
-                />
-              </Stack>
-              <Typography>{entityById.get(counterpartId)?.name ?? counterpartId}</Typography>
+              <Typography component="h3" variant="h6">
+                {outgoing ? currentEntity?.name : entityById.get(counterpartId)?.name}
+                {' '}
+                {typeById.get(relationship.relationship_type_id)?.name ?? t('relationships.relatedTo')}
+                {' '}
+                {outgoing ? entityById.get(counterpartId)?.name : currentEntity?.name}
+              </Typography>
             </CardContent>
             {canManage ? (
               <CardActions>

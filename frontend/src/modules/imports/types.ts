@@ -122,3 +122,19 @@ export interface ImportResolutionResult {
   resolved: number
   unresolved: number
 }
+
+export interface ImportCommitSummary {
+  rows_read: number
+  records_created: number
+  records_updated: number
+  records_unchanged: number
+  records_skipped: number
+  conflicts_resolved: number
+  invalid_rows: number
+}
+
+export interface ImportCommitResult {
+  import_job_id: string
+  status: string
+  summary: ImportCommitSummary
+}

@@ -323,6 +323,11 @@ SYSTEM_ADMIN
 PROJECT_MANAGER
 ANALYST
 VIEWER
+PROJECT_OFFICER
+TECHNICAL_REVIEWER
+CONTRACTOR_PROJECT_LEADER
+CONTRACTOR_TEAM_MEMBER
+EMPLOYER_REPRESENTATIVE
 ```
 
 Permissions SHALL be explicit and stable.
@@ -345,7 +350,24 @@ IMPORT_EXECUTE
 PHASE_LOCK
 PHASE_UNLOCK
 AUDIT_READ
+DELIVERABLE_CONTRIBUTE
+DELIVERABLE_INTERNAL_REVIEW
+SUBMISSION_CREATE
+PROJECT_MONITOR
+PROJECT_REVIEW
+PROJECT_RECOMMEND
+TECHNICAL_REVIEW
+TECHNICAL_SIGN_OFF
+ACCEPTANCE_DECIDE
+CONDITION_VERIFY
+COMMUNICATION_MANAGE
+WORKFLOW_CONFIGURE
 ```
+
+Governance services SHALL authorize these capabilities by permission and scoped
+assignment, never by literal role name. Internal readiness, formal submission,
+technical sign-off, project recommendation, and employer acceptance are independent
+authority checks and SHALL NOT imply one another.
 
 ---
 
@@ -819,6 +841,12 @@ Import job, profile, mapping, and commit SHALL all verify workspace access.
 
 A user SHALL not import into a workspace using another workspace's import profile.
 
+Contextual import SHALL additionally verify that the phase, deliverable/work item,
+target form/entity type, profile, source, and resulting canonical resources belong to
+the same workspace and are compatible with the configured action. Phase/resource
+locks are enforced before dry-run evidence becomes committable and again under the
+commit lock. Hiding top-level import navigation is not a security control.
+
 ---
 
 # 44. Import Idempotency
@@ -857,6 +885,12 @@ Creating/changing entity types and attributes is privileged.
 
 Changes SHALL be audited.
 
+Server-generated technical keys SHALL use collision-safe generation and uniqueness
+constraints. Selector/search endpoints for users, roles, parties, entities, phases,
+deliverables, and relationship targets SHALL enforce active membership, permission,
+object scope, bounded search, pagination, rate limiting, and safe result fields. They
+SHALL not enable user-directory or cross-workspace enumeration.
+
 ---
 
 # 48. Form Designer Security
@@ -873,11 +907,102 @@ This prevents silent reinterpretation of historical submissions.
 
 ---
 
+# 48.1 Context, Assistance, and Reference Security
+
+Client context IDs, labels, and suggested values are untrusted input. The backend
+SHALL derive/reload effective project, phase, deliverable, entity, party, field,
+binding, and lock context for render, suggestion generation, acceptance, save, and
+submission.
+
+Suggestion generation SHALL reveal only values and provenance the actor may access.
+Provider queries are bounded and shall not allow arbitrary paths/code. Accept/edit
+shall independently enforce permission, field visibility/read-only state, validation,
+current binding/policy version, optimistic concurrency, and locks. Rejection/accepted
+status and provenance require appropriate audit/redaction.
+
+Optional AI providers are prohibited until AI-001 defines privacy, provider,
+workspace-aware retrieval, prompt/version, injection, retention, audit, and cost
+controls. AI suggestions never persist without explicit human approval.
+
+Impact/reference queries SHALL not leak hidden linked resources. Notifications may
+contain only safe summaries and target IDs/links whose access is rechecked when
+opened. Cascading changes SHALL not rewrite historical evidence or unrelated
+relationships.
+
+---
+
+# 48.2 Report Template and Output Security
+
+Report templates SHALL use allowlisted bindings/widgets and SHALL not contain SQL,
+server/client executable code, unsafe markup, local file paths, or unrestricted
+external URLs. Template preview and generation authorize every source at execution
+time and apply field-level redaction/classification rules.
+
+Generation is resource bounded and suitable for background-job quotas. Branding and
+attachments follow upload/object-storage controls. Generated outputs are private,
+authorized documents. Formal report provenance/snapshots are immutable and audited;
+template authors cannot use bindings to exfiltrate cross-workspace or hidden data.
+
+---
+
 # 49. Phase Lock Security
 
 Only explicitly permitted users SHALL lock/unlock phases.
 
 Unlock is especially sensitive and SHALL be audited.
+
+---
+
+# 49.1 Governed Workflow Authority Separation
+
+Internal contractor review, formal submission, project monitoring, project-manager
+review/recommendation, technical review/sign-off, and employer acceptance SHALL use
+separate permission codes and transition policies. Backend services SHALL authorize
+the requested transition from effective workspace permissions, target assignment,
+workflow state, and configured policy; they SHALL NOT infer authority from a
+frontend route or a literal role name.
+
+Every formal transition SHALL:
+
+- constrain actor, target, referenced artifacts, recipients, and configuration to
+  the same workspace;
+- bind decisions to immutable document/form/submission versions where applicable;
+- reject replay, stale state, invalid sequencing, and unauthorized withdrawal or
+  reopening;
+- preserve actor, authority context, timestamp, reason/statement, and prior state;
+- create an immutable audit event in the same transaction;
+- avoid revealing cross-workspace target existence.
+
+Technical recommendation or sign-off SHALL NOT authorize contractual acceptance.
+Monitoring permission SHALL NOT authorize project-manager decisions. Contribution
+permission SHALL NOT authorize formal external submission.
+
+---
+
+# 49.2 Acceptance Record Security
+
+Phase/final acceptance packages, decisions, and conditions are integrity-critical.
+Acceptance evidence and referenced versions SHALL be immutable after decision.
+Corrections SHALL use a new governed event, superseding record, or reopening flow;
+history SHALL never be overwritten.
+
+Final acceptance SHALL be evaluated server-side against configured mandatory phase,
+deliverable, finding, and condition gates. Any supported exception requires a
+separate explicit permission, mandatory reason, and audit record.
+
+---
+
+# 49.3 Contextual Communication and Notification Security
+
+Threads, internal notes, comments, announcements, reminders, and notifications SHALL
+carry explicit workspace, target, kind, and visibility scope. Recipient selection
+SHALL be authorized and bounded. Notification payloads and links SHALL not reveal a
+resource the recipient cannot currently access; access SHALL be rechecked when the
+target is opened.
+
+Internal contractor notes, Project Officer monitoring notes, formal review comments,
+and employer comments SHALL remain distinguishable. Content SHALL use the standard
+XSS, upload, audit-redaction, retention, and rate-limit controls.
 
 ---
 
@@ -1478,4 +1603,6 @@ A feature is security-compliant when:
 09_TEST_SPECIFICATION.md
 10_DEPLOYMENT_GUIDE.md
 12_CURRENT_STATUS.md
+13_IMPLEMENTATION_ROADMAP.md
+14_PROJECT_USAGE_SCENARIOS.md
 ```

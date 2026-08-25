@@ -23,7 +23,6 @@ const dataTypes: AttributeDataType[] = [
 ]
 
 interface FormValues {
-  key: string
   label: string
   dataType: AttributeDataType
   isRequired: boolean
@@ -38,7 +37,7 @@ export function AttributeDefinitionEditor({ entityTypeId }: { entityTypeId: stri
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const { control, handleSubmit, register, reset, formState } = useForm<FormValues>({
     defaultValues: {
-      key: '', label: '', dataType: 'TEXT', isRequired: false, isReadOnly: false,
+      label: '', dataType: 'TEXT', isRequired: false, isReadOnly: false,
       displayOrder: 0, enumOptions: '',
     },
   })
@@ -47,7 +46,6 @@ export function AttributeDefinitionEditor({ entityTypeId }: { entityTypeId: stri
     mutationFn: (values: FormValues) => {
       const options = values.enumOptions.split('\n').map((value) => value.trim()).filter(Boolean)
       return createAttribute(entityTypeId, {
-        key: values.key.trim(),
         label: values.label.trim(),
         data_type: values.dataType,
         is_required: values.isRequired,
@@ -82,7 +80,6 @@ export function AttributeDefinitionEditor({ entityTypeId }: { entityTypeId: stri
     <Stack component="form" onSubmit={(event) => void submit(event)} spacing={2}>
       <Typography component="h2" variant="h5">{t('metadata.addAttribute')}</Typography>
       {errorMessage ? <Alert severity="error">{errorMessage}</Alert> : null}
-      <TextField label={t('metadata.key')} required {...register('key', { required: true, pattern: /^[a-z][a-z0-9_]*$/ })} error={formState.errors.key !== undefined} />
       <TextField label={t('metadata.label')} required {...register('label', { required: true })} />
       <TextField label={t('metadata.dataType')} select {...register('dataType')}>
         {dataTypes.map((value) => <MenuItem key={value} value={value}>{value}</MenuItem>)}

@@ -158,3 +158,16 @@ class ImportJobRepository:
             ImportConflict.resolution.is_(None),
         )
         return int((await self.session.scalar(statement)) or 0)
+
+    async def all_conflicts(self, job_id: UUID) -> tuple[ImportConflict, ...]:
+        statement = select(ImportConflict).where(ImportConflict.import_job_id == job_id)
+        return tuple((await self.session.scalars(statement)).all())
+
+    async def job_by_idempotency_key(
+        self, workspace_id: UUID, idempotency_key: str
+    ) -> ImportJob | None:
+        statement = select(ImportJob).where(
+            ImportJob.workspace_id == workspace_id,
+            ImportJob.idempotency_key == idempotency_key,
+        )
+        return cast(ImportJob | None, await self.session.scalar(statement))

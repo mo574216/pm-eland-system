@@ -37,6 +37,19 @@ export interface WorkspaceMemberCreate {
   role_id: string
 }
 
+export interface WorkspacePersonOption {
+  id: string
+  username: string
+  display_name: string | null
+}
+
+export interface WorkspaceRoleOption {
+  id: string
+  code: string
+  name: string
+  description: string | null
+}
+
 export function listWorkspaces(): Promise<WorkspaceList> {
   return apiRequest<WorkspaceList>('/workspaces?page=1&page_size=200')
 }
@@ -57,6 +70,20 @@ export function updateWorkspace(
 
 export function listWorkspaceMembers(workspaceId: string): Promise<WorkspaceMember[]> {
   return apiRequest<WorkspaceMember[]>(`/workspaces/${workspaceId}/members`)
+}
+
+export function searchWorkspaceMemberOptions(
+  workspaceId: string,
+  search: string,
+): Promise<WorkspacePersonOption[]> {
+  const query = new URLSearchParams({ search, limit: '10' })
+  return apiRequest<WorkspacePersonOption[]>(
+    `/workspaces/${workspaceId}/member-options?${query.toString()}`,
+  )
+}
+
+export function listWorkspaceRoleOptions(workspaceId: string): Promise<WorkspaceRoleOption[]> {
+  return apiRequest<WorkspaceRoleOption[]>(`/workspaces/${workspaceId}/role-options`)
 }
 
 export function addWorkspaceMember(

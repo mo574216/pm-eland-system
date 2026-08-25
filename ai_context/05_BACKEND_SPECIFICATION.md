@@ -518,6 +518,16 @@ Required responsibilities:
 - validate inheritance references,
 - enforce stable-key policies.
 
+StableKeyService SHALL generate collision-safe keys when create requests omit them.
+Generation SHALL be server-authoritative, deterministic enough for diagnostics, and
+independent of Persian display-label normalization. Explicit keys remain an advanced
+integration option and become immutable once referenced/published according to the
+resource lifecycle.
+
+Generic lookup/query services SHALL provide authorized paginated label projections
+for people, roles, parties, entities, parents, phases, deliverables, and relationship
+targets. They SHALL not expose unrestricted directory enumeration.
+
 Recommended methods:
 
 ```text
@@ -705,6 +715,35 @@ Historical form version identity SHALL be preserved.
 
 ---
 
+# 23.1 Form Context Service
+
+FormContextService SHALL derive effective context from the authorized route/work
+target rather than trust client labels or IDs. It resolves project/workspace, phase,
+deliverable/work item, current/parent/related entity, parties, actor, lifecycle, and
+lock state, then produces configured context-header items and binding candidates.
+
+Each binding SHALL use the explicit ADR-0008 mode. `SNAPSHOT_ON_SUBMIT` capture occurs
+inside the submission transaction and records source ID/version plus resolved value.
+Changing route context while a draft is active SHALL not permit cross-context save.
+
+---
+
+# 23.2 Assistance Service
+
+AssistanceService SHALL use a provider interface with safe deterministic providers
+for configured defaults, context/relationship values, taxonomies, prior accepted
+values, validation corrections, and duplicate/matching candidates. Optional AI is a
+future provider allowed only after AI-001.
+
+Generation is read-only. Candidates carry policy version, provenance, reason,
+confidence when meaningful, deterministic/AI classification, and lifecycle status.
+Accept/edit/reject commands re-authorize and revalidate current context, field,
+source visibility, lock, and concurrency. Accepted values flow through the ordinary
+FormInstanceService or import decision transaction; the suggestion store is never a
+canonical data source.
+
+---
+
 # 24. Document Storage Abstraction
 
 Define an interface such as:
@@ -828,6 +867,12 @@ get_job()
 
 Import code SHALL be separated into stages and SHALL NOT combine parsing and final persistence in one opaque function.
 
+Operational import SHALL also require a validated ImportContext for governed work.
+The service constrains the job to the originating phase/deliverable/form or output
+specification, derives permitted profiles/targets, applies the shared lock policy,
+and preserves context in audit/history. The standalone workspace job route remains a
+compatibility/support surface until the contextual contract is published.
+
 ---
 
 # 30. Import Parser Abstraction
@@ -940,6 +985,10 @@ authorize
 
 Failure SHALL roll back the canonical data transaction.
 
+Commit SHALL preserve all unrelated entity relationships. A row changes only the
+explicitly mapped canonical fields and configured relationship targets reviewed by
+the dry run; it SHALL not replace the entity's relationship collection implicitly.
+
 ---
 
 # 35. Phase Service
@@ -992,6 +1041,76 @@ request_revision()
 
 Review comments SHALL preserve author and timestamp.
 
+Formal review outcomes SHALL also preserve the exact submission/document/form
+version assessed. Comment resolution, technical recommendation, technical sign-off,
+project-manager recommendation, and employer acceptance are different commands and
+permissions; ReviewService SHALL NOT expose one generic `approve()` operation that
+can cross those authority boundaries.
+
+---
+
+# 37.1 Workflow Policy Service
+
+The governed-delivery engine SHALL provide generic operations such as:
+
+```text
+available_actions()
+start_instance()
+transition()
+reopen()
+transition_history()
+```
+
+`available_actions()` is a presentation aid. `transition()` SHALL independently
+reload and lock current state, verify workspace membership, effective permission,
+assignment, published definition version, configured preconditions, target evidence,
+and optimistic/idempotency inputs inside the write transaction.
+
+Transition handlers SHALL dispatch stable generic side effects through an allowlist;
+workflow configuration SHALL NOT execute arbitrary code, expressions, imports, SQL,
+or client-provided callbacks.
+
+---
+
+# 37.2 Deliverable and Submission Service
+
+Preparation, internal review, ready-for-submission, formal submission, permitted
+withdrawal, revision, and resubmission SHALL operate on generic deliverables and
+immutable packages. Formal submission SHALL capture the exact included versions and
+shall be restricted independently from contribution/edit permission.
+
+---
+
+# 37.3 Acceptance Service
+
+AcceptanceService SHALL assemble authorized immutable evidence packages and enforce
+configured phase/final gates. Accept, conditionally accept, reject, verify condition,
+reopen, and close conditional acceptance are explicit transactional commands with
+separate permission/policy checks and audit records.
+
+---
+
+# 37.4 Contextual Communication and Monitoring Services
+
+CommunicationService SHALL validate thread kind, visibility, participants, linked
+target, and recipient access. Notification generation SHALL be idempotent and SHALL
+recheck target authorization on read/navigation. Monitoring and dashboard services
+SHALL build permission-aware projections; they SHALL NOT duplicate canonical work,
+submission, review, or acceptance state.
+
+---
+
+# 37.5 Party and Impact Services
+
+PartyService SHALL manage generic organizations/parties, project roles, effective
+periods, contacts, and user affiliations without employer/contractor-specific code.
+
+ImpactService SHALL query authorized current dependencies from relationships,
+context bindings, assignments, active forms, deliverables, and report definitions.
+After a material canonical change it may create idempotent review markers and
+notifications according to configuration. It SHALL not cascade writes into
+historical snapshots or user-entered values. Snapshot comparison is read-only.
+
 ---
 
 # 38. Dashboard Service
@@ -1005,6 +1124,22 @@ Safe approaches:
 - predefined metric types,
 - metadata-driven query builder,
 - server-generated SQL from validated configuration.
+
+---
+
+# 38.1 Report Template and Generation Service
+
+ReportTemplateService SHALL manage immutable published versions of generic templates
+composed from allowlisted section/widget/binding definitions. It validates required
+content, parameter definitions, party/project bindings, branding assets, and output
+rules. Stored SQL, executable expressions, and unrestricted network resources are
+prohibited.
+
+ReportGenerationService SHALL authorize every binding, capture a data-as-of boundary
+and source versions/snapshots, render through a restricted provider, store the output
+as an immutable document version, and audit the result. Missing required content
+fails with addressable validation details. Completed formal reports do not change
+when canonical data or template drafts later change.
 
 ---
 
@@ -1487,6 +1622,16 @@ DOC-FR-*   → DocumentService, StorageProvider, workers
 IMP-FR-*   → ImportService, ImportParser, ImportConflictPolicy
 PHASE-FR-* → PhaseService, LockPolicyService
 REV-FR-*   → ReviewService
+GOV-FR-*   → WorkflowPolicyService, DeliverableService, SubmissionService
+WORK-FR-*  → WorkItemService, RiskIssueService, MonitoringService
+COM-FR-*   → CommunicationService, NotificationService
+ACC-FR-*   → AcceptanceService
+CONF-FR-*  → ConfigurationLifecycleService
+PARTY-FR-* → PartyService
+CTX-FR-*   → FormContextService and snapshot capture
+ASSIST-FR-* → AssistanceService/providers
+REF-FR-*   → RelationshipService, ImpactService, snapshots
+UX-FR-*    → StableKeyService and authorized lookup services
 RPT-FR-*   → DashboardService
 AUD-FR-*   → AuditService
 ```
@@ -1508,5 +1653,7 @@ AUD-FR-*   → AuditService
 10_DEPLOYMENT_GUIDE.md
 11_SECURITY_SPECIFICATION.md
 12_CURRENT_STATUS.md
+13_IMPLEMENTATION_ROADMAP.md
+14_PROJECT_USAGE_SCENARIOS.md
 contracts/openapi.yaml
 ```

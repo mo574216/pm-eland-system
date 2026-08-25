@@ -1,0 +1,64 @@
+import { screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+
+import { renderWithProviders } from '../../test/render'
+import { listWorkspaceMembers } from '../workspaces/workspaceApi'
+import { DeliverablesPanel } from './DeliverablesPanel'
+import {
+  createDeliverable,
+  createDeliverableVersion,
+  listDeliverables,
+  searchPackageOptions,
+  submitDeliverable,
+  withdrawSubmission,
+} from './deliverableApi'
+
+vi.mock('../workspaces/workspaceApi', () => ({ listWorkspaceMembers: vi.fn() }))
+vi.mock('./deliverableApi', () => ({
+  createDeliverable: vi.fn(), createDeliverableVersion: vi.fn(), listDeliverables: vi.fn(),
+  searchPackageOptions: vi.fn(), submitDeliverable: vi.fn(), withdrawSubmission: vi.fn(),
+}))
+
+const member = {
+  id: 'membership-1', user_id: '10000000-0000-0000-0000-000000000001', username: 'leader',
+  display_name: 'رهبر پروژه', role_id: 'role-1', role_code: 'CONTRACTOR_PROJECT_LEADER',
+  status: 'ACTIVE' as const, created_at: '2026-08-25T00:00:00Z',
+}
+const deliverable = {
+  id: '20000000-0000-0000-0000-000000000001', workspace_id: 'workspace-1', phase_id: 'phase-1',
+  key: 'deliverable_generated', name: 'بسته مشخصات', description: 'خروجی رسمی مرحله',
+  owner_id: member.user_id, internal_reviewer_id: null, contributor_ids: [],
+  internal_due_at: null, official_due_at: null, requirements: [],
+  readiness: { ready: false, total_required: 0, completed_required: 0, missing: [] },
+  latest_version: null, latest_submission: null, created_at: '2026-08-25T00:00:00Z',
+  updated_at: '2026-08-25T00:00:00Z', version: 1,
+}
+
+describe('DeliverablesPanel', () => {
+  beforeEach(() => {
+    vi.mocked(listWorkspaceMembers).mockResolvedValue([member])
+    vi.mocked(listDeliverables).mockResolvedValue([deliverable])
+    vi.mocked(createDeliverable).mockResolvedValue(deliverable)
+    vi.mocked(createDeliverableVersion).mockResolvedValue(deliverable)
+    vi.mocked(searchPackageOptions).mockResolvedValue([])
+    vi.mocked(submitDeliverable).mockResolvedValue(deliverable)
+    vi.mocked(withdrawSubmission).mockRejectedValue(new Error('unused'))
+  })
+
+  it('creates a named deliverable inside its phase with human-readable people selection', async () => {
+    const user = userEvent.setup()
+    renderWithProviders(<DeliverablesPanel locked={false} phaseId="phase-1" workspaceId="workspace-1" />)
+
+    expect(await screen.findByText('بسته مشخصات')).toBeVisible()
+    await user.click(screen.getByRole('button', { name: 'افزودن تحویل‌دادنی' }))
+    await user.type(screen.getByRole('textbox', { name: 'نام تحویل‌دادنی' }), 'گزارش مرحله')
+    await user.click(screen.getByRole('combobox', { name: /مسئول تحویل‌دادنی/ }))
+    await user.click(screen.getByRole('option', { name: 'رهبر پروژه' }))
+    await user.click(screen.getByRole('button', { name: 'ایجاد تحویل‌دادنی' }))
+
+    expect(createDeliverable).toHaveBeenCalledWith('phase-1', expect.objectContaining({
+      name: 'گزارش مرحله', owner_id: member.user_id,
+    }))
+    expect(screen.queryByText('deliverable_generated')).not.toBeInTheDocument()
+  })
+})

@@ -19,7 +19,6 @@ import { ApiError } from '../../api/client'
 import { createEntityType, listEntityTypes } from './metadataApi'
 
 interface FormValues {
-  key: string
   name: string
   pluralName: string
   description: string
@@ -37,12 +36,11 @@ export function EntityTypeList() {
     enabled: workspaceId !== undefined,
   })
   const { handleSubmit, register, reset, formState } = useForm<FormValues>({
-    defaultValues: { key: '', name: '', pluralName: '', description: '' },
+    defaultValues: { name: '', pluralName: '', description: '' },
   })
   const create = useMutation({
     mutationFn: (values: FormValues) =>
       createEntityType(workspaceId ?? '', {
-        key: values.key.trim(),
         name: values.name.trim(),
         plural_name: values.pluralName.trim() || undefined,
         description: values.description.trim() || undefined,
@@ -75,16 +73,6 @@ export function EntityTypeList() {
       <Stack component="form" onSubmit={(event) => void submit(event)} spacing={2}>
         <Typography component="h2" variant="h5">{t('metadata.createType')}</Typography>
         {mutationError ? <Alert severity="error">{mutationError}</Alert> : null}
-        <TextField
-          label={t('metadata.key')}
-          required
-          helperText={t('metadata.keyHelp')}
-          {...register('key', {
-            required: true,
-            pattern: /^[a-z][a-z0-9_]*$/,
-          })}
-          error={formState.errors.key !== undefined}
-        />
         <TextField label={t('metadata.name')} required {...register('name', { required: true })} />
         <TextField label={t('metadata.pluralName')} {...register('pluralName')} />
         <TextField label={t('metadata.description')} multiline {...register('description')} />
@@ -99,7 +87,9 @@ export function EntityTypeList() {
         <Card key={entityType.id} variant="outlined">
           <CardContent>
             <Typography component="h2" variant="h5">{entityType.name}</Typography>
-            <Typography color="text.secondary" dir="ltr">{entityType.key}</Typography>
+            {entityType.description ? (
+              <Typography color="text.secondary">{entityType.description}</Typography>
+            ) : null}
           </CardContent>
           <CardActions>
             <Button onClick={() => void navigate(`/workspaces/${workspaceId}/metadata/${entityType.id}`)}>

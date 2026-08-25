@@ -31,6 +31,7 @@ const workspaceId = '6ab93847-d2b3-43b8-aae1-15662031feb8'
 const entityId = '10000000-0000-0000-0000-000000000001'
 const targetId = '10000000-0000-0000-0000-000000000002'
 const typeId = '20000000-0000-0000-0000-000000000001'
+const otherTypeId = '20000000-0000-0000-0000-000000000002'
 const relationshipId = '30000000-0000-0000-0000-000000000001'
 
 describe('RelationshipPanel', () => {
@@ -47,6 +48,19 @@ describe('RelationshipPanel', () => {
           source_type_id: null,
           target_type_id: null,
           configuration: { allow_duplicates: false },
+          is_active: true,
+          created_at: '2026-08-23T00:00:00Z',
+        },
+        {
+          id: otherTypeId,
+          workspace_id: workspaceId,
+          key: 'hosts',
+          name: 'Hosts',
+          description: null,
+          directionality: 'DIRECTED',
+          source_type_id: otherTypeId,
+          target_type_id: null,
+          configuration: {},
           is_active: true,
           created_at: '2026-08-23T00:00:00Z',
         },
@@ -132,14 +146,14 @@ describe('RelationshipPanel', () => {
       <RelationshipPanel canManage entityId={entityId} workspaceId={workspaceId} />,
     )
 
-    expect(await screen.findByText('Depends On')).toBeInTheDocument()
-    expect(screen.getByText('Second Root')).toBeInTheDocument()
-    expect(screen.getByText('خروجی')).toBeInTheDocument()
+    expect(await screen.findByText('Demo Root Depends On Second Root')).toBeInTheDocument()
+    expect(screen.queryByText('خروجی')).not.toBeInTheDocument()
 
-    await user.click(screen.getByRole('combobox', { name: 'نوع رابطه' }))
+    await user.click(screen.getByRole('combobox', { name: 'چه ارتباطی دارد؟' }))
+    expect(screen.queryByRole('option', { name: 'Hosts' })).not.toBeInTheDocument()
     await user.click(screen.getByRole('option', { name: 'Depends On' }))
-    await user.click(screen.getByRole('combobox', { name: 'موجودیت مقصد' }))
-    await user.click(screen.getByRole('option', { name: 'Second Root' }))
+    await user.click(screen.getByRole('combobox', { name: 'با کدام مورد؟' }))
+    await user.click(screen.getByRole('option', { name: 'Second Root — Node' }))
     await user.click(screen.getByRole('button', { name: 'ایجاد رابطه' }))
     expect(createRelationship).toHaveBeenCalledWith(workspaceId, {
       relationship_type_id: typeId,

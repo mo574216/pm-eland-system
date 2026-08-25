@@ -69,6 +69,26 @@ class ResourceConflictError(ApplicationError):
         super().__init__(code="RESOURCE_CONFLICT", status_code=409)
 
 
+class ResourceLockedError(ApplicationError):
+    def __init__(self) -> None:
+        super().__init__(code="RESOURCE_LOCKED", status_code=423)
+
+
+class ImportValidationFailedError(ApplicationError):
+    def __init__(self) -> None:
+        super().__init__(code="IMPORT_VALIDATION_FAILED", status_code=422)
+
+
+class ImportConflictsUnresolvedError(ApplicationError):
+    def __init__(self) -> None:
+        super().__init__(code="IMPORT_CONFLICTS_UNRESOLVED", status_code=409)
+
+
+class ImportAlreadyCommittedError(ApplicationError):
+    def __init__(self) -> None:
+        super().__init__(code="IMPORT_ALREADY_COMMITTED", status_code=409)
+
+
 class StaleVersionError(ApplicationError):
     def __init__(self) -> None:
         super().__init__(code="STALE_VERSION", status_code=409)

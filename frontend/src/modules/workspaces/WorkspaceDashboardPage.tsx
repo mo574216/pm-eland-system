@@ -4,6 +4,7 @@ import {
   DashboardCustomizeOutlined,
   DescriptionOutlined,
   FileUploadOutlined,
+  FormatListNumberedRtlOutlined,
   SettingsOutlined,
   TuneOutlined,
   ViewQuiltOutlined,
@@ -12,6 +13,8 @@ import { Alert, Box, Button, Card, CardContent, Chip, Grid, Stack, Typography } 
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
+
+import { DashboardKpis } from '../dashboard/DashboardKpis'
 
 interface CapabilityCardProps {
   title: string
@@ -50,6 +53,7 @@ export function WorkspaceDashboardPage() {
   if (workspaceId === undefined) return <Navigate replace to="/workspaces" />
 
   const available = [
+    { title: t('navigation.phases'), description: t('dashboard.phasesDescription'), icon: <FormatListNumberedRtlOutlined />, path: `/workspaces/${workspaceId}/phases` },
     { title: t('navigation.entities'), description: t('dashboard.entitiesDescription'), icon: <AccountTreeOutlined />, path: `/workspaces/${workspaceId}/entities` },
     { title: t('navigation.metadata'), description: t('dashboard.metadataDescription'), icon: <TuneOutlined />, path: `/workspaces/${workspaceId}/metadata` },
     { title: t('dashboard.forms'), description: t('dashboard.formsDescription'), icon: <ViewQuiltOutlined />, path: `/workspaces/${workspaceId}/forms` },
@@ -66,6 +70,9 @@ export function WorkspaceDashboardPage() {
       <Box>
         <Typography component="h1" variant="h1">{t('dashboard.welcome')}</Typography>
         <Typography color="text.secondary" sx={{ mt: 1 }}>{t('dashboard.description')}</Typography>
+      </Box>
+      <Box component="section" aria-label={t('dashboard.kpiSection')}>
+        <DashboardKpis workspaceId={workspaceId} />
       </Box>
       <Box component="section" aria-labelledby="quick-access-title">
         <Typography component="h2" id="quick-access-title" sx={{ mb: 2 }} variant="h2">{t('dashboard.quickAccess')}</Typography>

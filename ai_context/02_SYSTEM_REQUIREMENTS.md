@@ -24,6 +24,7 @@ This specification SHALL be used together with:
 - `06_FRONTEND_SPECIFICATION.md`
 - `09_TEST_SPECIFICATION.md`
 - `11_SECURITY_SPECIFICATION.md`
+- `14_PROJECT_USAGE_SCENARIOS.md`
 
 Where conflicts exist, `01_ARCHITECTURE_RULES.md` and `11_SECURITY_SPECIFICATION.md` take precedence over convenience-oriented implementation choices.
 
@@ -72,7 +73,7 @@ All domain-specific concepts SHALL be created as metadata.
 
 # 4. Actors
 
-## ACT-001 — System Administrator
+## ACT-001 — Administrator
 
 Responsible for:
 
@@ -81,50 +82,90 @@ Responsible for:
 - form configuration,
 - system-level settings,
 - import profile configuration,
+- workflow, template, view, dashboard, and configuration-lifecycle management,
 - platform governance.
 
 ---
 
-## ACT-002 — Workspace Manager / Employer Representative
+## ACT-002 — Project Manager
 
 Responsible for:
 
-- monitoring project progress,
-- reviewing deliverables,
-- locking or unlocking phases,
-- reviewing structured data,
-- generating dashboards and reports.
+- governing project execution,
+- assigning project work and deliverables,
+- project review and revision decisions,
+- acceptance recommendations,
+- phase control, monitoring, dashboards, and reports.
 
 ---
 
-## ACT-003 — Analyst / Designer
+## ACT-003 — Project Officer
 
 Responsible for:
 
-- creating entities,
-- entering structured information,
-- completing forms,
-- uploading documents,
-- importing Excel/CSV data,
-- updating records while permitted.
+- monitoring progress, deadlines, completeness, review queues, and comments,
+- following up and reporting,
+- performing delegated preliminary checks,
+- flagging items for Project Manager attention without assuming decision authority.
 
 ---
 
-## ACT-004 — Viewer
+## ACT-004 — Technical Reviewer
 
 Responsible for:
 
-- viewing approved records,
-- viewing documents,
-- viewing dashboards and reports according to permissions.
+- independent technical assessment,
+- technical comments and revision recommendations,
+- technical recommendation or sign-off where explicitly authorized,
+- no implied contractor-management or contractual-acceptance authority.
 
 ---
 
-## ACT-005 — AI Coding Agent
+## ACT-005 — Contractor Project Leader
+
+Responsible for:
+
+- contractor-side planning, assignment, and internal quality review,
+- controlling formal contractor submission and resubmission,
+- coordinating responses, risks, issues, deadlines, and contractor reporting.
+
+---
+
+## ACT-006 — Contractor Team Member
+
+Responsible for:
+
+- performing assigned activities,
+- completing forms and using the project repository,
+- preparing and revising deliverables,
+- responding to assigned comments,
+- returning work for internal review rather than formal external submission unless
+  separately authorized.
+
+---
+
+## ACT-007 — Employer Representative
+
+Responsible for:
+
+- managerial oversight,
+- employer comments and decision-item review,
+- phase and final project acceptance,
+- defining and verifying acceptance conditions.
+
+---
+
+## ACT-008 — AI Coding Agent
 
 Responsible for implementing code according to the architecture package.
 
 This actor does not represent a runtime application user.
+
+Legacy specification examples using `Analyst`, `Designer`, or `Viewer` describe
+configurable contributor/read-only permission profiles, not additional fixed
+authority lanes. Existing seeded role codes remain supported until AUTH-DB-002
+defines and migrates the seven baseline scenario profiles without losing current
+assignments.
 
 ---
 
@@ -1095,6 +1136,20 @@ The import capability SHALL support the intended workflow where users prepare st
 
 ---
 
+## IMP-FR-013 — Contextual Phase/Deliverable Import
+
+**Priority:** P0 for first governed-delivery demo
+
+Operational import SHALL be launched from an eligible project phase, deliverable,
+form, or output specification rather than normal top-level navigation. It SHALL
+inherit and backend-validate the workspace, phase, deliverable, target entity/form,
+and permitted import profiles known from context. Imported canonical records and
+the import audit/history SHALL remain associated with that context. A locked phase
+SHALL reject import mutations unless an explicit authorized override workflow is
+configured.
+
+---
+
 # 5.11 Phase and Progression Control
 
 ## PHASE-FR-001 — Define Phase
@@ -1263,6 +1318,55 @@ Users MAY export configured reports to formats such as PDF or spreadsheet.
 
 ---
 
+## RPT-FR-007 — Versioned Report Templates
+
+**Priority:** P1
+
+Authorized users SHALL create, preview, version, publish, retire, and reuse report
+templates without code changes. Published versions SHALL be immutable.
+
+## RPT-FR-008 — Required Report Content
+
+**Priority:** P1
+
+Templates SHALL define required/optional sections and validated bindings for project,
+employer, contractor, reporting period, progress, phases, milestones, deliverables,
+risks/issues, reviews, acceptance, narrative, branding, headers/footers, and
+signature/approval areas.
+
+## RPT-FR-009 — Safe Template Composition
+
+**Priority:** P1
+
+Templates SHALL use allowlisted data sources, fields, aggregations, sections, and
+widgets. User-supplied SQL, executable code, unbounded expressions, and unrestricted
+external resource loading are prohibited.
+
+## RPT-FR-010 — Generated Report Provenance
+
+**Priority:** P1
+
+A formal generated report SHALL retain workspace, template/version, generating
+actor, data-as-of timestamp, relevant source IDs/versions, parameters, output
+artifact/version, and audit record.
+
+## RPT-FR-011 — Preview and Completeness
+
+**Priority:** P1
+
+Before generation/publishing, users SHALL preview the report and see missing required
+bindings or unavailable authorized data. Generation SHALL not silently omit required
+project or contractor details.
+
+## RPT-FR-012 — Historical Report Stability
+
+**Priority:** P1
+
+Previously generated formal reports SHALL remain reproducible/traceable and SHALL not
+change when a live referenced project, service, organization, or template changes.
+
+---
+
 # 5.14 Audit and History
 
 ## AUD-FR-001 — Mutation Audit
@@ -1376,6 +1480,509 @@ User-facing dates and numbers SHALL be formatted through a centralized `fa-IR`
 localization policy. API timestamps SHALL remain ISO 8601 and API numeric values
 SHALL remain JSON numbers. The calendar system and displayed digit policy require
 an explicit product decision before date- or number-intensive UI is completed.
+
+---
+
+# 5.16 Configurable Delivery Governance
+
+## GOV-FR-001 — Configurable Workflow Definitions
+
+**Priority:** P1
+
+Administrators SHALL configure lifecycle states, transitions, eligible roles,
+conditions, review sequences, lock/reopen rules, and versioning behavior without
+project-specific code. Published workflow definitions SHALL be versioned; active
+instances SHALL retain their definition version.
+
+## GOV-FR-002 — Distinct Authority Lanes
+
+**Priority:** P0 for governed-delivery release
+
+Contractor internal review, formal contractor submission, project monitoring,
+project-manager review/recommendation, technical recommendation/sign-off, and
+employer acceptance SHALL be distinct actions and permissions. One action SHALL NOT
+implicitly satisfy another.
+
+## GOV-FR-003 — Deliverable Lifecycle
+
+**Priority:** P1
+
+The system SHALL support metadata-defined deliverables with owner, contributors,
+internal reviewer, phase/milestone context, official and internal dates, required
+templates/content, immutable submitted version, and configurable lifecycle state.
+
+## GOV-FR-004 — Submission and Revision Packages
+
+**Priority:** P1
+
+Formal submission or resubmission SHALL identify submitter, recipients, target
+version, time, statement, related comments, and prior submission. Withdrawal SHALL
+require permission, reason, allowed state, and retained history.
+
+## GOV-FR-005 — Review Outcomes
+
+**Priority:** P1
+
+Review SHALL support clarification, revision request, recommendation for approval,
+conditional recommendation, rejection/major revision, and optional technical
+sign-off. Outcomes SHALL bind to the reviewed immutable version.
+
+## GOV-FR-006 — Completeness and Readiness
+
+**Priority:** P1
+
+The system SHALL compute readiness from configured required forms, documents,
+deliverables, milestones, comments, reviews, conditions, and exceptions. Monitoring
+views SHALL distinguish missing, incomplete, invalid, unsubmitted, awaiting review,
+and locked states.
+
+## GOV-FR-007 — Governed Reopening and Change
+
+**Priority:** P1
+
+Reopening a closed workflow item, phase, condition, or project SHALL require explicit
+authority and reason and SHALL preserve the previous decision and audit history.
+Deadline, assignment, scope, and requirement changes SHALL retain original/current
+values, reason, actor, time, and impact where applicable.
+
+## GOV-FR-008 — Project Archive
+
+**Priority:** P1
+
+Archiving SHALL check unresolved governed operations, preserve all history, and make
+the project read-only or restricted according to policy rather than deleting it.
+
+---
+
+# 5.17 Work Planning, Risks, and Monitoring
+
+## WORK-FR-001 — Generic Activities and Assignments
+
+**Priority:** P1
+
+Authorized users SHALL create generic project work items with scope, owner,
+collaborators, reviewer, dates, priority, progress, status, and links to configured
+project objects. Contractor-internal and official work SHALL remain distinguishable.
+
+## WORK-FR-002 — Dependencies and Schedule Changes
+
+**Priority:** P1
+
+Work-item dependencies SHALL reject cycles. Baseline and revised dates, extensions,
+reasons, approvals, and affected downstream items SHALL remain traceable.
+
+## WORK-FR-003 — Risks, Issues, and Escalations
+
+**Priority:** P1
+
+The system SHALL provide generic workspace-scoped risk/issue records with severity,
+likelihood/impact where applicable, owner, mitigation/action, date, associations,
+and controlled escalation.
+
+## WORK-FR-004 — Role-Appropriate Monitoring
+
+**Priority:** P1
+
+Authorized dashboards and queues SHALL project upcoming, overdue, blocked, at-risk,
+awaiting-review, revision, comment, completeness, workload, and decision items while
+preserving each actor's authority boundary.
+
+---
+
+# 5.18 Contextual Communication and Notifications
+
+## COM-FR-001 — Contextual Threads
+
+**Priority:** P1
+
+Users SHALL communicate in workspace-scoped threads linked to an authorized project
+object or governed action. Visibility SHALL be explicit; internal contractor notes,
+internal monitoring notes, formal review comments, and employer comments SHALL not
+be conflated.
+
+## COM-FR-002 — Announcements and Reminders
+
+**Priority:** P1
+
+Authorized users SHALL publish scoped announcements and reminders to configured
+project, phase, role, team, or selected recipients with retained provenance.
+
+## COM-FR-003 — Event Notifications
+
+**Priority:** P1
+
+Configurable events SHALL create deduplicated notifications with recipient, linked
+target, read state, action-required state, delivery status, and safe navigation.
+
+## COM-FR-004 — Notification Relevance
+
+**Priority:** P1
+
+Recipients SHALL receive only events they are authorized to know and that match
+configured role, assignment, subscription, or decision responsibility. A
+notification SHALL NOT reveal a target the recipient cannot access.
+
+---
+
+# 5.19 Acceptance and Conditions
+
+## ACC-FR-001 — Phase Acceptance Request
+
+**Priority:** P1
+
+An authorized workflow SHALL assemble a versioned phase-acceptance package containing
+configured deliverables, milestones, reviews, recommendations, comments, exceptions,
+conditions, and schedule evidence.
+
+## ACC-FR-002 — Phase Acceptance Decision
+
+**Priority:** P1
+
+An authorized Employer Representative SHALL accept, conditionally accept, or reject
+a phase. The decision SHALL retain actor, authority, time, statement, package, and
+referenced versions.
+
+## ACC-FR-003 — Final Acceptance
+
+**Priority:** P1
+
+Final acceptance SHALL require the configured phase and final-deliverable conditions
+and SHALL not bypass unresolved mandatory phases, critical findings, or mandatory
+conditions except through an explicit audited exception policy.
+
+## ACC-FR-004 — Acceptance Conditions
+
+**Priority:** P1
+
+Conditions SHALL record source decision, description, responsible party, deadline,
+evidence requirement, verifier, and lifecycle including Open, In Progress, Submitted
+for Verification, Satisfied, Overdue, and Rejected.
+
+## ACC-FR-005 — Conditional Acceptance Closure
+
+**Priority:** P1
+
+Conditional acceptance SHALL become full acceptance only after all mandatory
+conditions are verified by configured authority and the transition is recorded.
+
+## ACC-FR-006 — Durable Acceptance Evidence
+
+**Priority:** P1
+
+Acceptance records and referenced submission/review versions SHALL be immutable and
+queryable for the project lifetime.
+
+---
+
+# 5.20 Configuration Lifecycle and Reuse
+
+## CONF-FR-001 — Reusable Project Configuration
+
+**Priority:** P1
+
+Administrators SHALL configure and version taxonomies, templates, content/file
+rules, naming/numbering, project views, indicators, workflow definitions, validation
+rules, and review/acceptance policies as metadata.
+
+## CONF-FR-002 — Clone Without Operational Data
+
+**Priority:** P1
+
+Configuration cloning SHALL let the actor select components and SHALL exclude users'
+operational records, submissions, comments, audit, and acceptance history unless a
+separately authorized operation explicitly includes supported data.
+
+## CONF-FR-003 — Safe Configuration Change
+
+**Priority:** P1
+
+Changing published/in-use configuration SHALL provide impact analysis, validation,
+versioning or migration behavior, warnings, explicit confirmation, and audit. It
+SHALL NOT silently corrupt or reinterpret historical records.
+
+## CONF-FR-004 — Configuration History
+
+**Priority:** P1
+
+Authorized users SHALL query configuration versions and changes including actor,
+time, reason, and before/after state.
+
+---
+
+# 5.21 Human-Centered Administration and Work UX
+
+## UX-FR-001 — Plain-Language Information Architecture
+
+**Priority:** P0 for demo usability
+
+The application SHALL separate Project workspace and Administration console
+navigation and use Persian, task-oriented labels rather than exposing engine/storage
+terminology. Common administration SHALL follow recognizable list, add, edit,
+preview, draft/publish, archive, filter, and bulk-action patterns where applicable.
+
+## UX-FR-002 — No Raw Identifier Entry
+
+**Priority:** P0 for demo usability
+
+Normal workflows SHALL NOT require users to type user IDs, role IDs, entity IDs,
+parent IDs, relationship IDs, phase IDs, or other UUIDs. Authorized searchable
+selectors SHALL show names plus safe disambiguating context.
+
+## UX-FR-003 — Generated Technical Keys
+
+**Priority:** P0 for demo usability
+
+Stable technical keys SHALL be generated automatically through a server-authoritative
+collision-safe policy. The primary form asks for a human-readable name. Keys MAY be
+viewed in Advanced settings and edited only before the lifecycle point at which they
+become immutable/integration contracts.
+
+## UX-FR-004 — Natural Relationship Management
+
+**Priority:** P0 for demo usability
+
+Users SHALL create/view relationships using configured natural-language forward and
+reverse labels. From the current item, the system SHALL filter compatible relation
+types and searchable target records. Raw source/target direction, type IDs, and
+cardinality codes SHALL remain hidden outside advanced administration.
+
+## UX-FR-005 — Progressive Disclosure
+
+**Priority:** P0 for demo usability
+
+Primary forms SHALL contain the minimum information needed for the common case.
+Advanced configuration SHALL be grouped, explained, and disclose impact. Useful
+defaults, examples, empty states, and contextual help SHALL be provided.
+
+## UX-FR-006 — Human-Readable Membership Administration
+
+**Priority:** P0 for demo usability
+
+Project administration SHALL provide searchable people and role selectors, display
+organization/party, membership status, effective dates, assignments, and safe
+remove/replace/reassign flows. Internal UUIDs SHALL remain API-only.
+
+## UX-FR-007 — Context Preservation
+
+**Priority:** P0
+
+Navigation, dialogs, wizards, and return paths SHALL preserve the current project,
+phase, deliverable, entity/service, and work-item context. The system SHALL not ask
+users to reconstruct context already established by an authorized route or action.
+
+## UX-FR-008 — Technical Diagnostics Boundary
+
+**Priority:** P1
+
+Authorized support/advanced views MAY expose technical IDs, keys, versions, and raw
+configuration for diagnosis or integration, but SHALL label them clearly and keep
+them separate from normal task completion.
+
+---
+
+# 5.22 Organizations and Project Parties
+
+## PARTY-FR-001 — Reusable Party Records
+
+**Priority:** P1
+
+The system SHALL manage generic workspace-visible organization/party records for
+employer, contractor, reviewer, consultant, regulator, or other configured party
+roles without creating organization-type-specific tables.
+
+## PARTY-FR-002 — Project Party Assignment
+
+**Priority:** P1
+
+Projects SHALL associate parties with configurable roles, effective dates, contacts,
+and status. One organization MAY hold different roles in different projects.
+
+## PARTY-FR-003 — User Affiliation
+
+**Priority:** P1
+
+Membership MAY associate a user with a project party/organization and project role.
+Changing access SHALL preserve historical attribution and affiliation applicable to
+formal actions.
+
+## PARTY-FR-004 — Context and Report Reuse
+
+**Priority:** P1
+
+Authorized party details SHALL be reusable through live context bindings in forms,
+deliverables, memberships, notifications, and reports rather than repeated
+uncontrolled text.
+
+## PARTY-FR-005 — Party History and Isolation
+
+**Priority:** P1
+
+Party assignments and changes SHALL be audited and workspace/project scoped.
+Historical submissions/reports SHALL retain the applicable party snapshot/version.
+
+---
+
+# 5.23 Contextual Forms and Assistance
+
+## CTX-FR-001 — Authorized Form Context
+
+**Priority:** P0 for governed forms
+
+Opening a form from a project item SHALL establish a backend-authorized context
+including applicable project, phase, deliverable/work item, current entity/service,
+parent/related entities, organizations/parties, actor, and lifecycle/lock state.
+
+## CTX-FR-002 — Context Header
+
+**Priority:** P0 for governed forms
+
+The render contract SHALL provide a configured human-readable context header above
+the form. It MAY show project name/code, phase, service/entity, employer, contractor,
+responsible party, dates, and status. Users SHALL not re-enter known context.
+
+## CTX-FR-003 — Explicit Binding Modes
+
+**Priority:** P0
+
+Context/form/report bindings SHALL explicitly declare `LIVE_REFERENCE`,
+`READ_ONLY_INHERITED`, `EDITABLE_SUGGESTION`, `COPY_ON_CREATE`, or
+`SNAPSHOT_ON_SUBMIT` semantics and source provenance.
+
+## CTX-FR-004 — Context Lock and Authorization
+
+**Priority:** P0
+
+The backend SHALL reject forged/cross-workspace context, incompatible targets, and
+mutations blocked by phase/resource state. Frontend context is a UX aid only.
+
+## CTX-FR-005 — Context Change Handling
+
+**Priority:** P1
+
+If route/work-item context changes while a draft is open, the system SHALL prevent
+accidental cross-context save and require safe reload/rebinding or explicit draft
+handling.
+
+## CTX-FR-006 — Historical Context Snapshot
+
+**Priority:** P1
+
+Submission SHALL capture configured context values and source versions required to
+interpret the historical form without changing its live canonical sources.
+
+## ASSIST-FR-001 — Unified Suggestion Engine
+
+**Priority:** P1
+
+The same generic suggestion contract SHALL support manual form entry and import
+review. Suggestions MAY originate from configured defaults, project/parent/related
+records, parties, taxonomies, prior accepted values, deterministic rules,
+matching/duplicate analysis, and an approved optional AI provider.
+
+## ASSIST-FR-002 — Explainable Provenance
+
+**Priority:** P1
+
+Each suggestion SHALL include target field/row, candidate value, reason, source kind
+and source reference/version where allowed, confidence where meaningful, and whether
+the candidate is deterministic or AI-generated.
+
+## ASSIST-FR-003 — Explicit User Control
+
+**Priority:** P1
+
+Users SHALL be able to accept, edit, or reject suggestions individually and through
+bounded safe bulk actions. Suggestions SHALL never silently overwrite stored or
+imported user values.
+
+## ASSIST-FR-004 — Validation and Duplicate Guidance
+
+**Priority:** P1
+
+The engine SHOULD suggest allowed values or corrections for invalid/inconsistent
+input and identify likely existing records/relationships while preserving the
+explicit import conflict rules.
+
+## ASSIST-FR-005 — Suggestion Lifecycle
+
+**Priority:** P1
+
+Accepted suggestions become ordinary validated/audited changes. Rejected or obsolete
+suggestions SHALL not repeatedly interrupt users unless source evidence materially
+changes or the user requests regeneration.
+
+## ASSIST-FR-006 — Permission and Lock Enforcement
+
+**Priority:** P0
+
+Suggestion generation SHALL reveal only authorized data. Accepting a suggestion
+SHALL independently enforce current field permission, context, validation,
+concurrency, and phase/resource locks.
+
+## ASSIST-FR-007 — AI Boundary
+
+**Priority:** P2
+
+AI-generated candidates require the provider/privacy/audit architecture accepted by
+AI-001, SHALL be clearly identified, SHALL include confidence/limitations, and SHALL
+require human approval before persistence.
+
+## ASSIST-FR-008 — No Domain Hard-Coding
+
+**Priority:** P0
+
+Suggestion policies and bindings SHALL be metadata-driven. The application SHALL not
+hard-code service/process-specific completion logic.
+
+---
+
+# 5.24 Live References, Impact, and Historical Stability
+
+## REF-FR-001 — Canonical Live Reference
+
+**Priority:** P0
+
+Reusable current project information such as service, project, and party details
+SHOULD reference a canonical record rather than create uncontrolled copies.
+
+## REF-FR-002 — Relationship Preservation
+
+**Priority:** P0
+
+Updating a canonical entity SHALL preserve its relationship identities unless the
+user explicitly changes them. Relationship endpoints and imports SHALL not recreate
+or discard unrelated links as a side effect.
+
+## REF-FR-003 — Current Change Observability
+
+**Priority:** P1
+
+Authorized users SHALL be able to see where a changed canonical record is currently
+referenced across the project, including related entities, active forms,
+deliverables, current reports, assignments, and configured dependencies.
+
+## REF-FR-004 — Impact and Review Markers
+
+**Priority:** P1
+
+Configured material changes MAY create bounded notifications or `REVIEW_REQUIRED`
+markers for affected current work. The impact process SHALL be idempotent and SHALL
+not cascade silent data mutation.
+
+## REF-FR-005 — Immutable Historical Snapshots
+
+**Priority:** P0
+
+Submitted, approved, signed, accepted, and formally generated artifacts SHALL retain
+the bound source IDs/versions and captured values required for historical evidence.
+Later canonical changes SHALL not alter them.
+
+## REF-FR-006 — Staleness Visibility
+
+**Priority:** P1
+
+Authorized users MAY compare a historical/current snapshot with the latest canonical
+source and see that it is outdated without replacing the snapshot.
 
 ---
 
@@ -1849,4 +2456,6 @@ A requirement is considered implemented only when:
 10_DEPLOYMENT_GUIDE.md
 11_SECURITY_SPECIFICATION.md
 12_CURRENT_STATUS.md
+13_IMPLEMENTATION_ROADMAP.md
+14_PROJECT_USAGE_SCENARIOS.md
 ```

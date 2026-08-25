@@ -1,42 +1,46 @@
-import { Alert, Button, CircularProgress, List, ListItem, ListItemText, Stack, TextField, Typography } from '@mui/material'
+import { Alert, Autocomplete, Button, CircularProgress, List, ListItem, ListItemText, Stack, TextField, Typography } from '@mui/material'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { useState, type FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
-import { z } from 'zod'
 
 import { ApiError } from '../../api/client'
 import {
   addWorkspaceMember,
+  listWorkspaceRoleOptions,
   listWorkspaceMembers,
   removeWorkspaceMember,
+  searchWorkspaceMemberOptions,
   type WorkspaceMemberCreate,
+  type WorkspacePersonOption,
+  type WorkspaceRoleOption,
 } from './workspaceApi'
-
-const memberSchema = z.object({
-  user_id: z.uuid(),
-  role_id: z.uuid(),
-})
 
 export function WorkspaceMemberManager({ workspaceId }: { workspaceId: string }) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
   const [mutationError, setMutationError] = useState<string | null>(null)
-  const {
-    formState: { errors, isSubmitting },
-    handleSubmit,
-    register,
-    reset,
-    setError,
-  } = useForm<WorkspaceMemberCreate>()
+  const [personSearch, setPersonSearch] = useState('')
+  const [selectedPerson, setSelectedPerson] = useState<WorkspacePersonOption | null>(null)
+  const [selectedRole, setSelectedRole] = useState<WorkspaceRoleOption | null>(null)
   const members = useQuery({
     queryKey: ['workspace-members', workspaceId],
     queryFn: () => listWorkspaceMembers(workspaceId),
   })
+  const people = useQuery({
+    queryKey: ['workspace-member-options', workspaceId, personSearch],
+    queryFn: () => searchWorkspaceMemberOptions(workspaceId, personSearch.trim()),
+    enabled: personSearch.trim().length >= 2,
+  })
+  const roles = useQuery({
+    queryKey: ['workspace-role-options', workspaceId],
+    queryFn: () => listWorkspaceRoleOptions(workspaceId),
+  })
   const addMember = useMutation({
     mutationFn: (values: WorkspaceMemberCreate) => addWorkspaceMember(workspaceId, values),
     onSuccess: async () => {
-      reset()
+      setSelectedPerson(null)
+      setSelectedRole(null)
+      setPersonSearch('')
       await queryClient.invalidateQueries({ queryKey: ['workspace-members', workspaceId] })
     },
   })
@@ -47,20 +51,15 @@ export function WorkspaceMemberManager({ workspaceId }: { workspaceId: string })
     },
   })
 
-  const submit = handleSubmit(async (values) => {
+  const submit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
     setMutationError(null)
-    const parsed = memberSchema.safeParse(values)
-    if (!parsed.success) {
-      if (!z.uuid().safeParse(values.user_id).success) {
-        setError('user_id', { message: t('workspaces.invalidUserId') })
-      }
-      if (!z.uuid().safeParse(values.role_id).success) {
-        setError('role_id', { message: t('workspaces.invalidRoleId') })
-      }
+    if (selectedPerson === null || selectedRole === null) {
+      setMutationError(t('workspaces.memberSelectionRequired'))
       return
     }
     try {
-      await addMember.mutateAsync(parsed.data)
+      await addMember.mutateAsync({ user_id: selectedPerson.id, role_id: selectedRole.id })
     } catch (error) {
       setMutationError(
         error instanceof ApiError && error.code === 'RESOURCE_CONFLICT'
@@ -68,7 +67,7 @@ export function WorkspaceMemberManager({ workspaceId }: { workspaceId: string })
           : t('workspaces.memberMutationFailed'),
       )
     }
-  })
+  }
 
   const remove = async (userId: string) => {
     setMutationError(null)
@@ -112,21 +111,27 @@ export function WorkspaceMemberManager({ workspaceId }: { workspaceId: string })
         <Typography component="h3" variant="h6">
           {t('workspaces.addMember')}
         </Typography>
-        <TextField
-          error={errors.user_id !== undefined}
-          helperText={errors.user_id?.message}
-          label={t('workspaces.userId')}
-          slotProps={{ htmlInput: { dir: 'ltr' } }}
-          {...register('user_id')}
+        <Autocomplete
+          filterOptions={(options) => options}
+          getOptionLabel={(option) => option.display_name ?? option.username}
+          inputValue={personSearch}
+          loading={people.isFetching}
+          noOptionsText={personSearch.trim().length < 2 ? t('workspaces.searchPersonHelp') : t('workspaces.noPeopleFound')}
+          onChange={(_, value) => setSelectedPerson(value)}
+          onInputChange={(_, value) => setPersonSearch(value)}
+          options={people.data ?? []}
+          renderInput={(params) => <TextField {...params} label={t('workspaces.person')} />}
+          value={selectedPerson}
         />
-        <TextField
-          error={errors.role_id !== undefined}
-          helperText={errors.role_id?.message}
-          label={t('workspaces.roleId')}
-          slotProps={{ htmlInput: { dir: 'ltr' } }}
-          {...register('role_id')}
+        <Autocomplete
+          getOptionLabel={(option) => option.name}
+          loading={roles.isFetching}
+          onChange={(_, value) => setSelectedRole(value)}
+          options={roles.data ?? []}
+          renderInput={(params) => <TextField {...params} label={t('workspaces.role')} />}
+          value={selectedRole}
         />
-        <Button disabled={isSubmitting} type="submit" variant="contained">
+        <Button disabled={addMember.isPending} type="submit" variant="contained">
           {t('workspaces.addMember')}
         </Button>
       </Stack>

@@ -245,6 +245,11 @@ SYSTEM_ADMIN
 PROJECT_MANAGER
 ANALYST
 VIEWER
+PROJECT_OFFICER
+TECHNICAL_REVIEWER
+CONTRACTOR_PROJECT_LEADER
+CONTRACTOR_TEAM_MEMBER
+EMPLOYER_REPRESENTATIVE
 ```
 
 ---
@@ -1123,6 +1128,131 @@ CREATE TABLE phase_deliverables (
 );
 ```
 
+The initial `phase_deliverables` structure is an MVP association. Before governed
+delivery is implemented, `DEL-DB-001` SHALL evolve it through Alembic into a generic
+versioned deliverable/submission model. The four-state check above SHALL NOT be used
+as the full contractor-review, external-review, or acceptance workflow.
+
+---
+
+# 15.3 Versioned Governance Model
+
+`GOV-DB-001`, `DEL-DB-001`, and `ACC-DB-001` SHALL define normalized generic records
+for:
+
+```text
+workflow definitions and immutable published versions
+state/transition definitions and policy configuration
+workflow instances and append-only transition events
+generic deliverables and scoped assignments
+immutable submission/resubmission packages and withdrawals
+version-bound review outcomes and sign-offs
+phase/final acceptance packages and decisions
+acceptance conditions, evidence, verification, and closure
+```
+
+Every operational record SHALL carry `workspace_id` directly when needed for secure
+querying and composite workspace integrity. Referenced entities, documents, forms,
+phases, users, and configuration SHALL belong to the same workspace. Transition and
+decision history SHALL not be updated in place.
+
+Workflow status names and transition graphs are metadata. Stable engine-level states
+MAY be constrained where required for idempotency, publication, or immutable event
+integrity, but project-specific workflow labels SHALL NOT become SQL check values.
+
+`GOV-DB-001` implements this foundation through:
+
+```text
+workflow_definitions
+workflow_definition_versions
+workflow_state_definitions
+workflow_transition_definitions
+workflow_instances
+workflow_assignments
+workflow_transition_events
+```
+
+Definitions have workspace-unique generated keys. Draft/published/retired is an
+engine publication state; project lifecycle labels remain state-definition data.
+Composite `(id, definition_version_id, workspace_id)` constraints prevent transitions,
+instances, and events from binding states from another definition or workspace.
+Instances retain their published definition-version ID and optimistic version.
+Transition events retain the prior/resulting state, action, authority kind, actor,
+target artifact version, resulting instance version, reason, context, idempotency
+key, and occurrence time. No ordinary update/delete API exists for event history.
+
+`DEL-DB-001` implements governed delivery evidence through:
+
+```text
+deliverables
+deliverable_assignments
+deliverable_versions
+deliverable_package_items
+submissions
+submission_recipients
+submission_withdrawals
+```
+
+Deliverables belong directly to one phase and workspace, use server-generated stable
+keys, and retain generic owner/contributor/internal-reviewer assignments, configured
+required-content metadata, and internal/official dates. Deliverable versions and
+their package items are append-only snapshots. Package items identify an allowlisted
+generic resource kind (`ENTITY`, `DOCUMENT_VERSION`, or `FORM_INSTANCE`), the exact
+resource/version, a display-label snapshot, and requirement binding; service policy
+validates same-workspace ownership before insertion.
+
+Each formal submission binds one immutable deliverable version, submitter, bounded
+recipient set, statement, related comment references, context snapshot, sequence,
+idempotency key, and prior submission when resubmitting. Withdrawal is a separate
+append-only reasoned event; submission evidence is never updated or deleted in
+place. Composite workspace foreign keys prevent cross-workspace deliverable,
+version, prior-submission, recipient, or withdrawal associations.
+
+`WORK-DB-001` and `COM-DB-001` SHALL similarly use generic workspace-scoped work
+items/dependencies/risks/issues and explicit-kind communication/notification records.
+Dependencies require cycle prevention. Notification and thread targets require
+validated polymorphic references or a supported typed target registry.
+
+---
+
+# 15.4 Party, Context, Assistance, and Impact Model
+
+Future PARTY/CTX/ASSIST/REF migrations SHALL provide generic records for:
+
+```text
+parties / organizations
+project-party role assignments and effective periods
+user-to-party affiliations within project membership
+versioned context/binding definitions with explicit binding mode
+formal context/source snapshots
+suggestion policies and bounded suggestion candidates/provenance/status
+material-change impact/review markers and idempotent notification keys
+```
+
+Party kinds and project roles are configuration, not separate employer/contractor
+tables. Workspace/project scope SHALL be directly queryable and enforced by foreign
+keys or service-validated composite constraints.
+
+Binding rows/configuration SHALL distinguish `LIVE_REFERENCE`,
+`READ_ONLY_INHERITED`, `EDITABLE_SUGGESTION`, `COPY_ON_CREATE`, and
+`SNAPSHOT_ON_SUBMIT`. A live binding stores a source reference/path rather than a
+duplicated canonical value. A formal snapshot stores the source resource ID/version,
+resolved value required for evidence, binding definition version, and capture time.
+
+Suggestion persistence SHALL retain policy version, target field/row, candidate,
+reason, source kind/reference/version where permitted, confidence, deterministic/AI
+classification, status, actor decision, and expiry/obsolescence information. It SHALL
+not create a second canonical value store.
+
+Impact projections SHOULD be derived from canonical relationships/bindings and may
+use indexed dependency edges/materialized markers for bounded performance. They
+SHALL NOT use cascading updates that rewrite historical or user-entered values.
+
+The existing `import_jobs` model requires a migration before contextual import to
+bind, when applicable, `phase_id`, governed deliverable/work-item ID, target entity or
+form definition, and originating context/action. All bindings must match the job
+workspace. Import history remains even if navigation context later changes.
+
 ---
 
 # 16. Review and Comment Model
@@ -1154,6 +1284,27 @@ ON review_comments(resource_type, resource_id);
 ```
 
 Because `resource_id` is polymorphic, referential integrity SHALL be enforced in service logic.
+
+---
+
+# 16.2 Report Template and Generated Report Model
+
+`RPT-DB-002` SHALL add generic versioned persistence for:
+
+```text
+report template identity
+draft/published/retired template versions
+ordered sections/widgets and safe binding definitions
+required/optional content and generation parameters
+generated report run/provenance/status
+immutable output document/version reference
+source resource/version snapshots and data-as-of time
+```
+
+Published report-template versions and completed formal report runs are immutable.
+Bindings SHALL reference allowlisted server data-source identifiers and validated
+paths/aggregations, never raw SQL or executable template content. Branding assets use
+the authorized document/object-storage model.
 
 ---
 
@@ -1468,6 +1619,11 @@ SYSTEM_ADMIN
 PROJECT_MANAGER
 ANALYST
 VIEWER
+PROJECT_OFFICER
+TECHNICAL_REVIEWER
+CONTRACTOR_PROJECT_LEADER
+CONTRACTOR_TEAM_MEMBER
+EMPLOYER_REPRESENTATIVE
 ```
 
 Permissions:
@@ -1490,6 +1646,18 @@ PHASE_UNLOCK
 DASHBOARD_READ
 DASHBOARD_MANAGE
 AUDIT_READ
+DELIVERABLE_CONTRIBUTE
+DELIVERABLE_INTERNAL_REVIEW
+SUBMISSION_CREATE
+PROJECT_MONITOR
+PROJECT_REVIEW
+PROJECT_RECOMMEND
+TECHNICAL_REVIEW
+TECHNICAL_SIGN_OFF
+ACCEPTANCE_DECIDE
+CONDITION_VERIFY
+COMMUNICATION_MANAGE
+WORKFLOW_CONFIGURE
 ```
 
 Seed operations SHALL be idempotent.
@@ -1599,6 +1767,16 @@ DOC-FR-*   → documents, document_versions
 IMP-FR-*   → import_profiles, import_mappings, import_jobs, import_conflicts
 PHASE-FR-* → phases, phase_deliverables
 REV-FR-*   → review_comments
+GOV-FR-*   → workflow definitions/versions/instances/transition events, deliverables/submissions
+WORK-FR-*  → generic work items/dependencies/risks/issues
+COM-FR-*   → typed threads/messages/announcements/notifications
+ACC-FR-*   → acceptance packages/decisions/conditions/evidence
+CONF-FR-*  → versioned configuration packages/change history
+PARTY-FR-* → parties/project roles/user affiliations
+CTX-FR-*   → versioned bindings/context snapshots
+ASSIST-FR-* → suggestion policies/candidates/provenance
+REF-FR-*   → canonical references/impact markers/snapshots
+UX-FR-*    → generated-key and selector-supporting constraints
 RPT-FR-*   → dashboards
 AUD-FR-*   → audit_logs
 ```
@@ -1619,4 +1797,6 @@ AUD-FR-*   → audit_logs
 10_DEPLOYMENT_GUIDE.md
 11_SECURITY_SPECIFICATION.md
 12_CURRENT_STATUS.md
+13_IMPLEMENTATION_ROADMAP.md
+14_PROJECT_USAGE_SCENARIOS.md
 ```

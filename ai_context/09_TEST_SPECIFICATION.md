@@ -618,6 +618,43 @@ Mutation rejected when relevant phase locked.
 
 ---
 
+# TEST-CTX-001 — Authorized Context Header
+
+Opening a form from a phase/service deliverable returns and renders the configured
+project, phase, service/entity, party, date/state, and lock context without requiring
+raw ID entry. Forged or cross-workspace context is rejected.
+
+# TEST-CTX-002 — Binding Mode Semantics
+
+Verify live references update current views, read-only inherited values cannot be
+mutated, editable suggestions can diverge, copy-on-create does not later change, and
+snapshot-on-submit captures source ID/version/value atomically.
+
+# TEST-ASSIST-001 — Manual and Import Suggestions
+
+The same candidate contract works for a manual form and import row; every suggestion
+includes reason/provenance and deterministic/AI classification. Generation does not
+mutate canonical/draft values.
+
+# TEST-ASSIST-002 — Accept/Edit/Reject Safety
+
+Accept/edit/reject and bounded bulk decisions enforce permission, validation,
+concurrency, workspace, field state, and lock policy. Rejected/obsolete candidates do
+not repeatedly reappear without changed evidence or explicit regeneration.
+
+# TEST-REF-001 — Current Propagation and Historical Stability
+
+Changing a canonical service is visible through current live bindings and authorized
+impact projections while submitted forms, deliverables, accepted packages, and
+generated formal reports retain their captured source/version snapshots.
+
+# TEST-REF-002 — Impact Isolation and Idempotency
+
+Impact markers/notifications are bounded, workspace-isolated, permission-filtered,
+and idempotent; they do not mutate user values, unrelated relationships, or history.
+
+---
+
 # 18. Frontend Component Tests
 
 Required component tests include:
@@ -630,6 +667,11 @@ PermissionGuard
 EntityTreeViewer
 DocumentPanel
 ImportWizard
+FormContextHeader
+SuggestionPanel
+HumanReadableSelector
+NaturalRelationshipPanel
+ReportTemplateDesigner
 ```
 
 ---
@@ -679,6 +721,35 @@ equivalence while proving canonical display text is not overwritten.
 
 Persian metadata and user values SHALL be tested as untrusted Unicode input under
 the normal XSS, validation, authorization, and workspace-isolation controls.
+
+---
+
+# 19.2 Human-Centered UX Contract Tests
+
+## TEST-UX-001 — No Raw Identifier Entry
+
+Membership, parent/entity/reference, relationship, phase/deliverable, and ordinary
+configuration flows SHALL use named searchable selectors and SHALL not present UUID
+text fields. Direct API authorization remains independently tested.
+
+## TEST-UX-002 — Generated Technical Keys
+
+Creating an information type, attribute, form section/field, workflow item, or other
+supported configurable resource with a human-readable name and no key SHALL receive a
+unique stable server-generated key. Advanced explicit-key validation and post-publish
+immutability SHALL be tested separately.
+
+## TEST-UX-003 — Natural Relationship Flow
+
+From a current record, only compatible localized relation labels/authorized target
+records appear. The UI creates the correct directional API payload without displaying
+direction/cardinality/IDs and renders forward/reverse natural-language results.
+
+## TEST-UX-004 — Progressive Administration
+
+Critical administration flows SHALL test list/add/edit/preview/publish behavior,
+plain-language labels, defaults, Advanced disclosure, validation, and safe
+remove/archive impact warnings.
 
 ---
 
@@ -897,6 +968,28 @@ Import audit exists with counts and user.
 
 ---
 
+# TEST-IMP-020 — Contextual Import Binding
+
+An import started from a phase deliverable inherits the authorized workspace, phase,
+deliverable, target form/entity type, and permitted profile; committed records and
+history retain those associations.
+
+---
+
+# TEST-IMP-021 — Locked or Forged Import Context
+
+Locked-phase import and mixed/cross-workspace context IDs are rejected both at job
+creation and commit recheck without target-existence leakage.
+
+---
+
+# TEST-IMP-022 — Relationship Preservation
+
+Updating explicitly mapped fields through import preserves unrelated existing entity
+relationships. Only explicitly mapped/reviewed relationship changes may mutate links.
+
+---
+
 # 26. Phase and Lock Tests
 
 # TEST-PHASE-001 — Lock Phase
@@ -951,6 +1044,48 @@ P1:
 - revision requested,
 - preserve author/time.
 
+# TEST-GOV-001 — Authority Separation Matrix
+
+For every governed transition, test allow and deny cases for the seven baseline
+personas plus a custom role. At minimum prove:
+
+- contractor contribution does not grant formal submission,
+- contractor formal submission does not grant project review,
+- Project Officer monitoring does not grant Project Manager decisions,
+- technical recommendation/sign-off does not grant employer acceptance,
+- employer acceptance does not grant contractor work management,
+- frontend-hidden actions remain rejected through direct API calls.
+
+# TEST-GOV-002 — Transition Version and Audit Integrity
+
+Each internal review, submission, withdrawal, resubmission, recommendation, sign-off,
+reopening, and acceptance transition SHALL retain workflow-definition version,
+target artifact version, actor, authority context, time, prior/resulting state, and
+an immutable audit event.
+
+# TEST-GOV-003 — Governed Resource Isolation
+
+Cross-workspace IDs for workflows, assignments, submissions, comments, threads,
+notifications, acceptance packages, and conditions SHALL be denied without resource
+existence leakage. Mixed-workspace bulk requests SHALL fail atomically.
+
+# TEST-ACC-001 — Acceptance Gate Enforcement
+
+Final acceptance SHALL be rejected while any configured mandatory phase,
+deliverable, critical finding, or acceptance condition remains unsatisfied.
+
+# TEST-ACC-002 — Conditional Acceptance Closure
+
+Only configured verifiers may verify evidence; conditional acceptance becomes full
+acceptance only when every mandatory condition is satisfied. Rejection and reopening
+retain the earlier evidence and decisions.
+
+# TEST-COM-001 — Communication Visibility
+
+Internal contractor notes, Project Officer monitoring notes, formal review comments,
+employer comments, threads, announcements, reminders, and notifications SHALL obey
+their explicit visibility and linked-target authorization.
+
 ---
 
 # 28. Dashboard Tests
@@ -970,6 +1105,28 @@ No cross-workspace aggregation.
 # TEST-RPT-003 — Arbitrary SQL Rejected
 
 Browser cannot supply executable SQL.
+
+---
+
+# TEST-RPT-004 — Versioned Report Template
+
+Draft/preview/publish/new-version behavior preserves immutable published versions and
+validates allowlisted sections/bindings and required project/contractor details.
+
+---
+
+# TEST-RPT-005 — Generated Report Provenance
+
+A generated formal report retains template version, data-as-of time, parameters,
+authorized source IDs/versions, immutable output document version, actor, and audit.
+Later source/template changes do not alter it.
+
+---
+
+# TEST-RPT-006 — Unsafe Template Rejected
+
+Reject SQL, executable expressions, unsafe markup/resources, cross-workspace/hidden
+bindings, oversized generation, and missing required sections.
 
 ---
 
@@ -1248,6 +1405,55 @@ Expected all rejected.
 
 ---
 
+# 45.1 Governed Delivery and Acceptance Scenario
+
+## E2E-003
+
+```text
+1. Administrator publishes a configurable deliverable workflow.
+2. Contractor Team Member prepares a version and requests internal review.
+3. Verify the Team Member cannot formally submit it.
+4. Contractor Project Leader returns one internal correction.
+5. Team Member revises and returns the work.
+6. Contractor Project Leader marks it ready and formally submits the exact version.
+7. Project Officer sees the queue and records a monitoring flag but cannot decide it.
+8. Technical Reviewer records a major comment and requests revision.
+9. Contractor resolves the assigned action through internal review and resubmission.
+10. Technical Reviewer recommends approval; verify this is not acceptance.
+11. Project Manager recommends phase acceptance.
+12. Employer Representative conditionally accepts with one explicit condition.
+13. Authorized verifier accepts evidence for the condition.
+14. Employer Representative closes conditional acceptance.
+15. Verify immutable submission, review, decision, condition, notification, and audit history.
+16. Repeat protected reads/transitions with a foreign-workspace actor and verify denial.
+```
+
+---
+
+# 45.2 Contextual Form, Import, Change, and Report Scenario
+
+## E2E-004
+
+```text
+1. Administrator creates an organization/party for employer and contractor using names, not IDs.
+2. Administrator creates a service information type/form using generated hidden keys.
+3. Administrator configures project/service live fields, editable suggestions, and snapshot-on-submit fields.
+4. Administrator publishes a report template requiring project and contractor details.
+5. User opens a phase deliverable for a service and sees project/phase/service/party context above the form.
+6. User accepts one explainable suggestion, rejects another, edits a third, and saves.
+7. User launches embedded workbook import from the deliverable; known target/profile/context are inherited.
+8. User completes dry run/conflicts/commit and returns to the same deliverable.
+9. Verify imported updates preserve unrelated service relationships.
+10. Authorized manager changes the canonical service and sees affected current project items.
+11. Verify current live fields show the change and submitted snapshots remain unchanged.
+12. Generate the configured progress report and verify required project/contractor content and provenance.
+13. Change the service/template and verify the completed formal report remains unchanged.
+14. Verify no normal workflow asked for UUID, raw stable key, direction/cardinality, or matching discriminator.
+15. Repeat context, suggestion, impact, import, and report access with a foreign-workspace actor and verify denial.
+```
+
+---
+
 # 46. Regression Gate
 
 Before merging to protected branch:
@@ -1401,4 +1607,6 @@ A feature is considered tested when:
 10_DEPLOYMENT_GUIDE.md
 11_SECURITY_SPECIFICATION.md
 12_CURRENT_STATUS.md
+13_IMPLEMENTATION_ROADMAP.md
+14_PROJECT_USAGE_SCENARIOS.md
 ```

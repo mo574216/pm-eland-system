@@ -202,6 +202,19 @@ presentation formatting belongs to the frontend localization layer.
 
 ---
 
+## API-RULE-009 — Human-Readable Selector Contracts
+
+UUIDs remain API identifiers, but user-facing workflows SHALL consume authorized,
+searchable, paginated lookup resources containing at minimum `id`, localized display
+label, resource kind, and safe disambiguating context. Selector APIs SHALL support
+bounded search and SHALL not expose unauthorized identities/resources.
+
+Create requests SHOULD omit stable technical keys when the server can generate them.
+Where an explicit key is accepted, it belongs to an Advanced/integration contract,
+is server-normalized/validated, and returns collision errors through stable codes.
+
+---
+
 # 3. HTTP Status Codes
 
 The API SHALL use standard HTTP semantics.
@@ -616,6 +629,24 @@ insertion SHALL commit in one transaction.
 
 ---
 
+# 7.8 GET /workspaces/{workspace_id}/member-options
+
+Search active users who are not already members. Requires `WORKSPACE_MANAGE`, a
+trimmed search of 2-120 characters, and a result limit of 1-20 (default 10). Results
+contain only `id`, `username`, and `display_name`; no unbounded directory listing or
+total count is returned.
+
+---
+
+# 7.9 GET /workspaces/{workspace_id}/role-options
+
+List human-readable roles the acting workspace manager may assign. Requires
+`WORKSPACE_MANAGE`. A role is returned only when every permission it grants is in
+the actor's effective global or workspace permission set. The membership mutation
+repeats this authorization check and does not trust the selector result.
+
+---
+
 # 8. Metadata API
 
 # 8.1 POST /workspaces/{workspace_id}/entity-types
@@ -632,7 +663,6 @@ METADATA_MANAGE
 
 ```json
 {
-  "key": "business_process",
   "name": "Business Process",
   "plural_name": "Business Processes",
   "description": "A configurable process concept",
@@ -648,8 +678,11 @@ METADATA_MANAGE
 
 ### Validation
 
-- key unique within workspace,
-- key must follow stable naming rules.
+- `key` is optional and is intended only for advanced integration clients,
+- when omitted, the server generates `type_<32 lowercase hexadecimal characters>`,
+- an explicit key must follow stable naming rules and be unique within the workspace,
+- generated and explicit keys are immutable after creation; database uniqueness is
+  the final collision guard.
 
 ---
 
@@ -701,7 +734,6 @@ Create attribute.
 
 ```json
 {
-  "key": "risk_level",
   "label": "Risk Level",
   "data_type": "ENUM",
   "is_required": true,
@@ -1016,6 +1048,10 @@ Create relationship metadata.
 }
 ```
 
+`key` is optional. When omitted, the server generates
+`attribute_<32 lowercase hexadecimal characters>`. Advanced clients may continue to
+send a valid explicit key; generated and explicit attribute keys are immutable.
+
 `configuration.allow_duplicates` defaults to `true`. When explicitly `false`,
 creation SHALL reject an active relationship with the same type and ordered endpoints.
 For undirected relationship types, reversed endpoints are the same duplicate pair.
@@ -1249,6 +1285,13 @@ Return normalized rendering contract.
 entity_id
 ```
 
+CTX-BE-001 SHALL extend canonical OpenAPI before implementation with a discriminated
+context request supporting applicable `phase_id`, `deliverable_id`, and `work_item_id`.
+Such values establish requested context only. The backend derives and authorizes the
+effective context and returns human-readable context-header items, binding mode,
+source provenance/version where allowed, current/locked state, and field suggestion
+policy descriptors. A client-supplied context ID never grants access.
+
 If `entity_id` is supplied, response MAY include:
 
 - inherited values,
@@ -1394,6 +1437,21 @@ Manager/reviewer action.
 ### Permission
 
 Review permission defined in security specification.
+
+---
+
+# 12.6 Form Suggestion Contract Rules
+
+Before ASSIST implementation, OpenAPI SHALL define bounded operations to generate,
+list, accept/edit, reject, and optionally regenerate suggestions for a form draft or
+import review. Candidate schemas SHALL contain target field/row, candidate value,
+reason, source kind and safe provenance, confidence where meaningful,
+deterministic/AI indicator, status, and concurrency token.
+
+Acceptance SHALL send the suggestion ID and explicit chosen value and SHALL execute
+normal validation, authorization, lock, and optimistic-concurrency checks. Suggestion
+generation SHALL not mutate the draft. Bulk decisions are bounded and atomic per
+resource.
 
 ---
 
@@ -1608,6 +1666,10 @@ replace it. Supported `type` values are `ENTITY_ID`, `UNIQUE_ATTRIBUTE`,
 `COMPOSITE_KEY`, and `PARENT_AND_KEY`; referenced keys must correspond to mappings
 in the same profile.
 
+Profiles and mappings are reusable configuration managed from the Administration
+console. Operational users invoke import from an eligible phase, deliverable, form,
+or output-specification action rather than ordinary top-level project navigation.
+
 # 14.1 POST /workspaces/{workspace_id}/imports
 
 Upload import file and create import job.
@@ -1618,6 +1680,13 @@ Upload import file and create import job.
 file
 import_profile_id (optional)
 ```
+
+The current workspace upload shape remains a compatibility/support contract until
+IMP-BE-007 publishes a discriminated contextual request carrying the applicable
+`phase_id`, governed `deliverable_id`, and configured form/entity target. Normal frontend workflows
+SHALL not ask users to reselect a target already established by an authorized
+phase/deliverable/form action. The backend SHALL revalidate context compatibility,
+same-workspace ownership, import permission, and phase/resource lock state.
 
 ### Success
 
@@ -1771,6 +1840,11 @@ REPLACE
 SKIP
 ```
 
+Resolution semantics are field-level. `SKIP` retains the persisted value;
+`REPLACE` uses the imported value; `MERGE` shallow-merges object members, appends
+previously absent list members, and uses the imported value for scalar fields.
+No resolution is implicit.
+
 ---
 
 # 14.7 POST /imports/{import_job_id}/resolve-bulk
@@ -1794,7 +1868,8 @@ Commit import.
 
 ### Headers
 
-Recommended:
+Optional. When omitted, the server derives a stable key from the import job. A
+caller-supplied key SHALL be 1 through 255 characters.
 
 ```http
 Idempotency-Key: <client-generated-key>
@@ -1809,23 +1884,35 @@ Idempotency-Key: <client-generated-key>
 
 ### Success
 
-For background execution:
-
-```text
-202 Accepted
-```
+The current bounded implementation completes synchronously and returns `200 OK`.
+The same job and idempotency key replay the stored completion summary without
+performing canonical writes again. A different key after completion returns
+`IMPORT_ALREADY_COMMITTED`.
 
 ```json
 {
   "success": true,
   "data": {
     "import_job_id": "...",
-    "status": "COMMITTING"
+    "status": "COMPLETED",
+    "summary": {
+      "rows_read": 128,
+      "records_created": 80,
+      "records_updated": 32,
+      "records_unchanged": 12,
+      "records_skipped": 4,
+      "conflicts_resolved": 9,
+      "invalid_rows": 0
+    }
   },
   "error": null,
   "meta": {}
 }
 ```
+
+Partial commit is not supported. Any dry-run validation error blocks commit; a
+changed source/profile preview, stale entity version, hierarchy cycle, or failed
+write rolls back the entire canonical transaction.
 
 ---
 
@@ -1845,7 +1932,6 @@ Create phase.
 
 ```json
 {
-  "key": "current_state",
   "name": "Current State Analysis",
   "sequence_number": 1,
   "description": "..."
@@ -1863,6 +1949,11 @@ Return phases ordered by `sequence_number`.
 # 15.3 PATCH /phases/{phase_id}
 
 Update unlocked phase metadata.
+
+Phase updates require the current `version`; stale writes return `STALE_VERSION` and
+locked phases return `RESOURCE_LOCKED`. The backend shared lock policy is
+authoritative. Phase create `key` is optional and advanced-only; omission generates
+an immutable `phase_<32 lowercase hexadecimal characters>` key.
 
 ---
 
@@ -1952,7 +2043,106 @@ Resolve comment.
 
 ---
 
+# 16.4 Governed Delivery API Contract Rules
+
+The initial review endpoints cover the MVP comment flow only. They SHALL NOT be
+interpreted as technical sign-off, project-manager recommendation, or employer
+acceptance.
+
+Before GOV/DEL/SUB/ACC implementation, canonical OpenAPI paths and schemas SHALL be
+defined for generic workflow definitions/versions, instances/actions/transitions,
+deliverables/assignments, immutable submissions, version-bound review outcomes,
+acceptance packages/decisions, and conditions/evidence.
+
+Every transition request SHALL include optimistic concurrency or an equivalent
+current-state precondition and an idempotency key for externally repeatable formal
+actions. Responses SHALL identify:
+
+```text
+workspace_id
+resource/instance ID
+workflow definition version
+previous and current state
+performed action and authority kind
+actor and timestamp
+bound artifact/submission version where applicable
+available next actions (UX hint only)
+```
+
+Separate routes or explicit discriminated commands SHALL represent internal review,
+formal submission, withdrawal, technical outcome/sign-off, manager recommendation,
+employer decision, and condition verification. A generic untyped `/approve` endpoint
+is prohibited.
+
+Cross-workspace or unauthorized IDs SHALL use the standard safe not-found/access
+behavior. Bulk operations SHALL be bounded, single-workspace, and atomic. Formal
+history records SHALL expose create/transition operations but no ordinary update or
+delete endpoint.
+
+Implemented generic workflow foundation routes:
+
+```text
+POST /workspaces/{workspace_id}/workflow-definitions
+POST /workflow-definitions/{definition_id}/versions
+POST /workflow-definition-versions/{version_id}/publish
+POST /workspaces/{workspace_id}/workflow-instances
+GET  /workflow-instances/{instance_id}
+GET  /workflow-instances/{instance_id}/history
+POST /workflow-instances/{instance_id}/actions/{action_key}
+```
+
+Definition creation accepts bounded state/transition metadata and stable permission
+codes only. Publication makes that version immutable. Instance creation accepts only
+allowlisted target kinds and active same-workspace assignees. Transition requests
+require `expected_version`, an `idempotency_key`, and a reason when configured;
+returned `available_actions` are permission/assignment-filtered UX hints and never
+replace server-side transition authorization.
+
+Implemented phase-context deliverable and submission routes:
+
+```text
+GET  /phases/{phase_id}/deliverables
+POST /phases/{phase_id}/deliverables
+GET  /deliverables/{deliverable_id}
+GET  /deliverables/{deliverable_id}/package-options
+POST /deliverables/{deliverable_id}/versions
+POST /deliverables/{deliverable_id}/submissions
+POST /submissions/{submission_id}/withdrawals
+```
+
+Creation uses named-selector IDs resolved by the frontend but revalidates active
+same-workspace membership in the backend. Package-option search requires at least
+two characters, is capped at 20 safe results, and requires both contribution
+permission and a deliverable owner/contributor assignment. Creating a package
+version snapshots exact allowlisted resources and their versions. Formal submission
+requires `SUBMISSION_CREATE`, the owner assignment, readiness, active same-workspace
+recipients, an immutable package version, correct prior-submission provenance, and
+an idempotency key. Only the latest formal submission may be withdrawn, with a
+non-empty retained reason and audit record. Locked phases reject every mutation.
+
+---
+
+# 16.5 Work, Communication, and Notification Contract Rules
+
+Work items, dependencies, risks/issues, threads, notes, announcements, reminders,
+and notifications SHALL use typed/discriminated contracts with explicit workspace,
+target kind/ID, visibility, status, assignment/recipient, and version fields where
+mutable. APIs SHALL not accept arbitrary recipient expansion, workflow expressions,
+query code, or polymorphic target kinds outside server allowlists.
+
+---
+
 # 17. Dashboard API
+
+# 17.0 GET /workspaces/{workspace_id}/dashboard-summary
+
+Return the server-defined MVP KPI projection for an accessible workspace:
+active entity count, active document count, non-archived/completed phase totals and
+percentage, and pending/completed phase-deliverable totals. Requires
+`DASHBOARD_READ`. Every aggregate is constrained by the authorized workspace ID;
+clients cannot provide SQL, field paths, filters, or executable expressions.
+
+---
 
 # 17.1 POST /workspaces/{workspace_id}/dashboards
 
@@ -2003,6 +2193,31 @@ Response MAY include multiple widgets:
   "meta": {}
 }
 ```
+
+---
+
+# 17.5 Report Template and Generation Contract Rules
+
+Before RPT-DB/BE-002 implementation, OpenAPI SHALL define versioned report-template
+draft, preview, publish, new-version, list/read, retire, generate, generation-status,
+and authorized download operations. Template schemas use discriminated allowlisted
+section/widget/binding kinds and required-content rules; raw SQL, code, and arbitrary
+external URLs are prohibited.
+
+A completed generation response SHALL identify template/version, data-as-of time,
+parameters, output document/version, source snapshot/provenance summary, actor,
+status, and audit correlation. Missing required authorized content SHALL return a
+field/section-addressable validation result rather than silently generating an
+incomplete formal report.
+
+---
+
+# 17.6 Reference Impact Contract Rules
+
+An authorized impact endpoint MAY list current resources affected by a canonical
+entity change using paginated typed targets, relationship/binding reason, current
+review marker, and safe navigation label. Historical snapshots are read-only and may
+offer a compare-to-current operation; there is no bulk “replace all snapshots” API.
 
 ---
 
@@ -2216,6 +2431,16 @@ DOC-FR-*   → /documents/*, /document-versions/*
 IMP-FR-*   → /imports/*
 PHASE-FR-* → /phases/*
 REV-FR-*   → /reviews/*
+GOV-FR-*   → contract-first workflow/deliverable/submission APIs
+WORK-FR-*  → contract-first work/risk/issue APIs
+COM-FR-*   → contract-first thread/announcement/notification APIs
+ACC-FR-*   → contract-first acceptance/condition APIs
+CONF-FR-*  → contract-first configuration lifecycle APIs
+PARTY-FR-* → contract-first party/affiliation/selector APIs
+CTX-FR-*   → form render/instance context contracts
+ASSIST-FR-* → contract-first suggestion APIs
+REF-FR-*   → relationships and contract-first impact/compare APIs
+UX-FR-*    → generated-key creates and authorized lookup APIs
 RPT-FR-*   → /dashboards/*
 AUD-FR-*   → /audit/*
 ```
@@ -2237,5 +2462,7 @@ AUD-FR-*   → /audit/*
 10_DEPLOYMENT_GUIDE.md
 11_SECURITY_SPECIFICATION.md
 12_CURRENT_STATUS.md
+13_IMPLEMENTATION_ROADMAP.md
+14_PROJECT_USAGE_SCENARIOS.md
 contracts/openapi.yaml
 ```

@@ -316,6 +316,48 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
+  /workspaces/{workspaceId}/member-options:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+    get:
+      tags: [Workspaces]
+      operationId: searchWorkspaceMemberOptions
+      summary: Search active non-members for an authorized workspace member selector
+      parameters:
+        - name: search
+          in: query
+          required: true
+          schema: {type: string, minLength: 2, maxLength: 120}
+        - name: limit
+          in: query
+          schema: {type: integer, minimum: 1, maximum: 20, default: 10}
+      responses:
+        '200':
+          description: Bounded person options
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessEnvelope'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /workspaces/{workspaceId}/role-options:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+    get:
+      tags: [Workspaces]
+      operationId: listWorkspaceRoleOptions
+      summary: List roles whose permissions the acting manager may assign
+      responses:
+        '200':
+          description: Assignable role options
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessEnvelope'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
   /workspaces/{workspaceId}/entity-types:
     parameters:
       - $ref: '#/components/parameters/WorkspaceId'
@@ -1423,16 +1465,75 @@ paths:
         - name: Idempotency-Key
           in: header
           required: false
-          schema: {type: string}
+          schema: {type: string, minLength: 1, maxLength: 255}
       responses:
-        '202':
-          description: Commit accepted
+        '200':
+          description: Import committed transactionally, or same-key result replayed
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/SuccessEnvelope'
         '409':
           $ref: '#/components/responses/Conflict'
+        '422': {$ref: '#/components/responses/ValidationError'}
+
+  /workspaces/{workspaceId}/phases:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+    get:
+      tags: [Phases]
+      operationId: listPhases
+      summary: List accessible workspace phases in sequence order
+      responses:
+        '200':
+          description: Phase list
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SuccessEnvelope'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+    post:
+      tags: [Phases]
+      operationId: createPhase
+      summary: Create an ordered workspace phase
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/PhaseCreate'}
+      responses:
+        '201':
+          description: Phase created
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SuccessEnvelope'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '409': {$ref: '#/components/responses/Conflict'}
+
+  /phases/{phaseId}:
+    patch:
+      tags: [Phases]
+      operationId: updatePhase
+      summary: Update unlocked phase metadata with optimistic concurrency
+      parameters:
+        - $ref: '#/components/parameters/PhaseId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/PhaseUpdate'}
+      responses:
+        '200':
+          description: Phase updated
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SuccessEnvelope'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '423':
+          description: Phase is locked
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ErrorEnvelope'}
 
   /phases/{phaseId}/lock:
     post:
@@ -1448,6 +1549,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SuccessEnvelope'
+        '403': {$ref: '#/components/responses/Forbidden'}
 
   /phases/{phaseId}/unlock:
     post:
@@ -1463,6 +1565,319 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SuccessEnvelope'
+        '403': {$ref: '#/components/responses/Forbidden'}
+
+  /phases/{phaseId}/deliverables:
+    parameters:
+      - $ref: '#/components/parameters/PhaseId'
+    get:
+      tags: [Deliverables]
+      operationId: listPhaseDeliverables
+      summary: List governed deliverables within an accessible phase
+      responses:
+        '200':
+          description: Phase deliverables with readiness and latest immutable evidence
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SuccessEnvelope'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+    post:
+      tags: [Deliverables]
+      operationId: createPhaseDeliverable
+      summary: Create a metadata-neutral deliverable with scoped people and requirements
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/DeliverableCreate'}
+      responses:
+        '201':
+          description: Deliverable created and audited
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SuccessEnvelope'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+        '423': {$ref: '#/components/responses/Locked'}
+
+  /deliverables/{deliverableId}:
+    get:
+      tags: [Deliverables]
+      operationId: getDeliverable
+      summary: Get a governed deliverable and current authorized projection
+      parameters:
+        - {name: deliverableId, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '200':
+          description: Deliverable projection
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SuccessEnvelope'}
+        '404': {$ref: '#/components/responses/NotFound'}
+
+  /deliverables/{deliverableId}/package-options:
+    get:
+      tags: [Deliverables]
+      operationId: listDeliverablePackageOptions
+      summary: Search bounded authorized content choices for a deliverable package
+      parameters:
+        - {name: deliverableId, in: path, required: true, schema: {type: string, format: uuid}}
+        - {name: kind, in: query, required: true, schema: {type: string, enum: [ENTITY, DOCUMENT_VERSION, FORM_INSTANCE]}}
+        - {name: search, in: query, required: true, schema: {type: string, minLength: 2, maxLength: 120}}
+        - {name: limit, in: query, schema: {type: integer, minimum: 1, maximum: 20, default: 10}}
+      responses:
+        '200':
+          description: Safe named resource options
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SuccessEnvelope'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+
+  /deliverables/{deliverableId}/versions:
+    post:
+      tags: [Deliverables]
+      operationId: createDeliverableVersion
+      summary: Freeze a new immutable deliverable package version
+      parameters:
+        - {name: deliverableId, in: path, required: true, schema: {type: string, format: uuid}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/DeliverableVersionCreate'}
+      responses:
+        '201':
+          description: Immutable package version created
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SuccessEnvelope'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+        '423': {$ref: '#/components/responses/Locked'}
+
+  /deliverables/{deliverableId}/submissions:
+    post:
+      tags: [Deliverables]
+      operationId: createFormalSubmission
+      summary: Formally submit or resubmit one immutable package version
+      parameters:
+        - {name: deliverableId, in: path, required: true, schema: {type: string, format: uuid}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/SubmissionCreate'}
+      responses:
+        '201':
+          description: Formal submission evidence created and audited
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SuccessEnvelope'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+        '423': {$ref: '#/components/responses/Locked'}
+
+  /submissions/{submissionId}/withdrawals:
+    post:
+      tags: [Deliverables]
+      operationId: withdrawFormalSubmission
+      summary: Append a reasoned withdrawal for the current formal submission
+      parameters:
+        - {name: submissionId, in: path, required: true, schema: {type: string, format: uuid}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/SubmissionWithdrawalCreate'}
+      responses:
+        '201':
+          description: Withdrawal history appended and audited
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SuccessEnvelope'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '423': {$ref: '#/components/responses/Locked'}
+
+  /workspaces/{workspaceId}/dashboard-summary:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+    get:
+      tags: [Dashboards]
+      operationId: getDashboardSummary
+      summary: Return safe server-defined workspace KPIs
+      responses:
+        '200':
+          description: Entity, document, phase, and deliverable KPI summary
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SuccessEnvelope'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+
+  /workspaces/{workspaceId}/audit:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+    get:
+      tags: [Audit]
+      operationId: getWorkspaceAuditHistory
+      summary: List authorized, read-only workspace audit history
+      parameters:
+        - {name: resource_type, in: query, schema: {type: string}}
+        - {name: resource_id, in: query, schema: {type: string, format: uuid}}
+        - {name: user_id, in: query, schema: {type: string, format: uuid}}
+        - {name: action, in: query, schema: {type: string}}
+        - {name: from, in: query, schema: {type: string, format: date-time}}
+        - {name: to, in: query, schema: {type: string, format: date-time}}
+        - {name: page, in: query, schema: {type: integer, minimum: 1, default: 1}}
+        - {name: page_size, in: query, schema: {type: integer, minimum: 1, maximum: 100, default: 25}}
+      responses:
+        '200':
+          description: Reverse-chronological audit history
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SuccessEnvelope'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+
+  /workspaces/{workspaceId}/workflow-definitions:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+    post:
+      tags: [Workflows]
+      operationId: createWorkflowDefinition
+      summary: Create a validated draft workflow graph
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/WorkflowDefinitionCreate'}
+      responses:
+        '201':
+          description: Draft definition and version created
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SuccessEnvelope'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+
+  /workflow-definition-versions/{versionId}/publish:
+    post:
+      tags: [Workflows]
+      operationId: publishWorkflowDefinitionVersion
+      summary: Publish an immutable workflow definition version
+      parameters:
+        - {name: versionId, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '200':
+          description: Published definition version
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SuccessEnvelope'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '409': {$ref: '#/components/responses/Conflict'}
+
+  /workflow-definitions/{definitionId}/versions:
+    post:
+      tags: [Workflows]
+      operationId: createWorkflowDefinitionVersion
+      summary: Create a successor draft version with optimistic concurrency
+      parameters:
+        - {name: definitionId, in: path, required: true, schema: {type: string, format: uuid}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/WorkflowDefinitionVersionCreate'}
+      responses:
+        '201':
+          description: Successor draft definition version
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SuccessEnvelope'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '409': {$ref: '#/components/responses/Conflict'}
+
+  /workspaces/{workspaceId}/workflow-instances:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+    post:
+      tags: [Workflows]
+      operationId: startWorkflowInstance
+      summary: Start a workflow instance for an allowlisted workspace target
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/WorkflowInstanceCreate'}
+      responses:
+        '201':
+          description: Workflow instance and authorized next actions
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SuccessEnvelope'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+
+  /workflow-instances/{instanceId}:
+    get:
+      tags: [Workflows]
+      operationId: getWorkflowInstance
+      summary: Retrieve current workflow state and authorized action hints
+      parameters:
+        - {name: instanceId, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '200':
+          description: Current workflow projection
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SuccessEnvelope'}
+        '404': {$ref: '#/components/responses/NotFound'}
+
+  /workflow-instances/{instanceId}/history:
+    get:
+      tags: [Workflows]
+      operationId: getWorkflowTransitionHistory
+      summary: List append-only version-bound transition history
+      parameters:
+        - {name: instanceId, in: path, required: true, schema: {type: string, format: uuid}}
+        - {name: page, in: query, schema: {type: integer, minimum: 1, default: 1}}
+        - {name: page_size, in: query, schema: {type: integer, minimum: 1, maximum: 100, default: 25}}
+      responses:
+        '200':
+          description: Reverse-chronological transition events
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SuccessEnvelope'}
+        '404': {$ref: '#/components/responses/NotFound'}
+
+  /workflow-instances/{instanceId}/actions/{actionKey}:
+    post:
+      tags: [Workflows]
+      operationId: transitionWorkflowInstance
+      summary: Execute one permission and assignment-bound transition
+      parameters:
+        - {name: instanceId, in: path, required: true, schema: {type: string, format: uuid}}
+        - {name: actionKey, in: path, required: true, schema: {type: string}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/WorkflowTransitionRequest'}
+      responses:
+        '200':
+          description: Resulting state and newly authorized action hints
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SuccessEnvelope'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
 
   /jobs/{jobId}:
     get:
@@ -1756,13 +2171,66 @@ components:
         user_id: {type: string, format: uuid}
         role_id: {type: string, format: uuid}
 
-    EntityTypeCreate:
+    WorkspacePersonOption:
       type: object
-      required: [key, name]
+      required: [id, username, display_name]
+      additionalProperties: false
+      properties:
+        id: {type: string, format: uuid}
+        username: {type: string}
+        display_name: {type: [string, 'null']}
+
+    WorkspaceRoleOption:
+      type: object
+      required: [id, code, name, description]
+      additionalProperties: false
+      properties:
+        id: {type: string, format: uuid}
+        code: {type: string}
+        name: {type: string}
+        description: {type: [string, 'null']}
+
+    PhaseCreate:
+      type: object
+      required: [name, sequence_number]
       additionalProperties: false
       properties:
         key:
           type: string
+          minLength: 1
+          maxLength: 120
+          pattern: '^[a-z][a-z0-9_]*$'
+          description: Optional advanced stable key; generated by the server when omitted.
+        name: {type: string, minLength: 1, maxLength: 255}
+        description: {type: [string, 'null']}
+        sequence_number: {type: integer, minimum: 1}
+
+    PhaseUpdate:
+      type: object
+      required: [version]
+      additionalProperties: false
+      anyOf:
+        - required: [name]
+        - required: [description]
+        - required: [sequence_number]
+        - required: [status]
+      properties:
+        name: {type: string, minLength: 1, maxLength: 255}
+        description: {type: [string, 'null']}
+        sequence_number: {type: integer, minimum: 1}
+        status:
+          type: string
+          enum: [PLANNED, IN_PROGRESS, COMPLETED, ARCHIVED]
+        version: {type: integer, minimum: 1}
+
+    EntityTypeCreate:
+      type: object
+      required: [name]
+      additionalProperties: false
+      properties:
+        key:
+          type: string
+          description: Optional advanced stable key; generated by the server when omitted.
           minLength: 1
           maxLength: 120
           pattern: '^[a-z][a-z0-9_]*$'
@@ -1793,11 +2261,12 @@ components:
 
     AttributeCreate:
       type: object
-      required: [key, label, data_type]
+      required: [label, data_type]
       additionalProperties: false
       properties:
         key:
           type: string
+          description: Optional advanced stable key; generated by the server when omitted.
           minLength: 1
           maxLength: 120
           pattern: '^[a-z][a-z0-9_]*$'
@@ -2185,6 +2654,178 @@ components:
         submitted_by: {type: [string, 'null'], format: uuid}
         submitted_at: {type: [string, 'null'], format: date-time}
         form: {$ref: '#/components/schemas/FormRenderSummary'}
+
+    DeliverableRequirement:
+      type: object
+      additionalProperties: false
+      required: [key, label, resource_kind]
+      properties:
+        key: {type: string, pattern: '^[a-z][a-z0-9_]*$', maxLength: 120}
+        label: {type: string, minLength: 1, maxLength: 255}
+        resource_kind: {type: string, enum: [ENTITY, DOCUMENT_VERSION, FORM_INSTANCE]}
+        required: {type: boolean, default: true}
+
+    DeliverableCreate:
+      type: object
+      additionalProperties: false
+      required: [name, owner_id]
+      properties:
+        name: {type: string, minLength: 1, maxLength: 255}
+        description: {type: [string, 'null'], maxLength: 5000}
+        owner_id: {type: string, format: uuid}
+        contributor_ids:
+          type: array
+          maxItems: 100
+          items: {type: string, format: uuid}
+        internal_reviewer_id: {type: [string, 'null'], format: uuid}
+        internal_due_at: {type: [string, 'null'], format: date-time}
+        official_due_at: {type: [string, 'null'], format: date-time}
+        requirements:
+          type: array
+          maxItems: 100
+          items: {$ref: '#/components/schemas/DeliverableRequirement'}
+
+    DeliverablePackageItemCreate:
+      type: object
+      additionalProperties: false
+      required: [resource_kind, resource_id]
+      properties:
+        resource_kind: {type: string, enum: [ENTITY, DOCUMENT_VERSION, FORM_INSTANCE]}
+        resource_id: {type: string, format: uuid}
+        requirement_key: {type: [string, 'null'], maxLength: 120}
+
+    DeliverableVersionCreate:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        summary: {type: [string, 'null'], maxLength: 5000}
+        items:
+          type: array
+          minItems: 1
+          maxItems: 200
+          items: {$ref: '#/components/schemas/DeliverablePackageItemCreate'}
+
+    SubmissionCreate:
+      type: object
+      additionalProperties: false
+      required: [deliverable_version_id, statement, recipient_ids, idempotency_key]
+      properties:
+        deliverable_version_id: {type: string, format: uuid}
+        statement: {type: string, minLength: 1, maxLength: 10000}
+        recipient_ids:
+          type: array
+          minItems: 1
+          maxItems: 100
+          items: {type: string, format: uuid}
+        related_comment_ids:
+          type: array
+          maxItems: 100
+          items: {type: string, format: uuid}
+        prior_submission_id: {type: [string, 'null'], format: uuid}
+        idempotency_key: {type: string, minLength: 1, maxLength: 255}
+
+    SubmissionWithdrawalCreate:
+      type: object
+      additionalProperties: false
+      required: [reason, idempotency_key]
+      properties:
+        reason: {type: string, minLength: 1, maxLength: 5000}
+        idempotency_key: {type: string, minLength: 1, maxLength: 255}
+
+    WorkflowStateCreate:
+      type: object
+      additionalProperties: false
+      required: [key, label, sequence_number]
+      properties:
+        key: {type: string, pattern: '^[a-z][a-z0-9_]*$', maxLength: 120}
+        label: {type: string, minLength: 1, maxLength: 255}
+        sequence_number: {type: integer, minimum: 1}
+        is_initial: {type: boolean, default: false}
+        is_terminal: {type: boolean, default: false}
+
+    WorkflowTransitionCreate:
+      type: object
+      additionalProperties: false
+      required: [key, label, from_state_key, to_state_key, required_permission, authority_kind]
+      properties:
+        key: {type: string, pattern: '^[a-z][a-z0-9_]*$', maxLength: 120}
+        label: {type: string, minLength: 1, maxLength: 255}
+        from_state_key: {type: string}
+        to_state_key: {type: string}
+        required_permission: {type: string, description: Stable code from permissions.yaml}
+        authority_kind: {type: string, pattern: '^[A-Z][A-Z0-9_]*$', maxLength: 80}
+        assignment_kind: {type: [string, 'null'], pattern: '^[A-Z][A-Z0-9_]*$', maxLength: 80}
+        reason_required: {type: boolean, default: false}
+
+    WorkflowDefinitionCreate:
+      type: object
+      additionalProperties: false
+      required: [name, states, transitions]
+      properties:
+        key: {type: [string, 'null'], pattern: '^[a-z][a-z0-9_]*$', maxLength: 120}
+        name: {type: string, minLength: 1, maxLength: 255}
+        description: {type: [string, 'null']}
+        states:
+          type: array
+          minItems: 2
+          maxItems: 50
+          items: {$ref: '#/components/schemas/WorkflowStateCreate'}
+        transitions:
+          type: array
+          minItems: 1
+          maxItems: 100
+          items: {$ref: '#/components/schemas/WorkflowTransitionCreate'}
+
+    WorkflowDefinitionVersionCreate:
+      type: object
+      additionalProperties: false
+      required: [expected_version, states, transitions]
+      properties:
+        expected_version: {type: integer, minimum: 1}
+        states:
+          type: array
+          minItems: 2
+          maxItems: 50
+          items: {$ref: '#/components/schemas/WorkflowStateCreate'}
+        transitions:
+          type: array
+          minItems: 1
+          maxItems: 100
+          items: {$ref: '#/components/schemas/WorkflowTransitionCreate'}
+
+    WorkflowAssignmentCreate:
+      type: object
+      additionalProperties: false
+      required: [user_id, assignment_kind]
+      properties:
+        user_id: {type: string, format: uuid}
+        assignment_kind: {type: string, pattern: '^[A-Z][A-Z0-9_]*$', maxLength: 80}
+
+    WorkflowInstanceCreate:
+      type: object
+      additionalProperties: false
+      required: [definition_version_id, target_kind, target_id, idempotency_key]
+      properties:
+        definition_version_id: {type: string, format: uuid}
+        target_kind: {type: string, enum: [ENTITY, DOCUMENT, FORM_INSTANCE, PHASE, DELIVERABLE]}
+        target_id: {type: string, format: uuid}
+        target_version: {type: [integer, 'null'], minimum: 1}
+        assignments:
+          type: array
+          maxItems: 100
+          items: {$ref: '#/components/schemas/WorkflowAssignmentCreate'}
+        idempotency_key: {type: string, minLength: 8, maxLength: 255}
+
+    WorkflowTransitionRequest:
+      type: object
+      additionalProperties: false
+      required: [expected_version, idempotency_key]
+      properties:
+        expected_version: {type: integer, minimum: 1}
+        idempotency_key: {type: string, minLength: 8, maxLength: 255}
+        reason: {type: [string, 'null'], maxLength: 4000}
+        target_version: {type: [integer, 'null'], minimum: 1}
 
   responses:
     NotFound:

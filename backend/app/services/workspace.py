@@ -13,7 +13,7 @@ from app.core.exceptions import (
     WorkspaceAccessDeniedError,
 )
 from app.core.permissions import PermissionCode
-from app.models.identity import AuditLog
+from app.models.identity import AuditLog, Role, User
 from app.models.workspace import Workspace, WorkspaceMembership
 from app.repositories.workspace import WorkspaceMemberRecord, WorkspaceRepository
 from app.services.auth import AuthenticatedIdentity
@@ -175,6 +175,24 @@ class WorkspaceService:
         await self._require_workspace_permission(workspace_id, PermissionCode.WORKSPACE_MANAGE)
         return await self.repository.list_members(workspace_id)
 
+    async def search_member_candidates(
+        self, workspace_id: UUID, *, search: str, limit: int
+    ) -> tuple[User, ...]:
+        await self._require_workspace_permission(workspace_id, PermissionCode.WORKSPACE_MANAGE)
+        return await self.repository.search_member_candidates(workspace_id, search, limit)
+
+    async def list_assignable_roles(self, workspace_id: UUID) -> tuple[Role, ...]:
+        await self._require_workspace_permission(workspace_id, PermissionCode.WORKSPACE_MANAGE)
+        actor_permissions = self.authorization.permission_codes | frozenset(
+            await self.repository.workspace_permission_codes(workspace_id, self.actor.user.id)
+        )
+        assignable: list[Role] = []
+        for role in await self.repository.list_roles():
+            role_permissions = set(await self.repository.role_permission_codes(role.id))
+            if role_permissions.issubset(actor_permissions):
+                assignable.append(role)
+        return tuple(assignable)
+
     async def add_member(
         self,
         workspace_id: UUID,
@@ -187,7 +205,7 @@ class WorkspaceService:
             await self._require_workspace_permission(workspace_id, PermissionCode.WORKSPACE_MANAGE)
             target = await self.repository.user_by_id(user_id)
             role = await self.repository.role_by_id(role_id)
-            if target is None or role is None:
+            if target is None or target.is_active is False or role is None:
                 raise ResourceNotFoundError
             if await self.repository.membership(workspace_id, user_id) is not None:
                 raise ResourceConflictError

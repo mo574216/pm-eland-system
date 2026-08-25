@@ -69,6 +69,9 @@ class FakeWorkspaceRepository:
         self.workspaces: list[Workspace] = []
         self.memberships: list[WorkspaceMembership] = []
         self.audit_logs: list[AuditLog] = []
+        self.candidates: tuple[User, ...] = ()
+        self.roles: tuple[Role, ...] = ()
+        self.permissions_by_role: dict[UUID, tuple[str, ...]] = {}
 
     def add_workspace(self, value: Workspace) -> None:
         self.workspaces.append(value)
@@ -118,7 +121,13 @@ class FakeWorkspaceRepository:
         return self.target_role
 
     async def role_permission_codes(self, _: UUID) -> tuple[str, ...]:
-        return self.role_permissions
+        return self.permissions_by_role.get(_, self.role_permissions)
+
+    async def search_member_candidates(self, _: UUID, __: str, ___: int) -> tuple[User, ...]:
+        return self.candidates
+
+    async def list_roles(self) -> tuple[Role, ...]:
+        return self.roles
 
     async def membership(self, _: UUID, __: UUID) -> WorkspaceMembership | None:
         return self.existing_membership
@@ -220,3 +229,32 @@ async def test_workspace_role_can_supply_manage_permission_within_membership() -
     repository.workspace_permissions = (PermissionCode.WORKSPACE_MANAGE.value,)
 
     assert await service(actor, repository).list_members(scoped_workspace.id) == ()
+
+
+@pytest.mark.asyncio
+async def test_member_candidate_search_requires_workspace_manage() -> None:
+    actor = identity()
+    scoped_workspace = workspace(actor.user.id)
+
+    with pytest.raises(PermissionDeniedError):
+        await service(actor, FakeWorkspaceRepository(scoped_workspace)).search_member_candidates(
+            scoped_workspace.id, search="ali", limit=10
+        )
+
+
+@pytest.mark.asyncio
+async def test_role_options_only_include_roles_actor_may_assign() -> None:
+    actor = identity(PermissionCode.WORKSPACE_MANAGE, PermissionCode.ENTITY_READ)
+    scoped_workspace = workspace(actor.user.id)
+    repository = FakeWorkspaceRepository(scoped_workspace)
+    reader = Role(id=uuid4(), code="READER", name="Reader")
+    manager = Role(id=uuid4(), code="MANAGER", name="Manager")
+    repository.roles = (reader, manager)
+    repository.permissions_by_role = {
+        reader.id: (PermissionCode.ENTITY_READ.value,),
+        manager.id: (PermissionCode.WORKSPACE_MANAGE.value, PermissionCode.PHASE_UNLOCK.value),
+    }
+
+    options = await service(actor, repository).list_assignable_roles(scoped_workspace.id)
+
+    assert options == (reader,)

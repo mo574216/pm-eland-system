@@ -21,6 +21,18 @@ def _revision() -> ModuleType:
     return module
 
 
+def _governance_revision() -> ModuleType:
+    revision_path = (
+        Path(__file__).parents[1] / "alembic" / "versions" / "0014_governance_permissions.py"
+    )
+    spec = spec_from_file_location("governance_permission_revision", revision_path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"Unable to load governance migration: {revision_path}")
+    module = module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
 def _require(condition: bool, message: str) -> None:
     if not condition:
         raise RuntimeError(message)
@@ -29,6 +41,7 @@ def _require(condition: bool, message: str) -> None:
 def verify_identity_schema(database_url: str) -> None:
     """Assert schema, canonical seeds, and repeatable seed execution."""
     revision = _revision()
+    governance = _governance_revision()
     engine = sa.create_engine(to_sync_database_url(database_url))
     try:
         with engine.begin() as connection:
@@ -80,9 +93,13 @@ def verify_identity_schema(database_url: str) -> None:
             permission_codes = set(
                 connection.execute(sa.text("SELECT code FROM permissions")).scalars()
             )
-            expected_roles = {role["code"] for role in revision.ROLE_SEEDS}
+            expected_roles = {
+                *(role["code"] for role in revision.ROLE_SEEDS),
+                *(role[0] for role in governance.ROLE_SEEDS),
+            }
             expected_permissions = {
                 *(permission[1] for permission in revision.PERMISSION_SEEDS),
+                *(permission[0] for permission in governance.PERMISSION_SEEDS),
                 "IDENTITY_MANAGE",
             }
             _require(role_codes == expected_roles, "Canonical role seeds do not match.")
@@ -102,10 +119,11 @@ def verify_identity_schema(database_url: str) -> None:
             for role_code, permission_code in cast(Any, grants):
                 actual_grants[role_code].add(permission_code)
             expected_grants = {
-                role_code: set(grant_codes)
-                for role_code, grant_codes in revision.ROLE_GRANTS.items()
+                role_code: set(grants) for role_code, grants in revision.ROLE_GRANTS.items()
             }
             expected_grants["SYSTEM_ADMIN"].add("IDENTITY_MANAGE")
+            for role_code, grants in governance.ROLE_GRANTS.items():
+                expected_grants.setdefault(role_code, set()).update(grants)
             _require(actual_grants == expected_grants, "Canonical role grants do not match.")
     finally:
         engine.dispose()

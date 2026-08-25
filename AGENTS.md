@@ -12,9 +12,13 @@ Before making any change:
 2. Read `ai_context/01_ARCHITECTURE_RULES.md`.
 3. Read `ai_context/02_SYSTEM_REQUIREMENTS.md`.
 4. Read `ai_context/12_CURRENT_STATUS.md`.
-5. Read all specification files relevant to the task.
-6. Read relevant ADRs under `ADR/`.
-7. Read shared contracts under `contracts/` when the task affects APIs, permissions, or errors.
+5. Read `ai_context/14_PROJECT_USAGE_SCENARIOS.md` when the task affects runtime
+   actors, workflows, deliverables, reviews, monitoring, communication, reporting,
+   or acceptance, and consult `ai_context/15_DETAILED_USAGE_SCENARIOS.md` for the
+   exact affected actor scenarios.
+6. Read all specification files relevant to the task.
+7. Read relevant ADRs under `ADR/`.
+8. Read shared contracts under `contracts/` when the task affects APIs, permissions, or errors.
 
 ## Mandatory Rules
 
@@ -29,6 +33,19 @@ Before making any change:
 - Preserve immutable document version history.
 - Respect phase/resource locking rules.
 - Material mutations must be audited where required by the specifications.
+- Preserve the authority boundaries in ADR-0006: contractor internal review, formal
+  submission, monitoring, project review/recommendation, technical review/sign-off,
+  and employer acceptance are distinct actions.
+- Do not authorize runtime operations by literal role name; use effective permissions,
+  workspace scope, assignment, lifecycle state, and configured policy.
+- Follow ADR-0007: primary UX must not require raw UUIDs, technical keys,
+  relationship direction/cardinality, or configuration payloads; use generated keys,
+  authorized named selectors, contextual actions, and progressive disclosure.
+- Follow ADR-0008: distinguish live references, inherited/read-only values, editable
+  suggestions, deliberate copies, and immutable submission/report snapshots. Never
+  propagate changes by silently rewriting historical or user-entered values.
+- Treat operational import as an embedded phase/deliverable/form capability; keep
+  import-profile configuration in administration and enforce context/locks server-side.
 - Do not modify published API contracts without updating the relevant specification and contract files.
 - Do not make database schema changes without Alembic migrations.
 - Do not modify unrelated functionality.

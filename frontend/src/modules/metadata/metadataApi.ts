@@ -60,7 +60,7 @@ export interface AttributeDefinition {
 }
 
 export interface EntityTypeCreate {
-  key: string
+  key?: string
   name: string
   plural_name?: string
   description?: string
@@ -68,7 +68,7 @@ export interface EntityTypeCreate {
 }
 
 export interface AttributeCreate {
-  key: string
+  key?: string
   label: string
   data_type: AttributeDataType
   is_required: boolean
