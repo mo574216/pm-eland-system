@@ -323,6 +323,11 @@ SYSTEM_ADMIN
 PROJECT_MANAGER
 ANALYST
 VIEWER
+PROJECT_OFFICER
+TECHNICAL_REVIEWER
+CONTRACTOR_PROJECT_LEADER
+CONTRACTOR_TEAM_MEMBER
+EMPLOYER_REPRESENTATIVE
 ```
 
 Permissions SHALL be explicit and stable.
@@ -345,7 +350,24 @@ IMPORT_EXECUTE
 PHASE_LOCK
 PHASE_UNLOCK
 AUDIT_READ
+DELIVERABLE_CONTRIBUTE
+DELIVERABLE_INTERNAL_REVIEW
+SUBMISSION_CREATE
+PROJECT_MONITOR
+PROJECT_REVIEW
+PROJECT_RECOMMEND
+TECHNICAL_REVIEW
+TECHNICAL_SIGN_OFF
+ACCEPTANCE_DECIDE
+CONDITION_VERIFY
+COMMUNICATION_MANAGE
+WORKFLOW_CONFIGURE
 ```
+
+Governance services SHALL authorize these capabilities by permission and scoped
+assignment, never by literal role name. Internal readiness, formal submission,
+technical sign-off, project recommendation, and employer acceptance are independent
+authority checks and SHALL NOT imply one another.
 
 ---
 

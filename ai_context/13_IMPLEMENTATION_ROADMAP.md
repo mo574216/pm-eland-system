@@ -53,7 +53,7 @@ The repository uses `ai_context/`. Canonical repository guidance now references 
 | DG-06 | DOC-BE-006 | Select malware scanner integration (OD-009) | Security/deployment decision |
 | DG-07 | DR-001 | Approve production RPO/RTO (OD-013) | Operations decision and recovery plan |
 | DG-08 | Date/number-intensive frontend work | Choose Jalali/Gregorian calendar and Persian/Latin display digits (OD-015) | Localization policy update and centralized formatter tests |
-| DG-09 | GOV-DB-001 / AUTH-DB-002 | Define granular contribution, submission, monitoring, review, recommendation, sign-off, acceptance, condition-verification, and configuration permissions | Updated permission contract, seed migration, and authority-matrix tests |
+| DG-09 | GOV-DB-001 / AUTH-DB-002 | Resolved by ADR-0006 and AUTH-DB-002: distinct contribution, internal-review, submission, monitoring, project-review/recommendation, technical-review/sign-off, acceptance, condition-verification, communication, and workflow-configuration permissions | `contracts/permissions.yaml`, migration 0014, and authority-matrix tests |
 | DG-10 | UX-BE-001 | Define server-generated stable-key format, collision policy, explicit-key lifecycle, and compatibility for existing API clients | API/spec update and key-generation tests |
 | DG-11 | CTX-BE-001 | Finalize explicit live/reference/suggestion/copy/snapshot binding schema and compatibility mapping from current inheritance rules | Contract/spec update; ADR-0008 is authoritative |
 | DG-12 | RPT-BE-004 | Select restricted report renderer/output formats and resource limits; prohibit template SQL/code | Deployment/security decision and renderer contract |

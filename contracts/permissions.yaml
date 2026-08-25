@@ -119,6 +119,66 @@ permissions:
     action: read
     description: View authorized audit history.
 
+  - code: DELIVERABLE_CONTRIBUTE
+    resource: deliverable
+    action: contribute
+    description: Prepare and revise assigned deliverable content.
+
+  - code: DELIVERABLE_INTERNAL_REVIEW
+    resource: deliverable
+    action: internal_review
+    description: Perform contractor-side internal review and readiness decisions.
+
+  - code: SUBMISSION_CREATE
+    resource: submission
+    action: create
+    description: Formally submit or resubmit an authorized immutable package.
+
+  - code: PROJECT_MONITOR
+    resource: project
+    action: monitor
+    description: Monitor completeness, progress, and exceptions without decision authority.
+
+  - code: PROJECT_REVIEW
+    resource: project_review
+    action: review
+    description: Perform project governance review.
+
+  - code: PROJECT_RECOMMEND
+    resource: project_review
+    action: recommend
+    description: Record a project-manager recommendation.
+
+  - code: TECHNICAL_REVIEW
+    resource: technical_review
+    action: review
+    description: Assess technical quality of an authorized immutable version.
+
+  - code: TECHNICAL_SIGN_OFF
+    resource: technical_review
+    action: sign_off
+    description: Record an authorized technical sign-off without contractual acceptance.
+
+  - code: ACCEPTANCE_DECIDE
+    resource: acceptance
+    action: decide
+    description: Record an employer phase or final acceptance decision.
+
+  - code: CONDITION_VERIFY
+    resource: acceptance_condition
+    action: verify
+    description: Verify evidence for an assigned acceptance condition.
+
+  - code: COMMUNICATION_MANAGE
+    resource: communication
+    action: manage
+    description: Create and manage authorized contextual project communications.
+
+  - code: WORKFLOW_CONFIGURE
+    resource: workflow
+    action: configure
+    description: Configure and publish governed workflow definitions.
+
 roles:
   SYSTEM_ADMIN:
     description: Full platform administration.
@@ -146,6 +206,18 @@ roles:
       - DASHBOARD_READ
       - DASHBOARD_MANAGE
       - AUDIT_READ
+      - DELIVERABLE_CONTRIBUTE
+      - DELIVERABLE_INTERNAL_REVIEW
+      - SUBMISSION_CREATE
+      - PROJECT_MONITOR
+      - PROJECT_REVIEW
+      - PROJECT_RECOMMEND
+      - TECHNICAL_REVIEW
+      - TECHNICAL_SIGN_OFF
+      - ACCEPTANCE_DECIDE
+      - CONDITION_VERIFY
+      - COMMUNICATION_MANAGE
+      - WORKFLOW_CONFIGURE
 
   PROJECT_MANAGER:
     description: Workspace/project management and review.
@@ -166,6 +238,10 @@ roles:
       - DASHBOARD_READ
       - DASHBOARD_MANAGE
       - AUDIT_READ
+      - PROJECT_MONITOR
+      - PROJECT_REVIEW
+      - PROJECT_RECOMMEND
+      - COMMUNICATION_MANAGE
 
   ANALYST:
     description: Structured data and document contribution.
@@ -180,6 +256,8 @@ roles:
       - DOCUMENT_READ
       - IMPORT_EXECUTE
       - DASHBOARD_READ
+      - DELIVERABLE_CONTRIBUTE
+      - COMMUNICATION_MANAGE
 
   VIEWER:
     description: Read-only access.
@@ -188,3 +266,68 @@ roles:
       - ENTITY_READ
       - DOCUMENT_READ
       - DASHBOARD_READ
+
+  PROJECT_OFFICER:
+    description: Project monitoring, completeness follow-up, and reporting.
+    grants:
+      - WORKSPACE_READ
+      - ENTITY_READ
+      - DOCUMENT_READ
+      - DASHBOARD_READ
+      - AUDIT_READ
+      - PROJECT_MONITOR
+      - COMMUNICATION_MANAGE
+
+  TECHNICAL_REVIEWER:
+    description: Independent technical assessment and configured sign-off.
+    grants:
+      - WORKSPACE_READ
+      - ENTITY_READ
+      - DOCUMENT_READ
+      - DASHBOARD_READ
+      - TECHNICAL_REVIEW
+      - TECHNICAL_SIGN_OFF
+      - COMMUNICATION_MANAGE
+
+  CONTRACTOR_PROJECT_LEADER:
+    description: Contractor-side execution, internal review, and formal submission.
+    grants:
+      - WORKSPACE_READ
+      - ENTITY_CREATE
+      - ENTITY_READ
+      - ENTITY_UPDATE
+      - FORM_SUBMIT
+      - DOCUMENT_UPLOAD
+      - DOCUMENT_READ
+      - DASHBOARD_READ
+      - DELIVERABLE_CONTRIBUTE
+      - DELIVERABLE_INTERNAL_REVIEW
+      - SUBMISSION_CREATE
+      - PROJECT_MONITOR
+      - COMMUNICATION_MANAGE
+
+  CONTRACTOR_TEAM_MEMBER:
+    description: Preparation and revision of assigned contractor work.
+    grants:
+      - WORKSPACE_READ
+      - ENTITY_READ
+      - ENTITY_UPDATE
+      - FORM_SUBMIT
+      - DOCUMENT_UPLOAD
+      - DOCUMENT_READ
+      - DASHBOARD_READ
+      - DELIVERABLE_CONTRIBUTE
+      - COMMUNICATION_MANAGE
+
+  EMPLOYER_REPRESENTATIVE:
+    description: Employer oversight and contractual acceptance authority.
+    grants:
+      - WORKSPACE_READ
+      - ENTITY_READ
+      - DOCUMENT_READ
+      - DASHBOARD_READ
+      - AUDIT_READ
+      - PROJECT_MONITOR
+      - ACCEPTANCE_DECIDE
+      - CONDITION_VERIFY
+      - COMMUNICATION_MANAGE

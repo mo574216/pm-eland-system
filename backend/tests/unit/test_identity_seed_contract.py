@@ -22,13 +22,11 @@ def test_identity_seeds_match_canonical_permission_contract() -> None:
     revision = load_revision()
     contract_path = Path(__file__).parents[3] / "contracts" / "permissions.yaml"
     contract = cast(dict[str, Any], yaml.safe_load(contract_path.read_text(encoding="utf-8")))
-    legacy_permissions = [
-        definition
-        for definition in contract["permissions"]
-        if definition["code"] != "IDENTITY_MANAGE"
-    ]
-
     permission_seeds = revision.PERMISSION_SEEDS
+    legacy_codes = {permission[1] for permission in permission_seeds}
+    legacy_permissions = [
+        definition for definition in contract["permissions"] if definition["code"] in legacy_codes
+    ]
     seeded_permissions = [
         {
             "code": code,
@@ -41,11 +39,11 @@ def test_identity_seeds_match_canonical_permission_contract() -> None:
     assert seeded_permissions == legacy_permissions
 
     seeded_roles = {role["code"]: role for role in revision.ROLE_SEEDS}
-    assert set(seeded_roles) == set(contract["roles"])
-    for code, definition in contract["roles"].items():
+    for code in seeded_roles:
+        definition = contract["roles"][code]
         assert seeded_roles[code]["description"] == definition["description"]
         assert seeded_roles[code]["is_system"] is True
-        expected_grants = [grant for grant in definition["grants"] if grant != "IDENTITY_MANAGE"]
+        expected_grants = [grant for grant in definition["grants"] if grant in legacy_codes]
         assert list(revision.ROLE_GRANTS[code]) == expected_grants
 
 

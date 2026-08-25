@@ -3973,6 +3973,71 @@ None.
 
 ---
 
+Governance authority permission gate entry:
+
+```text
+DATE:
+2026-08-25
+
+MILESTONE:
+M5 governed delivery
+
+TASKS_COMPLETED:
+DG-09 Governance permission decision gate
+AUTH-DB-002 Governance Permission and Baseline Role Expansion
+
+TASKS_IN_PROGRESS:
+None
+
+SUMMARY:
+The distinct authority lanes accepted by ADR-0006 are now executable permission
+contracts rather than role-name assumptions. Seven scenario personas are available
+as database-backed baseline role profiles while legacy ANALYST and VIEWER roles are
+retained for compatibility.
+
+FILES_CHANGED:
+Permission contract/enum, idempotent governance seed migration, identity verifier,
+authority-matrix and seed-contract tests, database/security specifications, roadmap,
+and current status.
+
+DATABASE_CHANGES:
+Migration 0014 adds twelve generic governance permissions and five additional
+baseline role profiles. Existing SYSTEM_ADMIN, PROJECT_MANAGER, and ANALYST grants
+are extended without removing assignments or legacy permissions.
+
+API_CHANGES:
+None. The stable permission codes are available to subsequent governed APIs.
+
+TESTS_ADDED:
+Contract tests prove migration/YAML/enum agreement and the required negative
+authority boundaries: contributors cannot formally submit, officers cannot decide,
+technical sign-off cannot accept, and employer acceptance does not grant project
+review.
+
+TEST_RESULTS:
+Focused Ruff and mypy pass; four identity/governance contract tests pass. Migration
+0013 -> 0014 and the canonical idempotent identity-schema verifier pass against the
+running PostgreSQL container.
+
+SECURITY_IMPACT:
+Formal submission, internal review, monitoring, project recommendation, technical
+sign-off, contractual acceptance, and condition verification now require separate
+permissions. Services remain prohibited from authorizing by literal role name.
+
+KNOWN_LIMITATIONS:
+The permissions intentionally expose no governed transitions until GOV-DB-001 and
+GOV-BE-001 enforce workflow definition, assignment, version, and state policy.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+Implement the generic versioned workflow schema and transition policy foundation
+before exposing the deliverable lifecycle.
+```
+
+---
+
 # 27. Related Specifications
 
 ```text
