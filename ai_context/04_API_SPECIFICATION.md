@@ -2079,6 +2079,25 @@ behavior. Bulk operations SHALL be bounded, single-workspace, and atomic. Formal
 history records SHALL expose create/transition operations but no ordinary update or
 delete endpoint.
 
+Implemented generic workflow foundation routes:
+
+```text
+POST /workspaces/{workspace_id}/workflow-definitions
+POST /workflow-definitions/{definition_id}/versions
+POST /workflow-definition-versions/{version_id}/publish
+POST /workspaces/{workspace_id}/workflow-instances
+GET  /workflow-instances/{instance_id}
+GET  /workflow-instances/{instance_id}/history
+POST /workflow-instances/{instance_id}/actions/{action_key}
+```
+
+Definition creation accepts bounded state/transition metadata and stable permission
+codes only. Publication makes that version immutable. Instance creation accepts only
+allowlisted target kinds and active same-workspace assignees. Transition requests
+require `expected_version`, an `idempotency_key`, and a reason when configured;
+returned `available_actions` are permission/assignment-filtered UX hints and never
+replace server-side transition authorization.
+
 ---
 
 # 16.5 Work, Communication, and Notification Contract Rules

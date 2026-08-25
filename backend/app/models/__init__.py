@@ -17,6 +17,15 @@ from app.models.import_job import ImportConflict, ImportJob, ImportMapping, Impo
 from app.models.metadata import AttributeDefinition, EntityType
 from app.models.phase import Phase, PhaseDeliverable
 from app.models.relationship import EntityRelationship, RelationshipType
+from app.models.workflow import (
+    WorkflowAssignment,
+    WorkflowDefinition,
+    WorkflowDefinitionVersion,
+    WorkflowInstance,
+    WorkflowStateDefinition,
+    WorkflowTransitionDefinition,
+    WorkflowTransitionEvent,
+)
 from app.models.workspace import Workspace, WorkspaceMembership
 
 __all__ = [
@@ -42,6 +51,13 @@ __all__ = [
     "RelationshipType",
     "Role",
     "User",
+    "WorkflowAssignment",
+    "WorkflowDefinition",
+    "WorkflowDefinitionVersion",
+    "WorkflowInstance",
+    "WorkflowStateDefinition",
+    "WorkflowTransitionDefinition",
+    "WorkflowTransitionEvent",
     "Workspace",
     "WorkspaceMembership",
     "role_permissions",

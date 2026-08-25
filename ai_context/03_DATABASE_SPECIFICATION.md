@@ -1160,6 +1160,27 @@ Workflow status names and transition graphs are metadata. Stable engine-level st
 MAY be constrained where required for idempotency, publication, or immutable event
 integrity, but project-specific workflow labels SHALL NOT become SQL check values.
 
+`GOV-DB-001` implements this foundation through:
+
+```text
+workflow_definitions
+workflow_definition_versions
+workflow_state_definitions
+workflow_transition_definitions
+workflow_instances
+workflow_assignments
+workflow_transition_events
+```
+
+Definitions have workspace-unique generated keys. Draft/published/retired is an
+engine publication state; project lifecycle labels remain state-definition data.
+Composite `(id, definition_version_id, workspace_id)` constraints prevent transitions,
+instances, and events from binding states from another definition or workspace.
+Instances retain their published definition-version ID and optimistic version.
+Transition events retain the prior/resulting state, action, authority kind, actor,
+target artifact version, resulting instance version, reason, context, idempotency
+key, and occurrence time. No ordinary update/delete API exists for event history.
+
 `WORK-DB-001` and `COM-DB-001` SHALL similarly use generic workspace-scoped work
 items/dependencies/risks/issues and explicit-kind communication/notification records.
 Dependencies require cycle prevention. Notification and thread targets require

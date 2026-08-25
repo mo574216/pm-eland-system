@@ -13,6 +13,7 @@ from app.api.v1.metadata import router as metadata_router
 from app.api.v1.phases import router as phases_router
 from app.api.v1.relationships import router as relationships_router
 from app.api.v1.users import router as users_router
+from app.api.v1.workflows import router as workflows_router
 from app.api.v1.workspaces import router as workspaces_router
 
 api_router = APIRouter()
@@ -28,3 +29,4 @@ api_router.include_router(phases_router)
 api_router.include_router(relationships_router)
 api_router.include_router(users_router)
 api_router.include_router(workspaces_router)
+api_router.include_router(workflows_router)

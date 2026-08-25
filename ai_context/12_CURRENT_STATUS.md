@@ -4038,6 +4038,76 @@ before exposing the deliverable lifecycle.
 
 ---
 
+Generic governed-workflow foundation entry:
+
+```text
+DATE:
+2026-08-25
+
+MILESTONE:
+M5 governed delivery
+
+TASKS_COMPLETED:
+GOV-DB-001 Versioned Workflow and Transition Schema
+GOV-BE-001 Workflow Policy and Transition Engine
+
+TASKS_IN_PROGRESS:
+None
+
+SUMMARY:
+The platform now stores configurable workflow graphs as immutable published versions
+and runs workspace-bound instances without hard-coded project states or persona
+branches. Authorized configuration supports draft creation, successor versions, and
+publication. Runtime responses expose only the caller's permission-and-assignment
+eligible actions; every transition rechecks policy server-side.
+
+FILES_CHANGED:
+Workflow models/migration, request/response schemas, workspace-safe repository,
+policy service, API/router and OpenAPI/narrative contracts, focused schema/service
+tests, database specification, and current status.
+
+DATABASE_CHANGES:
+Migration 0015 creates workflow definitions/versions, states, transitions, instances,
+assignments, and append-only transition events. Composite workspace/version foreign
+keys prohibit cross-workspace and cross-definition state wiring. Events retain
+definition, target and resulting-instance versions plus idempotency provenance.
+
+API_CHANGES:
+Added draft/new-version/publish operations, workspace target instance start, current
+state and authorized-action projection, paginated history, and typed action execution.
+Transition requests require optimistic version and idempotency inputs.
+
+TESTS_ADDED:
+Focused tests cover graph validation, stable permission codes, composite workspace
+integrity, distinct permission and assignment enforcement, hidden inaccessible
+instances, idempotent retry conflict behavior, version-bound events, and audit output.
+
+TEST_RESULTS:
+Focused Ruff and mypy pass. Eight workflow, governance, and OpenAPI tests pass.
+Migration 0015 upgrades PostgreSQL after a clean 0014 downgrade. The restarted
+backend is live and the new protected route returns 401 to an anonymous request.
+
+SECURITY_IMPACT:
+All configuration is gated by WORKFLOW_CONFIGURE. Transition authorization combines
+active workspace membership, the stable required permission, optional same-workspace
+assignment, current state, optimistic version, configured reason requirement, and
+idempotency key. Cross-workspace targets/assignees use safe not-found behavior.
+
+KNOWN_LIMITATIONS:
+The workflow engine currently targets existing generic entities, documents, form
+instances, and phases. DEL-DB-001 will add governed deliverables to the allowlisted
+target registry and provide the first end-user lifecycle workspace.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+Implement DEL-DB-001 and the first preparation/internal-review/formal-submission
+vertical slice on this generic workflow engine.
+```
+
+---
+
 # 27. Related Specifications
 
 ```text
