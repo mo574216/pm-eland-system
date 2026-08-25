@@ -629,6 +629,24 @@ insertion SHALL commit in one transaction.
 
 ---
 
+# 7.8 GET /workspaces/{workspace_id}/member-options
+
+Search active users who are not already members. Requires `WORKSPACE_MANAGE`, a
+trimmed search of 2-120 characters, and a result limit of 1-20 (default 10). Results
+contain only `id`, `username`, and `display_name`; no unbounded directory listing or
+total count is returned.
+
+---
+
+# 7.9 GET /workspaces/{workspace_id}/role-options
+
+List human-readable roles the acting workspace manager may assign. Requires
+`WORKSPACE_MANAGE`. A role is returned only when every permission it grants is in
+the actor's effective global or workspace permission set. The membership mutation
+repeats this authorization check and does not trust the selector result.
+
+---
+
 # 8. Metadata API
 
 # 8.1 POST /workspaces/{workspace_id}/entity-types
@@ -645,7 +663,6 @@ METADATA_MANAGE
 
 ```json
 {
-  "key": "business_process",
   "name": "Business Process",
   "plural_name": "Business Processes",
   "description": "A configurable process concept",
@@ -661,8 +678,11 @@ METADATA_MANAGE
 
 ### Validation
 
-- key unique within workspace,
-- key must follow stable naming rules.
+- `key` is optional and is intended only for advanced integration clients,
+- when omitted, the server generates `type_<32 lowercase hexadecimal characters>`,
+- an explicit key must follow stable naming rules and be unique within the workspace,
+- generated and explicit keys are immutable after creation; database uniqueness is
+  the final collision guard.
 
 ---
 
@@ -714,7 +734,6 @@ Create attribute.
 
 ```json
 {
-  "key": "risk_level",
   "label": "Risk Level",
   "data_type": "ENUM",
   "is_required": true,
@@ -1028,6 +1047,10 @@ Create relationship metadata.
   }
 }
 ```
+
+`key` is optional. When omitted, the server generates
+`attribute_<32 lowercase hexadecimal characters>`. Advanced clients may continue to
+send a valid explicit key; generated and explicit attribute keys are immutable.
 
 `configuration.allow_duplicates` defaults to `true`. When explicitly `false`,
 creation SHALL reject an active relationship with the same type and ordered endpoints.

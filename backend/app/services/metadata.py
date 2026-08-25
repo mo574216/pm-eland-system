@@ -93,7 +93,12 @@ class MetadataService:
     ) -> EntityType:
         async with self.session.begin():
             await self._require_manage(workspace_id)
-            key = str(values["key"])
+            key = (
+                str(values["key"])
+                if values.get("key") is not None
+                else self._generated_key("type")
+            )
+            values["key"] = key
             if await self.repository.entity_type_by_key(workspace_id, key) is not None:
                 raise ResourceConflictError
             entity_type = EntityType(
@@ -388,7 +393,12 @@ class MetadataService:
         async with self.session.begin():
             entity_type = await self.get_entity_type(entity_type_id)
             await self._require_manage(entity_type.workspace_id)
-            key = str(values["key"])
+            key = (
+                str(values["key"])
+                if values.get("key") is not None
+                else self._generated_key("attribute")
+            )
+            values["key"] = key
             if await self.repository.attribute_by_key(entity_type_id, key) is not None:
                 raise ResourceConflictError
             await self._validate_attribute_configuration(
@@ -417,6 +427,11 @@ class MetadataService:
             except IntegrityError as exc:
                 raise ResourceConflictError from exc
         return attribute
+
+    @staticmethod
+    def _generated_key(resource: str) -> str:
+        """Create an opaque stable key without deriving identifiers from display text."""
+        return f"{resource}_{uuid4().hex}"
 
     async def list_attributes(self, entity_type_id: UUID) -> tuple[AttributeDefinition, ...]:
         await self.get_entity_type(entity_type_id)

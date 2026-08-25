@@ -12,7 +12,9 @@ STABLE_KEY_PATTERN = r"^[a-z][a-z0-9_]*$"
 class EntityTypeCreate(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
 
-    key: str = Field(min_length=1, max_length=120, pattern=STABLE_KEY_PATTERN)
+    key: str | None = Field(
+        default=None, min_length=1, max_length=120, pattern=STABLE_KEY_PATTERN
+    )
     name: str = Field(min_length=1, max_length=180)
     plural_name: str | None = Field(default=None, max_length=180)
     description: str | None = None
@@ -82,7 +84,9 @@ AttributeDataType = Literal[
 class AttributeCreate(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
 
-    key: str = Field(min_length=1, max_length=120, pattern=STABLE_KEY_PATTERN)
+    key: str | None = Field(
+        default=None, min_length=1, max_length=120, pattern=STABLE_KEY_PATTERN
+    )
     label: str = Field(min_length=1, max_length=180)
     description: str | None = None
     data_type: AttributeDataType

@@ -83,3 +83,17 @@ async def test_workspace_role_read_permission_is_required_without_global_read() 
         assert "JOIN role_permissions" in sql
         assert "JOIN permissions" in sql
         assert "permissions.code" in sql
+
+
+@pytest.mark.asyncio
+async def test_member_candidate_search_is_bounded_and_excludes_existing_members() -> None:
+    session = CapturingSession()
+    repository = WorkspaceRepository(cast(AsyncSession, session))
+
+    await repository.search_member_candidates(uuid4(), "ali", 10)
+
+    sql = str(session.statements[0])
+    assert "users.is_active IS true" in sql
+    assert "workspace_memberships.workspace_id" in sql
+    assert "users.id NOT IN" in sql
+    assert "LIMIT" in sql

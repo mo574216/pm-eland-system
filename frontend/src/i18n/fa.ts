@@ -151,6 +151,11 @@ export const fa = {
     title: 'صفحه پیدا نشد',
   },
   workspaces: {
+    memberSelectionRequired: 'انتخاب کاربر و نقش الزامی است.',
+    noPeopleFound: 'کاربر واجد شرایطی پیدا نشد.',
+    person: 'کاربر',
+    role: 'نقش',
+    searchPersonHelp: 'برای جست‌وجوی کاربر حداقل دو حرف وارد کنید.',
     addMember: 'افزودن عضو',
     description: 'توضیحات',
     empty: 'فضای کاری در دسترس شما نیست.',

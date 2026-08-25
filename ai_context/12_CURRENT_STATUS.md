@@ -3494,6 +3494,127 @@ IMP-BE-007/IMP-FE-006 after phase/deliverable foundations.
 
 ---
 
+Generated metadata-key usability entry:
+
+```text
+DATE:
+2026-08-25
+
+MILESTONE:
+Demo usability remediation
+
+TASKS_COMPLETED:
+UX-BE-001/UX-FE-002 first vertical slice: metadata keys
+
+TASKS_IN_PROGRESS:
+DG-10/UX-BE-001/UX-FE-002 remaining human-readable selectors and form metadata
+
+SUMMARY:
+Entity-type and attribute creation no longer asks normal administrators for stable
+technical keys. The server creates opaque immutable UUID-based keys, while advanced
+API clients retain backward-compatible explicit-key support. Metadata list/editor
+views no longer expose those keys as primary information.
+
+FILES_CHANGED:
+Metadata request schemas and service; OpenAPI and API specification; metadata admin
+API types, create/list/editor components and focused backend/frontend tests.
+
+DATABASE_CHANGES:
+None. Existing unique constraints remain the final collision guard.
+
+API_CHANGES:
+EntityTypeCreate.key and AttributeCreate.key are now optional. Omission generates
+type_<uuidhex> or attribute_<uuidhex>; explicit valid keys remain supported and all
+keys remain immutable.
+
+TESTS_ADDED:
+Focused service tests verify opaque generated keys for Persian entity and attribute
+labels; the existing frontend creation test now verifies key-free submission.
+
+TEST_RESULTS:
+Focused backend Ruff and 14 metadata/schema/OpenAPI tests pass. The focused frontend
+test, full frontend lint, type check, and production build pass.
+
+SECURITY_IMPACT:
+Generated keys are server-controlled, do not derive identifiers from user-authored
+labels, preserve authorization, and remain protected by existing uniqueness rules.
+
+KNOWN_LIMITATIONS:
+Form-designer keys and raw member/role selectors remain pending in the next bounded
+UX-BE-001/UX-FE-002 slices.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+Implement authorization-bounded people and role lookup contracts and replace raw
+workspace membership IDs with human-readable selectors.
+```
+
+---
+
+Human-readable workspace membership entry:
+
+```text
+DATE:
+2026-08-25
+
+MILESTONE:
+Demo usability remediation
+
+TASKS_COMPLETED:
+UX-BE-001/UX-FE-002 workspace people and role selector slice
+
+TASKS_IN_PROGRESS:
+UX-BE-001/UX-FE-002 remaining entity/parent/form selector remediation
+
+SUMMARY:
+Workspace administrators now search for an active person by name or username and
+choose a human-readable assignable role instead of entering User ID and Role ID.
+The people search excludes existing members and is bounded; role options are
+filtered to permissions the acting manager possesses.
+
+FILES_CHANGED:
+Workspace schemas, repository, service and API; OpenAPI/API specification; workspace
+frontend API and member manager; Persian translations; focused tests; current status.
+
+DATABASE_CHANGES:
+None.
+
+API_CHANGES:
+Added GET /workspaces/{workspace_id}/member-options with required bounded search and
+GET /workspaces/{workspace_id}/role-options. Existing membership mutation payloads
+remain compatible and IDs are resolved internally by the selector.
+
+TESTS_ADDED:
+Backend tests cover permission-gated people search, bounded/excluding candidate SQL,
+and assignable-role filtering. Frontend tests cover named person/role selection and
+the resulting unchanged membership contract.
+
+TEST_RESULTS:
+Focused backend Ruff, mypy, and 14 workspace/schema/OpenAPI tests pass. The focused
+frontend membership tests, full frontend lint, and type check pass.
+
+SECURITY_IMPACT:
+Both lookups require active workspace access and WORKSPACE_MANAGE. People search
+requires 2-120 characters, returns at most 20 safe fields with no total count, and
+excludes inactive/existing members. Roles exceeding the manager's authority are not
+returned, and add-member repeats authority and active-user validation.
+
+KNOWN_LIMITATIONS:
+Organization/affiliation context depends on the future generic party model. Other
+entity, parent, reference, and form-designer technical selectors remain pending.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+Implement REL-FE-002 sentence-style relationship creation using compatible named
+relationship and target selectors.
+```
+
+---
+
 # 27. Related Specifications
 
 ```text

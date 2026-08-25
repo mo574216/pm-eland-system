@@ -157,6 +157,32 @@ class WorkspaceRepository:
         )
         return tuple((await self.session.scalars(statement)).all())
 
+    async def search_member_candidates(
+        self, workspace_id: UUID, search: str, limit: int
+    ) -> tuple[User, ...]:
+        existing_members = select(WorkspaceMembership.user_id).where(
+            WorkspaceMembership.workspace_id == workspace_id
+        )
+        pattern = f"%{search}%"
+        statement = (
+            select(User)
+            .where(
+                User.is_active.is_(True),
+                User.id.not_in(existing_members),
+                or_(
+                    User.username.ilike(pattern),
+                    User.display_name.ilike(pattern),
+                    User.email.ilike(pattern),
+                ),
+            )
+            .order_by(User.display_name, User.username, User.id)
+            .limit(limit)
+        )
+        return tuple((await self.session.scalars(statement)).all())
+
+    async def list_roles(self) -> tuple[Role, ...]:
+        return tuple((await self.session.scalars(select(Role).order_by(Role.name, Role.id))).all())
+
     async def membership(self, workspace_id: UUID, user_id: UUID) -> WorkspaceMembership | None:
         statement = select(WorkspaceMembership).where(
             WorkspaceMembership.workspace_id == workspace_id,

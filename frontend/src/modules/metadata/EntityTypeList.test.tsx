@@ -51,12 +51,10 @@ describe('EntityTypeList', () => {
 
     expect(await screen.findByText('Business Process')).toBeInTheDocument()
     const fields = screen.getAllByRole('textbox')
-    await user.type(fields[0], 'network_security_zone')
-    await user.type(fields[1], 'Network Security Zone')
+    await user.type(fields[0], 'Network Security Zone')
     await user.click(screen.getByRole('button', { name: 'ایجاد نوع موجودیت' }))
 
     expect(createEntityType).toHaveBeenCalledWith(workspaceId, {
-      key: 'network_security_zone',
       name: 'Network Security Zone',
       plural_name: undefined,
       description: undefined,

@@ -18,7 +18,9 @@ from app.schemas.workspace import (
     WorkspaceListResponse,
     WorkspaceMemberCreate,
     WorkspaceMemberResponse,
+    WorkspacePersonOptionResponse,
     WorkspaceResponse,
+    WorkspaceRoleOptionResponse,
     WorkspaceUpdate,
 )
 from app.services.auth import AuthenticatedIdentity
@@ -129,6 +131,44 @@ async def list_workspace_members(
     members = await WorkspaceService(session, actor).list_members(workspace_id)
     return success_envelope(
         [_member_response(member).model_dump(mode="json") for member in members]
+    )
+
+
+@router.get("/{workspace_id}/member-options")
+async def search_workspace_member_options(
+    workspace_id: UUID,
+    actor: Annotated[AuthenticatedIdentity, Depends(get_current_identity)],
+    session: Annotated[AsyncSession, Depends(get_database_session)],
+    search: Annotated[str, Query(min_length=2, max_length=120)],
+    limit: Annotated[int, Query(ge=1, le=20)] = 10,
+) -> dict[str, object]:
+    users = await WorkspaceService(session, actor).search_member_candidates(
+        workspace_id, search=search.strip(), limit=limit
+    )
+    return success_envelope(
+        [
+            WorkspacePersonOptionResponse.model_validate(user, from_attributes=True).model_dump(
+                mode="json"
+            )
+            for user in users
+        ]
+    )
+
+
+@router.get("/{workspace_id}/role-options")
+async def list_workspace_role_options(
+    workspace_id: UUID,
+    actor: Annotated[AuthenticatedIdentity, Depends(get_current_identity)],
+    session: Annotated[AsyncSession, Depends(get_database_session)],
+) -> dict[str, object]:
+    roles = await WorkspaceService(session, actor).list_assignable_roles(workspace_id)
+    return success_envelope(
+        [
+            WorkspaceRoleOptionResponse.model_validate(role, from_attributes=True).model_dump(
+                mode="json"
+            )
+            for role in roles
+        ]
     )
 
 

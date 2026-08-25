@@ -42,7 +42,6 @@ export function EntityTypeEditor() {
   return (
     <Stack spacing={3}>
       <Typography component="h1" variant="h1">{entityType.data.name}</Typography>
-      <Typography color="text.secondary" dir="ltr">{entityType.data.key}</Typography>
       <Stack component="form" onSubmit={(event) => void submit(event)} spacing={2}>
         {saveMessage ? <Alert severity={update.isError ? 'error' : 'success'}>{saveMessage}</Alert> : null}
         <TextField label={t('metadata.name')} required {...register('name', { required: true })} />
@@ -54,7 +53,7 @@ export function EntityTypeEditor() {
       <Typography component="h2" variant="h5">{t('metadata.attributes')}</Typography>
       {attributes.isError ? <Alert severity="error">{t('metadata.attributesLoadFailed')}</Alert> : null}
       {attributes.data?.length === 0 ? <Alert severity="info">{t('metadata.noAttributes')}</Alert> : null}
-      <List>{attributes.data?.map((attribute) => <ListItem key={attribute.id} divider><ListItemText primary={attribute.label} secondary={`${attribute.key} · ${attribute.data_type}`} /></ListItem>)}</List>
+      <List>{attributes.data?.map((attribute) => <ListItem key={attribute.id} divider><ListItemText primary={attribute.label} secondary={attribute.data_type} /></ListItem>)}</List>
       <Divider />
       <AttributeDefinitionEditor entityTypeId={entityTypeId} />
     </Stack>

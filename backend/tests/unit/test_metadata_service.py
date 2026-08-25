@@ -1,5 +1,6 @@
 """Entity-type lifecycle, authorization, and audit tests."""
 
+import re
 from datetime import UTC, datetime
 from typing import cast
 from uuid import UUID, uuid4
@@ -177,6 +178,23 @@ async def test_create_entity_type_is_audited_atomically() -> None:
 
 
 @pytest.mark.asyncio
+async def test_create_entity_type_generates_opaque_stable_key_when_omitted() -> None:
+    actor = identity(PermissionCode.METADATA_MANAGE)
+    workspace = Workspace(id=uuid4(), name="A", slug="a", owner_id=actor.user.id)
+    repository = FakeMetadataRepository()
+    metadata_service, _ = service(actor, workspace, repository)
+
+    created = await metadata_service.create_entity_type(
+        workspace.id,
+        values=EntityTypeCreate(name="فرایند کسب و کار").model_dump(),
+        audit=audit_context(),
+    )
+
+    assert re.fullmatch(r"type_[0-9a-f]{32}", created.key)
+    assert "فرایند" not in created.key
+
+
+@pytest.mark.asyncio
 async def test_workspace_role_can_supply_metadata_manage_permission() -> None:
     actor = identity()
     workspace = Workspace(id=uuid4(), name="A", slug="a", owner_id=actor.user.id)
@@ -273,6 +291,23 @@ async def test_valid_enum_attribute_is_created_and_audited() -> None:
 
     assert created.entity_type_id == existing.id
     assert repository.audit_logs[-1].action == "ATTRIBUTE_DEFINITION_CREATED"
+
+
+@pytest.mark.asyncio
+async def test_create_attribute_generates_opaque_stable_key_when_omitted() -> None:
+    actor = identity(PermissionCode.METADATA_MANAGE)
+    workspace = Workspace(id=uuid4(), name="A", slug="a", owner_id=actor.user.id)
+    existing = entity_type(workspace.id, actor.user.id)
+    repository = FakeMetadataRepository(existing)
+    metadata_service, _ = service(actor, workspace, repository)
+
+    created = await metadata_service.create_attribute(
+        existing.id,
+        values=AttributeCreate(label="مالک", data_type="TEXT").model_dump(),
+        audit=audit_context(),
+    )
+
+    assert re.fullmatch(r"attribute_[0-9a-f]{32}", created.key)
 
 
 @pytest.mark.asyncio
