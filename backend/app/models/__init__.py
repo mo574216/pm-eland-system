@@ -14,6 +14,7 @@ from app.models.identity import (
 )
 from app.models.import_job import ImportConflict, ImportJob, ImportMapping, ImportProfile
 from app.models.metadata import AttributeDefinition, EntityType
+from app.models.phase import Phase, PhaseDeliverable
 from app.models.relationship import EntityRelationship, RelationshipType
 from app.models.workspace import Workspace, WorkspaceMembership
 
@@ -34,6 +35,8 @@ __all__ = [
     "ImportMapping",
     "ImportProfile",
     "Permission",
+    "Phase",
+    "PhaseDeliverable",
     "RelationshipType",
     "Role",
     "User",

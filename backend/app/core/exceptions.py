@@ -69,6 +69,11 @@ class ResourceConflictError(ApplicationError):
         super().__init__(code="RESOURCE_CONFLICT", status_code=409)
 
 
+class ResourceLockedError(ApplicationError):
+    def __init__(self) -> None:
+        super().__init__(code="RESOURCE_LOCKED", status_code=423)
+
+
 class ImportValidationFailedError(ApplicationError):
     def __init__(self) -> None:
         super().__init__(code="IMPORT_VALIDATION_FAILED", status_code=422)

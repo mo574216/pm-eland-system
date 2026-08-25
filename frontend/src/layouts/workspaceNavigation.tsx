@@ -2,6 +2,7 @@ import {
   AccountTreeOutlined,
   DashboardOutlined,
   FileUploadOutlined,
+  FormatListNumberedRtlOutlined,
   SettingsOutlined,
   TuneOutlined,
   ViewQuiltOutlined,
@@ -9,13 +10,14 @@ import {
 } from '@mui/icons-material'
 
 export interface WorkspaceNavigationItem {
-  key: 'dashboard' | 'entities' | 'forms' | 'imports' | 'metadata' | 'settings'
+  key: 'dashboard' | 'phases' | 'entities' | 'forms' | 'imports' | 'metadata' | 'settings'
   path: (workspaceId: string) => string
   icon: SvgIconComponent
 }
 
 export const workspaceNavigation: WorkspaceNavigationItem[] = [
   { key: 'dashboard', path: (id) => `/workspaces/${id}`, icon: DashboardOutlined },
+  { key: 'phases', path: (id) => `/workspaces/${id}/phases`, icon: FormatListNumberedRtlOutlined },
   { key: 'entities', path: (id) => `/workspaces/${id}/entities`, icon: AccountTreeOutlined },
   { key: 'forms', path: (id) => `/workspaces/${id}/forms`, icon: ViewQuiltOutlined },
   { key: 'imports', path: (id) => `/workspaces/${id}/imports`, icon: FileUploadOutlined },

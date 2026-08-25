@@ -1932,7 +1932,6 @@ Create phase.
 
 ```json
 {
-  "key": "current_state",
   "name": "Current State Analysis",
   "sequence_number": 1,
   "description": "..."
@@ -1950,6 +1949,11 @@ Return phases ordered by `sequence_number`.
 # 15.3 PATCH /phases/{phase_id}
 
 Update unlocked phase metadata.
+
+Phase updates require the current `version`; stale writes return `STALE_VERSION` and
+locked phases return `RESOURCE_LOCKED`. The backend shared lock policy is
+authoritative. Phase create `key` is optional and advanced-only; omission generates
+an immutable `phase_<32 lowercase hexadecimal characters>` key.
 
 ---
 

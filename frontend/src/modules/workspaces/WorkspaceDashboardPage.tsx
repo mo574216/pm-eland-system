@@ -4,6 +4,7 @@ import {
   DashboardCustomizeOutlined,
   DescriptionOutlined,
   FileUploadOutlined,
+  FormatListNumberedRtlOutlined,
   SettingsOutlined,
   TuneOutlined,
   ViewQuiltOutlined,
@@ -50,6 +51,7 @@ export function WorkspaceDashboardPage() {
   if (workspaceId === undefined) return <Navigate replace to="/workspaces" />
 
   const available = [
+    { title: t('navigation.phases'), description: t('dashboard.phasesDescription'), icon: <FormatListNumberedRtlOutlined />, path: `/workspaces/${workspaceId}/phases` },
     { title: t('navigation.entities'), description: t('dashboard.entitiesDescription'), icon: <AccountTreeOutlined />, path: `/workspaces/${workspaceId}/entities` },
     { title: t('navigation.metadata'), description: t('dashboard.metadataDescription'), icon: <TuneOutlined />, path: `/workspaces/${workspaceId}/metadata` },
     { title: t('dashboard.forms'), description: t('dashboard.formsDescription'), icon: <ViewQuiltOutlined />, path: `/workspaces/${workspaceId}/forms` },

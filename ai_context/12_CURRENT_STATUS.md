@@ -3735,6 +3735,75 @@ import, prioritizing the smallest phase vertical slice defined by the roadmap.
 
 ---
 
+Phase foundation entry:
+
+```text
+DATE:
+2026-08-25
+
+MILESTONE:
+M5 phase control foundation
+
+TASKS_COMPLETED:
+PHASE-DB-001 Phase Schema
+PHASE-BE-001 Phase CRUD
+PHASE-BE-002 Lock Policy Service
+PHASE-FE-001 Phase UI
+
+TASKS_IN_PROGRESS:
+None
+
+SUMMARY:
+Projects now have ordered metadata-neutral phases with generated technical keys,
+centrally constrained lifecycle states, optimistic concurrency, and a visible RTL
+management page. Explicit lock/unlock permissions are backend-enforced, material
+transitions are audited, and locked updates return RESOURCE_LOCKED. A reusable lock
+policy provides the boundary for subsequent phase-associated resources.
+
+FILES_CHANGED:
+Phase models/migration, schemas, repository, service/lock policy, API/router, shared
+contract/specification, phase frontend API/page/navigation/dashboard, Persian labels,
+focused tests, and current status.
+
+DATABASE_CHANGES:
+Migration 0012 creates phases and the specification-defined MVP phase_deliverables
+association with uniqueness, lifecycle/resource checks, foreign keys, and indexes.
+
+API_CHANGES:
+Added create/list workspace phases, optimistic phase update, and explicit lock/unlock
+operations. Create keys are optional and server-generated when omitted.
+
+TESTS_ADDED:
+Backend schema tests cover constraints/cascades; service tests cover audited
+lock/unlock and shared locked-phase rejection. Frontend coverage exercises named
+create, status progression, and lock actions without technical keys.
+
+TEST_RESULTS:
+Backend Ruff, focused mypy, five phase/OpenAPI tests, and OpenAPI synchronization
+pass. Alembic reports a single 0012 head and migration 0011 -> 0012 succeeds against
+the healthy local PostgreSQL service. File-scoped frontend ESLint, full type check,
+focused phase UI test, and production build pass.
+
+SECURITY_IMPACT:
+Reads/mutations require active workspace scope. Management, lock, and unlock use
+distinct permissions; transition rows are locked and material lock changes audit in
+the same transaction. Frontend state is UX only.
+
+KNOWN_LIMITATIONS:
+Deliverable association CRUD and governed evolution belong to DEL tasks. Existing
+resource mutations cannot be phase-bound until those APIs land, so they do not yet
+invoke the shared phase lock policy.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+Implement the generic deliverable foundation required to bind forms, documents,
+entities, and contextual imports to phases.
+```
+
+---
+
 # 27. Related Specifications
 
 ```text
