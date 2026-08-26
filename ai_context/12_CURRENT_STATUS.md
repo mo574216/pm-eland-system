@@ -4716,6 +4716,27 @@ observed MVP blockers before broader backlog work.
 
 ---
 
+Deliverable assignment authority checkpoint:
+
+```text
+DATE: 2026-08-27
+SUMMARY: Deliverable creation now validates assignment-lane permissions from the
+active workspace membership role: owner/contributors require DELIVERABLE_CONTRIBUTE
+and the internal reviewer requires DELIVERABLE_INTERNAL_REVIEW. This prevents an
+otherwise active technical reviewer from being assigned to contractor internal QA.
+DATABASE_CHANGES: None.
+API_CHANGES: None.
+TEST_RESULTS: Ruff and mypy pass for affected services; live API verification
+rejected the invalid technical-reviewer assignment before creating a deliverable.
+SECURITY_IMPACT: Assignment authority is enforced server-side from permissions, not
+role-name checks or frontend hiding.
+ARCHITECTURE_DEVIATIONS: None.
+NEXT_TASK: Provide permission-compatible assignment options in the selector, then
+continue the internal-review handoff.
+```
+
+---
+
 # 27. Related Specifications
 
 ```text

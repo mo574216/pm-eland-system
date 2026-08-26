@@ -17,7 +17,7 @@ from app.models.deliverable import (
     SubmissionRecipient,
     SubmissionWithdrawal,
 )
-from app.models.identity import AuditLog
+from app.models.identity import AuditLog, Permission, Role, role_permissions
 from app.models.workspace import WorkspaceMembership
 
 
@@ -120,6 +120,29 @@ class DeliverableRepository:
                         WorkspaceMembership.status == "ACTIVE",
                         WorkspaceMembership.user_id.in_(ids),
                     )
+                )
+            ).all()
+        )
+
+    async def active_member_ids_with_permission(
+        self, workspace_id: UUID, ids: set[UUID], permission_code: str
+    ) -> set[UUID]:
+        if not ids:
+            return set()
+        return set(
+            (
+                await self.session.scalars(
+                    select(WorkspaceMembership.user_id)
+                    .join(Role, Role.id == WorkspaceMembership.role_id)
+                    .join(role_permissions, role_permissions.c.role_id == Role.id)
+                    .join(Permission, Permission.id == role_permissions.c.permission_id)
+                    .where(
+                        WorkspaceMembership.workspace_id == workspace_id,
+                        WorkspaceMembership.status == "ACTIVE",
+                        WorkspaceMembership.user_id.in_(ids),
+                        Permission.code == permission_code,
+                    )
+                    .distinct()
                 )
             ).all()
         )

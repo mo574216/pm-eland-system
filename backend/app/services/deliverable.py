@@ -529,6 +529,23 @@ class DeliverableService:
                 != participant_ids
             ):
                 raise ResourceNotFoundError
+            contributor_ids = {payload.owner_id, *payload.contributor_ids}
+            if (
+                await self.repository.active_member_ids_with_permission(
+                    phase.workspace_id, contributor_ids, PermissionCode.DELIVERABLE_CONTRIBUTE.value
+                )
+                != contributor_ids
+            ):
+                raise PermissionDeniedError
+            if (
+                await self.repository.active_member_ids_with_permission(
+                    phase.workspace_id,
+                    {payload.internal_reviewer_id},
+                    PermissionCode.DELIVERABLE_INTERNAL_REVIEW.value,
+                )
+                != {payload.internal_reviewer_id}
+            ):
+                raise PermissionDeniedError
             value = Deliverable(
                 id=uuid4(),
                 workspace_id=phase.workspace_id,
