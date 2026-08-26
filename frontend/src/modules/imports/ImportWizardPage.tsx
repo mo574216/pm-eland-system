@@ -290,5 +290,5 @@ export function ImportWizard({ workspaceId, title, description, onComplete }: Im
 export function ImportWizardPage() {
   const { workspaceId } = useParams()
   if (workspaceId === undefined) return <Navigate replace to="/workspaces" />
-  return <ImportWizard workspaceId={workspaceId} />
+  return <Navigate replace to={`/workspaces/${workspaceId}/phases`} />
 }

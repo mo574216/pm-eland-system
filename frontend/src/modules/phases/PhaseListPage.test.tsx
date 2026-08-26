@@ -12,6 +12,12 @@ vi.mock('./phaseApi', () => ({
 vi.mock('../deliverables/DeliverablesPanel', () => ({
   DeliverablesPanel: () => <div data-testid="deliverables-panel" />,
 }))
+vi.mock('../acceptance/AcceptancePanel', () => ({
+  AcceptancePanel: () => <div data-testid="acceptance-panel" />,
+}))
+vi.mock('../imports/ImportWizardPage', () => ({
+  ImportWizard: ({ title }: { title: string }) => <div data-testid="phase-import-wizard">{title}</div>,
+}))
 
 const phase = {
   id: '10000000-0000-0000-0000-000000000001', workspace_id: 'workspace-1', key: 'phase_demo',
@@ -48,5 +54,18 @@ describe('PhaseListPage', () => {
 
     await user.click(screen.getByRole('button', { name: 'قفل مرحله' }))
     expect(setPhaseLocked).toHaveBeenCalledWith(phase.id, true)
+  })
+
+  it('starts the generic import workflow within the selected phase', async () => {
+    const user = userEvent.setup()
+    renderWithProviders(
+      <MemoryRouter initialEntries={['/workspaces/workspace-1/phases']}>
+        <Routes><Route path="/workspaces/:workspaceId/phases" element={<PhaseListPage />} /></Routes>
+      </MemoryRouter>,
+    )
+
+    expect(screen.queryByTestId('phase-import-wizard')).not.toBeInTheDocument()
+    await user.click(await screen.findByRole('button', { name: 'ورود اطلاعات این مرحله' }))
+    expect(screen.getByTestId('phase-import-wizard')).toHaveTextContent(phase.name)
   })
 })

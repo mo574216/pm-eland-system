@@ -4457,6 +4457,57 @@ short visual MVP walkthrough and address only observed demo-blocking defects.
 
 ---
 
+Phase-context import MVP checkpoint:
+
+```text
+DATE:
+2026-08-27
+
+SUMMARY:
+Operational import is now launched inside a selected project phase, where users
+work with its deliverables and acceptance actions. The same generic, metadata-driven
+import wizard is reused; it has not gained phase-specific persistence or bypassed
+its existing server-authorized upload, dry-run, explicit conflict-resolution, and
+idempotent commit protections. The routine workspace sidebar no longer exposes a
+standalone import destination. Its legacy URL redirects safely to phase work.
+
+FILES_CHANGED:
+Phase workspace UI, generic import route behavior, routine navigation, Persian
+localized contextual labels, focused frontend tests, and current status.
+
+DATABASE_CHANGES:
+None.
+
+API_CHANGES:
+None. Existing generic import endpoints and contracts are unchanged.
+
+TESTS_ADDED:
+Focused coverage verifies the phase opens the reusable import workflow with its
+selected phase context and that the old standalone URL redirects to phase work.
+
+TEST_RESULTS:
+Frontend type check and lint pass. Five focused phase/import frontend tests pass.
+
+SECURITY_IMPACT:
+No authorization or import safety control changes. Workspace scope continues to be
+derived by the existing import API; dry-run and explicit conflict decisions remain
+required before a material commit.
+
+KNOWN_LIMITATIONS:
+This MVP entry point provides operational context, not a new persistence association
+between an import job and a governed deliverable. The imported canonical data can be
+selected into the existing immutable deliverable package flow.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+Run the opt-in local persona bootstrap with a user-chosen password and complete the
+short visual governed-delivery walkthrough; address only observed demo blockers.
+```
+
+---
+
 # 27. Related Specifications
 
 ```text
