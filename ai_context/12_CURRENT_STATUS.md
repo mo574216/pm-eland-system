@@ -4508,6 +4508,53 @@ short visual governed-delivery walkthrough; address only observed demo blockers.
 
 ---
 
+Local MVP demo activation checkpoint:
+
+```text
+DATE:
+2026-08-27
+
+SUMMARY:
+The local development environment is running: Vite responds on localhost:5173 and
+the Docker backend container is healthy on localhost:8000. The opt-in demo bootstrap
+was run for the existing demo workspace. It created/reused the separate project
+manager, contractor leader, technical reviewer, and employer representative
+accounts, and direct backend login verification succeeded for each role.
+
+FILES_CHANGED:
+Current status only.
+
+DATABASE_CHANGES:
+No schema change. Local development identity/membership and corresponding audit
+records were created or reused by the existing opt-in bootstrap.
+
+API_CHANGES:
+None.
+
+TEST_RESULTS:
+Verified live frontend availability, healthy backend container, and successful
+credential login for all four governed-delivery demo roles without exposing tokens.
+
+SECURITY_IMPACT:
+The demonstration password exists only as a runtime local-development credential;
+it was not committed, logged by the bootstrap, or written to configuration. The
+bootstrap remains production-disabled and idempotent.
+
+KNOWN_LIMITATIONS:
+The workspace deliberately starts without fabricated phase or deliverable records.
+Use the walkthrough to create the visible governed-delivery evidence interactively.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+Use the active local personas to execute a short visual governed-delivery walkthrough
+and address only observed demo blockers before beginning the next dependency-ready
+MVP backlog slice.
+```
+
+---
+
 # 27. Related Specifications
 
 ```text
