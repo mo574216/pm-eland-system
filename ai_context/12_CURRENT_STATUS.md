@@ -4406,6 +4406,57 @@ blocking presentation defects before expanding into non-demo backlog capabilitie
 
 ---
 
+MVP demo-readiness checkpoint:
+
+```text
+DATE:
+2026-08-27
+
+SUMMARY:
+The local demo database was audited and contains only the administrator account,
+so a governed hand-off cannot be demonstrated until distinct personas are added.
+An opt-in development-only bootstrap now safely creates/reuses a project manager,
+contractor leader, technical reviewer, and employer representative for exactly one
+named workspace. It requires a caller-supplied 12+ character runtime password,
+never prints or overwrites a password, is idempotent for role/membership setup, is
+audited, and is disabled in production. A concise Persian-first demo walkthrough
+documents the full end-to-end flow.
+
+FILES_CHANGED:
+Development-only demo persona bootstrap, safety tests, and MVP walkthrough.
+
+DATABASE_CHANGES:
+None. The bootstrap uses existing identity, role, membership, and audit tables.
+
+API_CHANGES:
+None.
+
+TESTS_ADDED:
+Explicit workspace scope/password validation, required authority-lane coverage, and
+production disablement tests.
+
+TEST_RESULTS:
+Focused Ruff, mypy, and six bootstrap safety tests pass.
+
+SECURITY_IMPACT:
+No default or source-controlled password exists. The tool is local-development
+only, preserves existing credentials, rejects ambiguous workspace scope, and writes
+auditable membership changes.
+
+KNOWN_LIMITATIONS:
+The operator must choose and provide the local demo password when running the
+bootstrap; no credentials are created automatically or disclosed by the repository.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+Run the opt-in persona bootstrap with a user-chosen local password, then perform a
+short visual MVP walkthrough and address only observed demo-blocking defects.
+```
+
+---
+
 # 27. Related Specifications
 
 ```text
