@@ -165,10 +165,20 @@ class DeliverableService:
                 policy,
             ) in DELIVERABLE_TRANSITIONS
         ]
-        self.workflow_repository.add_all([definition, version, *states.values(), *transitions])
+        # These rows use composite workspace-scoped foreign keys. Persist each
+        # dependency layer before handing its identifiers to the next layer; ORM
+        # ordering cannot reliably infer this from the composite constraints.
+        self.workflow_repository.add_all([definition])
+        await self.workflow_repository.flush()
+        self.workflow_repository.add_all([version])
+        await self.workflow_repository.flush()
+        self.workflow_repository.add_all(list(states.values()))
+        await self.workflow_repository.flush()
+        self.workflow_repository.add_all([*transitions])
+        await self.workflow_repository.flush()
         return version, states["preparation"]
 
-    def _create_workflow_instance(
+    async def _create_workflow_instance(
         self,
         deliverable: Deliverable,
         definition_version: WorkflowDefinitionVersion,
@@ -217,7 +227,12 @@ class DeliverableService:
             context={"profile": DELIVERABLE_WORKFLOW_KEY},
             idempotency_key=f"deliverable-start:{deliverable.id}",
         )
-        self.workflow_repository.add_all([instance, *workflow_assignments, event])
+        # The assignment table has a composite FK to the instance. SQLAlchemy cannot
+        # infer the required ordering from that composite constraint alone, so flush
+        # the instance graph before adding its assignment/event children.
+        self.workflow_repository.add_all([instance])
+        await self.workflow_repository.flush()
+        self.workflow_repository.add_all([*workflow_assignments, event])
         return instance
 
     async def _effective_permissions(self, workspace_id: UUID) -> frozenset[str]:
@@ -565,7 +580,7 @@ class DeliverableService:
                 phase.workspace_id
             )
             self.repository.add_all([value, *assignments])
-            workflow_instance = self._create_workflow_instance(
+            workflow_instance = await self._create_workflow_instance(
                 value, workflow_version, initial_state, assignments
             )
             self.repository.add_audit_log(

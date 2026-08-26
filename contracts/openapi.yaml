@@ -265,7 +265,7 @@ paths:
     get:
       tags: [Workspaces]
       operationId: listWorkspaceMembers
-      summary: List members of an accessible workspace
+      summary: List safe member display details for an accessible workspace
       responses:
         '200':
           description: Workspace member list

@@ -222,13 +222,24 @@ async def test_actor_cannot_grant_workspace_role_permissions_they_do_not_possess
 
 
 @pytest.mark.asyncio
-async def test_workspace_role_can_supply_manage_permission_within_membership() -> None:
+async def test_workspace_role_can_supply_member_roster_read_permission_within_membership() -> None:
     actor = identity()
     scoped_workspace = workspace(actor.user.id)
     repository = FakeWorkspaceRepository(scoped_workspace)
-    repository.workspace_permissions = (PermissionCode.WORKSPACE_MANAGE.value,)
+    repository.workspace_permissions = (PermissionCode.WORKSPACE_READ.value,)
 
     assert await service(actor, repository).list_members(scoped_workspace.id) == ()
+
+
+@pytest.mark.asyncio
+async def test_member_roster_still_requires_workspace_read_permission() -> None:
+    actor = identity()
+    scoped_workspace = workspace(actor.user.id)
+
+    with pytest.raises(PermissionDeniedError):
+        await service(actor, FakeWorkspaceRepository(scoped_workspace)).list_members(
+            scoped_workspace.id
+        )
 
 
 @pytest.mark.asyncio

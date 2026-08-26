@@ -4555,6 +4555,66 @@ MVP backlog slice.
 
 ---
 
+Demo assignment and workflow persistence checkpoint:
+
+```text
+DATE:
+2026-08-27
+
+SUMMARY:
+Resolved a first-demo blocker: a Project Manager with workspace read access could
+not retrieve the safe same-workspace roster needed by the existing named owner and
+internal-reviewer selectors. Roster reading now requires WORKSPACE_READ, while
+membership add/remove, external candidate search, and role assignment still require
+WORKSPACE_MANAGE. During live demo staging, a composite foreign-key ordering defect
+in baseline deliverable workflow creation was found and fixed. New workflow profiles
+now persist definition, version, states, transitions, instance, assignments, and
+event in dependency order within the same audited transaction.
+
+FILES_CHANGED:
+Workspace authorization service and tests; deliverable workflow persistence service
+and regression tests; API/OpenAPI wording; current status.
+
+DATABASE_CHANGES:
+None. The local demo database now contains one explicitly named in-progress phase
+and one assigned sample deliverable in its governed preparation state.
+
+API_CHANGES:
+GET /workspaces/{workspaceId}/members now requires WORKSPACE_READ rather than
+WORKSPACE_MANAGE. Its response remains a scoped safe display roster; membership
+mutations and directory search are unchanged.
+
+TESTS_ADDED:
+Workspace-read roster authorization coverage and workflow composite-FK persistence
+ordering regression coverage.
+
+TEST_RESULTS:
+Ruff and mypy pass for affected backend services. Seventeen focused workspace,
+deliverable-schema, workflow-schema, and workflow-persistence tests pass. Live local
+verification confirms a Project Manager receives the scoped roster and can create
+the staged deliverable with owner/reviewer assignments and preparation workflow.
+
+SECURITY_IMPACT:
+Roster access remains limited to an accessible workspace and exposes only existing
+member display identity, assigned workspace profile, and status. No member-management
+or directory-enumeration capability was broadened. Workflow constraints remain
+enforced; the fix preserves rather than bypasses their ordered integrity checks.
+
+KNOWN_LIMITATIONS:
+The staged deliverable is intentionally at preparation so the contractor-leader,
+review, and employer hand-offs can be demonstrated interactively. Contextual form
+and import backend bindings remain correctly deferred to their contract-first tasks.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+Perform the short visual governed-delivery walkthrough from the staged phase and
+fix only observed MVP demo blockers before moving to the next dependency-ready task.
+```
+
+---
+
 # 27. Related Specifications
 
 ```text
