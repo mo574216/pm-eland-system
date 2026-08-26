@@ -4263,6 +4263,79 @@ submitted package can return to preparation and be resubmitted with provenance.
 
 ---
 
+Version-bound external review checkpoint:
+
+```text
+DATE:
+2026-08-27
+
+MILESTONE:
+M5C governed external review and revision slice
+
+TASKS_COMPLETED:
+REV-DB-001 Review Comment Schema
+REV-BE-001 Review Comment API
+REV-BE-002 Version-Bound Review Outcomes and Sign-Off
+SUB-BE-001 external revision/resubmission provenance portion
+DEL-FE-001 external review/revision presentation portion
+
+SUMMARY:
+Formal submission recipients with project or technical review authority can append
+comments and record clarification, revision, recommendation, conditional
+recommendation, major-revision/rejection, or technical-sign-off evidence against
+the exact immutable submitted version. Backend-returned actions drive one generic
+phase deliverable UI. Revision outcomes atomically return the configurable
+deliverable workflow to preparation; later formal submissions retain their prior
+submission provenance.
+
+FILES_CHANGED:
+Review evidence models/migration/repository/service/routes, configurable workflow
+transitions and policy, OpenAPI/database/API specifications, phase deliverable
+UI/API/localization/tests, and current status.
+
+DATABASE_CHANGES:
+Migration 0018 adds append-only review_comments and review_outcomes with composite
+workspace/submission/version integrity, plus project and technical revision
+transitions and formal-recipient workflow assignments.
+
+API_CHANGES:
+Added POST /submissions/{submission_id}/review-comments and
+POST /submissions/{submission_id}/review-outcomes. Submission projections include
+version-bound history and only review actions authorized for the current user.
+
+TESTS_ADDED:
+Schema/policy coverage proves evidence tables, distinct authority lanes,
+anti-bypass policy, outcome validation, and backend-returned external-review UI.
+
+TEST_RESULTS:
+Backend Ruff and full app mypy pass; 12 focused backend tests pass. Migration 0018
+upgrade, downgrade, and restored upgrade pass against PostgreSQL. Frontend lint,
+type/build, and three focused deliverable interactions pass. Backend readiness and
+localhost:5173 are healthy.
+
+SECURITY_IMPACT:
+Review mutations require active workspace access, current formal-recipient
+assignment, lane-specific permission, current submitted state, latest
+non-withdrawn submission, phase mutability, idempotency, and workspace-safe
+references. Generic workflow calls cannot bypass review evidence. Sign-off and
+recommendation do not grant employer acceptance.
+
+KNOWN_LIMITATIONS:
+Comment resolution/response evidence and employer acceptance packages remain the
+next demo dependencies. External review currently targets the immutable submitted
+package; field-level anchors are deferred to contextual communication.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+Implement the acceptance package/decision foundation so an authorized employer
+representative can accept, conditionally accept, or reject immutable evidence
+without conflating review recommendations with contractual acceptance.
+```
+
+---
+
 # 27. Related Specifications
 
 ```text

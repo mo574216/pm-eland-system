@@ -483,6 +483,17 @@ class WorkflowService:
                     or not await self.repository.latest_submission_is_withdrawn(instance.target_id)
                 ):
                     raise ResourceConflictError
+            if transition.policy.get("requires_review_outcome"):
+                if (
+                    instance.target_kind != "DELIVERABLE"
+                    or not await self.repository.has_current_review_outcome(
+                        instance.target_id,
+                        self.actor.user.id,
+                        transition.authority_kind,
+                        payload.target_version or instance.target_version,
+                    )
+                ):
+                    raise ResourceConflictError
             previous_state = await self.repository.state(instance.current_state_id)
             resulting_state = await self.repository.state(transition.to_state_id)
             version = await self.repository.version(instance.definition_version_id)

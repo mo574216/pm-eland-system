@@ -1730,6 +1730,53 @@ paths:
         '409': {$ref: '#/components/responses/Conflict'}
         '423': {$ref: '#/components/responses/Locked'}
 
+  /submissions/{submissionId}/review-comments:
+    post:
+      tags: [Deliverables]
+      operationId: createSubmissionReviewComment
+      summary: Append a comment bound to the submitted immutable version
+      parameters:
+        - {name: submissionId, in: path, required: true, schema: {type: string, format: uuid}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ReviewCommentCreate'}
+      responses:
+        '201':
+          description: Version-bound review comment appended and audited
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SuccessEnvelope'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '423': {$ref: '#/components/responses/Locked'}
+
+  /submissions/{submissionId}/review-outcomes:
+    post:
+      tags: [Deliverables]
+      operationId: createSubmissionReviewOutcome
+      summary: Record a version-bound project or technical review outcome
+      parameters:
+        - {name: submissionId, in: path, required: true, schema: {type: string, format: uuid}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ReviewOutcomeCreate'}
+      responses:
+        '201':
+          description: Immutable outcome recorded; revision outcomes transition the workflow
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SuccessEnvelope'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+        '423': {$ref: '#/components/responses/Locked'}
+
   /workspaces/{workspaceId}/dashboard-summary:
     parameters:
       - $ref: '#/components/parameters/WorkspaceId'
@@ -2755,6 +2802,35 @@ components:
       required: [reason, idempotency_key]
       properties:
         reason: {type: string, minLength: 1, maxLength: 5000}
+        idempotency_key: {type: string, minLength: 1, maxLength: 255}
+
+    ReviewCommentCreate:
+      type: object
+      additionalProperties: false
+      required: [text, idempotency_key]
+      properties:
+        text: {type: string, minLength: 1, maxLength: 10000}
+        idempotency_key: {type: string, minLength: 1, maxLength: 255}
+
+    ReviewOutcomeCreate:
+      type: object
+      additionalProperties: false
+      required: [outcome_kind, authority_kind, statement, idempotency_key]
+      properties:
+        outcome_kind:
+          type: string
+          enum: [CLARIFICATION, REVISION_REQUEST, RECOMMENDATION, CONDITIONAL_RECOMMENDATION, REJECTION_MAJOR_REVISION, TECHNICAL_SIGN_OFF]
+        authority_kind: {type: string, enum: [PROJECT_REVIEW, TECHNICAL_REVIEW]}
+        statement: {type: string, minLength: 1, maxLength: 10000}
+        conditions:
+          type: array
+          maxItems: 100
+          items: {type: string}
+        related_comment_ids:
+          type: array
+          maxItems: 100
+          items: {type: string, format: uuid}
+        expected_workflow_version: {type: [integer, 'null'], minimum: 1}
         idempotency_key: {type: string, minLength: 1, maxLength: 255}
 
     WorkflowStateCreate:

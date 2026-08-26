@@ -1791,6 +1791,17 @@ AUD-FR-*   → audit_logs
 
 ---
 
+## 36.1 Version-Bound Review Evidence
+
+`REV-DB-001` and `REV-BE-002` use `review_comments` and `review_outcomes` as
+append-only evidence. Both carry `workspace_id` and composite foreign keys to the
+exact submission and deliverable version, so later revisions cannot change what
+was reviewed. Outcome kind and authority lane are independent: project
+recommendation and technical sign-off cannot be mistaken for employer acceptance.
+Conditional recommendations retain their stated conditions as evidence.
+
+---
+
 # 37. Related Specifications
 
 ```text

@@ -23,8 +23,10 @@ import { listWorkspaceMembers, type WorkspaceMember } from '../workspaces/worksp
 import {
   createDeliverable,
   createDeliverableVersion,
+  addSubmissionReviewComment,
   listDeliverables,
   searchPackageOptions,
+  recordSubmissionReviewOutcome,
   submitDeliverable,
   transitionDeliverableReview,
   withdrawSubmission,
@@ -32,6 +34,7 @@ import {
   type DeliverableCreate,
   type PackageResourceKind,
   type PackageResourceOption,
+  type ReviewAction,
 } from './deliverableApi'
 
 interface CreateState {
@@ -55,7 +58,7 @@ function memberLabel(member: WorkspaceMember): string {
 
 function DeliverableActions({ item, members, locked, refresh }: { item: Deliverable; members: WorkspaceMember[]; locked: boolean; refresh: () => Promise<void> }) {
   const { t } = useTranslation()
-  const [mode, setMode] = useState<'PACKAGE' | 'SUBMIT' | null>(null)
+  const [mode, setMode] = useState<'PACKAGE' | 'SUBMIT' | 'REVIEW' | null>(null)
   const [kind, setKind] = useState<PackageResourceKind>('DOCUMENT_VERSION')
   const [search, setSearch] = useState('')
   const [resource, setResource] = useState<PackageResourceOption | null>(null)
@@ -64,6 +67,10 @@ function DeliverableActions({ item, members, locked, refresh }: { item: Delivera
   const [recipients, setRecipients] = useState<WorkspaceMember[]>([])
   const [reason, setReason] = useState('')
   const [reviewReason, setReviewReason] = useState('')
+  const [reviewAction, setReviewAction] = useState<ReviewAction | null>(null)
+  const [reviewStatement, setReviewStatement] = useState('')
+  const [reviewConditions, setReviewConditions] = useState('')
+  const [commentText, setCommentText] = useState('')
   const [error, setError] = useState<string | null>(null)
   const options = useQuery({
     queryKey: ['deliverable-package-options', item.id, kind, search],
@@ -96,6 +103,23 @@ function DeliverableActions({ item, members, locked, refresh }: { item: Delivera
     ),
     onSuccess: async () => { setReviewReason(''); await refresh() },
   })
+  const outcomeMutation = useMutation({
+    mutationFn: () => recordSubmissionReviewOutcome(item.latest_submission?.id ?? '', {
+      outcome_kind: reviewAction?.outcome_kind ?? '',
+      authority_kind: reviewAction?.authority_kind ?? 'PROJECT_REVIEW',
+      statement: reviewStatement.trim(),
+      conditions: reviewConditions.split('\n').map((value) => value.trim()).filter(Boolean),
+      related_comment_ids: [],
+      expected_workflow_version: reviewAction?.changes_workflow ? item.workflow?.version ?? null : null,
+    }),
+    onSuccess: async () => {
+      setMode(null); setReviewAction(null); setReviewStatement(''); setReviewConditions(''); await refresh()
+    },
+  })
+  const commentMutation = useMutation({
+    mutationFn: () => addSubmissionReviewComment(item.latest_submission?.id ?? '', commentText.trim()),
+    onSuccess: async () => { setCommentText(''); await refresh() },
+  })
   const run = async (operation: () => Promise<unknown>) => {
     setError(null)
     try { await operation() } catch (caught) {
@@ -113,6 +137,7 @@ function DeliverableActions({ item, members, locked, refresh }: { item: Delivera
           <Button disabled={locked || reviewMutation.isPending || (action.reason_required && reviewReason.trim() === '')} key={action.key} onClick={() => void run(() => reviewMutation.mutateAsync(action.key))} size="small" variant={action.key === 'mark_ready' ? 'contained' : 'outlined'}>{action.label}</Button>
         ))}
         <Button disabled={locked || !item.workflow?.available_actions.some((action) => action.key === 'formal_submit')} onClick={() => setMode(mode === 'SUBMIT' ? null : 'SUBMIT')} size="small" variant="contained">{item.latest_submission ? t('deliverables.resubmit') : t('deliverables.formalSubmit')}</Button>
+        {item.latest_submission?.available_review_actions.length ? <Button disabled={locked} onClick={() => setMode(mode === 'REVIEW' ? null : 'REVIEW')} size="small" variant="contained" color="secondary">{t('deliverables.externalReview')}</Button> : null}
       </Stack>
       {item.workflow?.available_actions.some((action) => action.reason_required && !['withdraw_submission'].includes(action.key)) ? <TextField label={t('deliverables.reviewReason')} onChange={(event) => setReviewReason(event.target.value)} size="small" value={reviewReason} /> : null}
       <Collapse in={mode === 'PACKAGE'}>
@@ -125,6 +150,20 @@ function DeliverableActions({ item, members, locked, refresh }: { item: Delivera
           <Autocomplete filterOptions={(values) => values} getOptionLabel={(option) => option.label} inputValue={search} loading={options.isFetching} noOptionsText={search.trim().length < 2 ? t('deliverables.searchHelp') : t('deliverables.noContentFound')} onChange={(_, value) => setResource(value)} onInputChange={(_, value) => setSearch(value)} options={options.data ?? []} renderInput={(params) => <TextField {...params} label={t('deliverables.content')} />} value={resource} />
           <TextField label={t('deliverables.packageSummary')} multiline onChange={(event) => setSummary(event.target.value)} value={summary} />
           <Button disabled={resource === null || packageMutation.isPending} onClick={() => void run(() => packageMutation.mutateAsync())} variant="contained">{t('deliverables.savePackage')}</Button>
+        </Stack>
+      </Collapse>
+      <Collapse in={mode === 'REVIEW'}>
+        <Stack spacing={1.5} sx={{ bgcolor: 'action.hover', borderRadius: 2, p: 1.5 }}>
+          <Alert severity="info">{t('deliverables.reviewVersionHint', { number: item.latest_version?.version_number.toLocaleString('fa-IR') })}</Alert>
+          <TextField label={t('deliverables.reviewOutcome')} onChange={(event) => setReviewAction(item.latest_submission?.available_review_actions.find((action) => `${action.authority_kind}:${action.outcome_kind}` === event.target.value) ?? null)} select value={reviewAction ? `${reviewAction.authority_kind}:${reviewAction.outcome_kind}` : ''}>
+            {item.latest_submission?.available_review_actions.map((action) => <MenuItem key={`${action.authority_kind}:${action.outcome_kind}`} value={`${action.authority_kind}:${action.outcome_kind}`}>{action.label}</MenuItem>)}
+          </TextField>
+          <TextField label={t('deliverables.reviewStatement')} multiline minRows={2} onChange={(event) => setReviewStatement(event.target.value)} value={reviewStatement} />
+          {reviewAction?.outcome_kind === 'CONDITIONAL_RECOMMENDATION' ? <TextField helperText={t('deliverables.conditionsHint')} label={t('deliverables.conditions')} multiline onChange={(event) => setReviewConditions(event.target.value)} value={reviewConditions} /> : null}
+          <Button disabled={!reviewAction || !reviewStatement.trim() || (reviewAction.outcome_kind === 'CONDITIONAL_RECOMMENDATION' && !reviewConditions.trim()) || outcomeMutation.isPending} onClick={() => void run(() => outcomeMutation.mutateAsync())} variant="contained">{t('deliverables.recordOutcome')}</Button>
+          <Divider />
+          <TextField label={t('deliverables.reviewComment')} multiline onChange={(event) => setCommentText(event.target.value)} value={commentText} />
+          <Button disabled={!commentText.trim() || commentMutation.isPending} onClick={() => void run(() => commentMutation.mutateAsync())} variant="outlined">{t('deliverables.addComment')}</Button>
         </Stack>
       </Collapse>
       <Collapse in={mode === 'SUBMIT'}>
@@ -257,6 +296,7 @@ export function DeliverablesPanel({ phaseId, workspaceId, locked }: { phaseId: s
               </Typography>
               {item.official_due_at ? <Stack direction="row" spacing={1}><EventOutlined fontSize="small" /><Typography variant="caption">{t('deliverables.officialDueValue', { date: new Date(item.official_due_at).toLocaleString('fa-IR') })}</Typography></Stack> : null}
               {item.latest_submission ? <Alert severity={item.latest_submission.withdrawn_at ? 'warning' : 'success'}>{item.latest_submission.withdrawn_at ? t('deliverables.withdrawn') : t('deliverables.submitted', { number: item.latest_submission.sequence_number.toLocaleString('fa-IR') })}</Alert> : null}
+              {item.latest_submission?.review_outcomes.map((outcome) => <Alert key={outcome.id} severity={['REVISION_REQUEST', 'REJECTION_MAJOR_REVISION'].includes(outcome.outcome_kind) ? 'warning' : 'info'}>{t('deliverables.reviewHistoryItem', { statement: outcome.statement })}</Alert>)}
               <DeliverableActions item={item} locked={locked} members={activeMembers} refresh={refresh} />
             </Stack>
           </Box>

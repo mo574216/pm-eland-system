@@ -230,3 +230,79 @@ class SubmissionWithdrawal(Base):
     withdrawn_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
+
+
+class ReviewComment(Base):
+    """Version-addressed review comment; resolution is added as separate evidence later."""
+
+    __tablename__ = "review_comments"
+    __table_args__ = (
+        UniqueConstraint("id", "workspace_id", name="uq_review_comments_scope"),
+        UniqueConstraint("submission_id", "idempotency_key", name="uq_review_comments_idempotency"),
+        ForeignKeyConstraint(
+            ["submission_id", "workspace_id"],
+            ["submissions.id", "submissions.workspace_id"],
+            name="fk_review_comments_submission_scope",
+            ondelete="RESTRICT",
+        ),
+        ForeignKeyConstraint(
+            ["deliverable_version_id", "workspace_id"],
+            ["deliverable_versions.id", "deliverable_versions.workspace_id"],
+            name="fk_review_comments_version_scope",
+            ondelete="RESTRICT",
+        ),
+        CheckConstraint("status IN ('OPEN')", name="ck_review_comments_status"),
+    )
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    workspace_id: Mapped[UUID]
+    submission_id: Mapped[UUID]
+    deliverable_version_id: Mapped[UUID]
+    author_id: Mapped[UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
+    text: Mapped[str] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(String(20), default="OPEN", server_default="OPEN")
+    idempotency_key: Mapped[str] = mapped_column(String(255))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class ReviewOutcome(Base):
+    """Append-only formal assessment of one immutable submitted version."""
+
+    __tablename__ = "review_outcomes"
+    __table_args__ = (
+        UniqueConstraint("submission_id", "idempotency_key", name="uq_review_outcomes_idempotency"),
+        ForeignKeyConstraint(
+            ["submission_id", "workspace_id"],
+            ["submissions.id", "submissions.workspace_id"],
+            name="fk_review_outcomes_submission_scope",
+            ondelete="RESTRICT",
+        ),
+        ForeignKeyConstraint(
+            ["deliverable_version_id", "workspace_id"],
+            ["deliverable_versions.id", "deliverable_versions.workspace_id"],
+            name="fk_review_outcomes_version_scope",
+            ondelete="RESTRICT",
+        ),
+        CheckConstraint(
+            "outcome_kind IN ('CLARIFICATION', 'REVISION_REQUEST', 'RECOMMENDATION', "
+            "'CONDITIONAL_RECOMMENDATION', 'REJECTION_MAJOR_REVISION', 'TECHNICAL_SIGN_OFF')",
+            name="ck_review_outcomes_kind",
+        ),
+        CheckConstraint(
+            "authority_kind IN ('PROJECT_REVIEW', 'TECHNICAL_REVIEW')",
+            name="ck_review_outcomes_authority",
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    workspace_id: Mapped[UUID]
+    submission_id: Mapped[UUID]
+    deliverable_version_id: Mapped[UUID]
+    outcome_kind: Mapped[str] = mapped_column(String(50))
+    authority_kind: Mapped[str] = mapped_column(String(40))
+    actor_id: Mapped[UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
+    statement: Mapped[str] = mapped_column(Text)
+    conditions: Mapped[list[str]] = mapped_column(JSONB, default=list, server_default="[]")
+    related_comment_ids: Mapped[list[str]] = mapped_column(JSONB, default=list, server_default="[]")
+    idempotency_key: Mapped[str] = mapped_column(String(255))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

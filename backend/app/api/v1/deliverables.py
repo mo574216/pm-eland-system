@@ -13,6 +13,8 @@ from app.core.request_context import get_request_id
 from app.schemas.deliverable import (
     DeliverableCreate,
     DeliverableVersionCreate,
+    ReviewCommentCreate,
+    ReviewOutcomeCreate,
     SubmissionCreate,
     SubmissionWithdrawalCreate,
 )
@@ -136,6 +138,34 @@ async def withdraw_submission(
     session: Annotated[AsyncSession, Depends(get_database_session)],
 ) -> dict[str, object]:
     value = await DeliverableService(session, actor).withdraw(
+        submission_id, payload, _audit_context(request)
+    )
+    return success_envelope(value.model_dump(mode="json"))
+
+
+@router.post("/submissions/{submission_id}/review-comments", status_code=status.HTTP_201_CREATED)
+async def create_review_comment(
+    submission_id: UUID,
+    payload: ReviewCommentCreate,
+    request: Request,
+    actor: Annotated[AuthenticatedIdentity, Depends(get_current_identity)],
+    session: Annotated[AsyncSession, Depends(get_database_session)],
+) -> dict[str, object]:
+    value = await DeliverableService(session, actor).add_review_comment(
+        submission_id, payload, _audit_context(request)
+    )
+    return success_envelope(value.model_dump(mode="json"))
+
+
+@router.post("/submissions/{submission_id}/review-outcomes", status_code=status.HTTP_201_CREATED)
+async def create_review_outcome(
+    submission_id: UUID,
+    payload: ReviewOutcomeCreate,
+    request: Request,
+    actor: Annotated[AuthenticatedIdentity, Depends(get_current_identity)],
+    session: Annotated[AsyncSession, Depends(get_database_session)],
+) -> dict[str, object]:
+    value = await DeliverableService(session, actor).record_review_outcome(
         submission_id, payload, _audit_context(request)
     )
     return success_envelope(value.model_dump(mode="json"))

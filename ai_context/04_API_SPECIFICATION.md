@@ -2455,6 +2455,22 @@ AUD-FR-*   → /audit/*
 
 ---
 
+## 27.1 Governed Submission Review Commands
+
+```text
+POST /submissions/{submission_id}/review-comments
+POST /submissions/{submission_id}/review-outcomes
+```
+
+Both commands are idempotent, recipient-scoped, workspace-isolated, phase-lock
+aware, audited, and bound by the server to the submitted immutable version.
+Revision and major-revision outcomes require an optimistic workflow version and
+atomically return the deliverable to preparation. Other outcomes remain immutable
+review evidence. Technical sign-off and project recommendation never create an
+employer acceptance decision.
+
+---
+
 # 28. Related Specifications
 
 ```text

@@ -47,6 +47,34 @@ export interface Submission {
   submitted_at: string
   withdrawn_at: string | null
   withdrawal_reason: string | null
+  review_comments: ReviewComment[]
+  review_outcomes: ReviewOutcome[]
+  available_review_actions: ReviewAction[]
+}
+
+export interface ReviewComment {
+  id: string
+  text: string
+  status: string
+  author_id: string | null
+  created_at: string
+}
+
+export interface ReviewOutcome {
+  id: string
+  outcome_kind: string
+  authority_kind: 'PROJECT_REVIEW' | 'TECHNICAL_REVIEW'
+  statement: string
+  conditions: string[]
+  actor_id: string | null
+  created_at: string
+}
+
+export interface ReviewAction {
+  outcome_kind: string
+  authority_kind: 'PROJECT_REVIEW' | 'TECHNICAL_REVIEW'
+  label: string
+  changes_workflow: boolean
 }
 
 export interface WorkflowAction {
@@ -159,5 +187,29 @@ export function transitionDeliverableReview(
       idempotency_key: crypto.randomUUID(),
       reason,
     }),
+  })
+}
+
+export function addSubmissionReviewComment(submissionId: string, text: string): Promise<Submission> {
+  return apiRequest<Submission>(`/submissions/${submissionId}/review-comments`, {
+    method: 'POST',
+    body: JSON.stringify({ text, idempotency_key: crypto.randomUUID() }),
+  })
+}
+
+export function recordSubmissionReviewOutcome(
+  submissionId: string,
+  values: {
+    outcome_kind: string
+    authority_kind: 'PROJECT_REVIEW' | 'TECHNICAL_REVIEW'
+    statement: string
+    conditions: string[]
+    related_comment_ids: string[]
+    expected_workflow_version: number | null
+  },
+): Promise<Submission> {
+  return apiRequest<Submission>(`/submissions/${submissionId}/review-outcomes`, {
+    method: 'POST',
+    body: JSON.stringify({ ...values, idempotency_key: crypto.randomUUID() }),
   })
 }

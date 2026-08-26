@@ -72,6 +72,38 @@ class SubmissionWithdrawalCreate(BaseModel):
     idempotency_key: Annotated[str, Field(min_length=1, max_length=255)]
 
 
+class ReviewCommentCreate(BaseModel):
+    text: Annotated[str, Field(min_length=1, max_length=10000)]
+    idempotency_key: Annotated[str, Field(min_length=1, max_length=255)]
+
+
+class ReviewOutcomeCreate(BaseModel):
+    outcome_kind: Literal[
+        "CLARIFICATION",
+        "REVISION_REQUEST",
+        "RECOMMENDATION",
+        "CONDITIONAL_RECOMMENDATION",
+        "REJECTION_MAJOR_REVISION",
+        "TECHNICAL_SIGN_OFF",
+    ]
+    authority_kind: Literal["PROJECT_REVIEW", "TECHNICAL_REVIEW"]
+    statement: Annotated[str, Field(min_length=1, max_length=10000)]
+    conditions: Annotated[list[str], Field(max_length=100)] = []
+    related_comment_ids: Annotated[list[UUID], Field(max_length=100)] = []
+    expected_workflow_version: int | None = Field(default=None, ge=1)
+    idempotency_key: Annotated[str, Field(min_length=1, max_length=255)]
+
+    @model_validator(mode="after")
+    def validate_outcome(self) -> "ReviewOutcomeCreate":
+        if self.outcome_kind == "CONDITIONAL_RECOMMENDATION" and not self.conditions:
+            raise ValueError("conditions are required for a conditional recommendation")
+        if self.outcome_kind == "TECHNICAL_SIGN_OFF" and self.authority_kind != "TECHNICAL_REVIEW":
+            raise ValueError("technical sign-off requires technical review authority")
+        if self.outcome_kind == "REVISION_REQUEST" and self.expected_workflow_version is None:
+            raise ValueError("expected_workflow_version is required for a revision request")
+        return self
+
+
 class PackageItemResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -109,6 +141,43 @@ class SubmissionResponse(BaseModel):
     submitted_at: datetime
     withdrawn_at: datetime | None = None
     withdrawal_reason: str | None = None
+    review_comments: list["ReviewCommentResponse"] = []
+    review_outcomes: list["ReviewOutcomeResponse"] = []
+    available_review_actions: list["ReviewActionResponse"] = []
+
+
+class ReviewCommentResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    submission_id: UUID
+    deliverable_version_id: UUID
+    author_id: UUID | None
+    text: str
+    status: str
+    created_at: datetime
+
+
+class ReviewOutcomeResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    submission_id: UUID
+    deliverable_version_id: UUID
+    outcome_kind: str
+    authority_kind: str
+    actor_id: UUID | None
+    statement: str
+    conditions: list[str]
+    related_comment_ids: list[UUID]
+    created_at: datetime
+
+
+class ReviewActionResponse(BaseModel):
+    outcome_kind: str
+    authority_kind: str
+    label: str
+    changes_workflow: bool = False
 
 
 class DeliverableReadiness(BaseModel):

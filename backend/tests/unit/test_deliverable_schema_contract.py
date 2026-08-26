@@ -10,7 +10,7 @@ from sqlalchemy import ForeignKeyConstraint
 from app.core.database import Base
 from app.core.deliverable_workflow import DELIVERABLE_STATES, DELIVERABLE_TRANSITIONS
 from app.models.deliverable import Deliverable, DeliverablePackageItem
-from app.schemas.deliverable import DeliverableCreate
+from app.schemas.deliverable import DeliverableCreate, ReviewOutcomeCreate
 from app.services.deliverable import DeliverableService
 
 
@@ -23,6 +23,8 @@ def test_deliverable_schema_preserves_workspace_and_immutable_evidence_scope() -
         "submissions",
         "submission_recipients",
         "submission_withdrawals",
+        "review_comments",
+        "review_outcomes",
     }
     assert expected <= set(Base.metadata.tables)
     submissions = Base.metadata.tables["submissions"]
@@ -125,3 +127,28 @@ def test_baseline_lifecycle_keeps_authority_lanes_and_policy_as_metadata() -> No
         "OWNER",
     )
     assert transitions["formal_submit"][8] == {"requires_active_submission": True}
+    assert transitions["project_request_revision"][4:7] == (
+        "PROJECT_REVIEW",
+        "PROJECT_REVIEW",
+        "REVIEW_RECIPIENT",
+    )
+    assert transitions["technical_request_revision"][4:7] == (
+        "TECHNICAL_REVIEW",
+        "TECHNICAL_REVIEW",
+        "REVIEW_RECIPIENT",
+    )
+    assert transitions["project_request_revision"][8] == {"requires_review_outcome": True}
+
+
+def test_review_outcome_contract_requires_version_precondition_and_distinct_signoff_lane() -> None:
+    base = {
+        "authority_kind": "PROJECT_REVIEW",
+        "statement": "اصلاح لازم است",
+        "idempotency_key": "review-1",
+    }
+    with pytest.raises(ValidationError):
+        ReviewOutcomeCreate.model_validate({**base, "outcome_kind": "REVISION_REQUEST"})
+    with pytest.raises(ValidationError):
+        ReviewOutcomeCreate.model_validate({**base, "outcome_kind": "TECHNICAL_SIGN_OFF"})
+    with pytest.raises(ValidationError):
+        ReviewOutcomeCreate.model_validate({**base, "outcome_kind": "CONDITIONAL_RECOMMENDATION"})

@@ -10,6 +10,7 @@ from app.models.deliverable import (
     Deliverable,
     DeliverablePackageItem,
     DeliverableVersion,
+    ReviewOutcome,
     Submission,
     SubmissionWithdrawal,
 )
@@ -339,6 +340,31 @@ class WorkflowRepository:
             )
             is not None
         )
+
+    async def has_current_review_outcome(
+        self, deliverable_id: UUID, actor_id: UUID, authority_kind: str, version_number: int | None
+    ) -> bool:
+        if version_number is None:
+            return False
+        latest_submission_id = (
+            select(Submission.id)
+            .where(Submission.deliverable_id == deliverable_id)
+            .order_by(Submission.sequence_number.desc())
+            .limit(1)
+            .scalar_subquery()
+        )
+        statement = (
+            select(ReviewOutcome.id)
+            .join(DeliverableVersion, DeliverableVersion.id == ReviewOutcome.deliverable_version_id)
+            .where(
+                ReviewOutcome.submission_id == latest_submission_id,
+                ReviewOutcome.actor_id == actor_id,
+                ReviewOutcome.authority_kind == authority_kind,
+                ReviewOutcome.outcome_kind.in_(("REVISION_REQUEST", "REJECTION_MAJOR_REVISION")),
+                DeliverableVersion.version_number == version_number,
+            )
+        )
+        return await self.session.scalar(statement) is not None
 
     async def update_instance_state(
         self, instance_id: UUID, expected_version: int, state_id: UUID, target_version: int | None
