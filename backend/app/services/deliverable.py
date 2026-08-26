@@ -749,7 +749,11 @@ class DeliverableService:
                         else {},
                     )
                 )
-            self.repository.add_all([version, *records])
+            # Package items reference the immutable version through a composite
+            # workspace-scoped FK, so persist the version before its item records.
+            self.repository.add_all([version])
+            await self.repository.flush()
+            self.repository.add_all([*records])
             self.repository.add_audit_log(
                 self._audit(
                     value.workspace_id,

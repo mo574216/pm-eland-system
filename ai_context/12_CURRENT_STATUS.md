@@ -4668,6 +4668,54 @@ demo, then address only observed MVP blockers before broader backlog work.
 
 ---
 
+Immutable package persistence checkpoint:
+
+```text
+DATE:
+2026-08-27
+
+SUMMARY:
+The live contractor-leader walkthrough exposed and fixed a second composite-FK
+persistence ordering defect: immutable deliverable package items could be flushed
+before their parent version. The service now flushes the version first, then items,
+while preserving the same transaction/audit boundary. The staged contractor leader
+successfully created immutable package version 1 from an authorized existing entity;
+the workflow now exposes only the configured internal-review request action.
+
+FILES_CHANGED:
+Deliverable package-version persistence ordering and current status.
+
+DATABASE_CHANGES:
+None. Local staged deliverable now has immutable package version 1 containing the
+authorized Demo Child entity snapshot.
+
+API_CHANGES:
+None.
+
+TEST_RESULTS:
+Ruff and mypy pass for the affected deliverable service. Nine focused deliverable
+schema, workflow schema, and persistence-ordering tests pass. The real local
+contractor-leader API command successfully created and read the immutable package.
+
+SECURITY_IMPACT:
+No authorization or version immutability relaxation. The owner/contributor and
+workspace checks, phase lock check, package-resource authorization, and transaction
+audit remain authoritative.
+
+KNOWN_LIMITATIONS:
+The internal-review request remains unperformed so it can be demonstrated visibly;
+further review/submission/acceptance handoffs remain available for the walkthrough.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+Exercise the contractor internal-review transition in the live demo and address only
+observed MVP blockers before broader backlog work.
+```
+
+---
+
 # 27. Related Specifications
 
 ```text
