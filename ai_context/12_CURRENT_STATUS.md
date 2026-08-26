@@ -4188,6 +4188,154 @@ correction, readiness, submission, and withdrawal from backend-returned actions.
 
 ---
 
+Workflow-bound internal-review entry:
+
+```text
+DATE:
+2026-08-26
+
+MILESTONE:
+M5A governed deliverable vertical slice
+
+TASKS_COMPLETED:
+DEL-BE-001 Deliverable Preparation and Internal Review API
+DEL-FE-001 backend-action-driven preparation/internal-review portion
+
+TASKS_IN_PROGRESS:
+SUB-BE-001 external revision integration
+DEL-FE-001 external review/revision presentation
+
+SUMMARY:
+Every new deliverable is now atomically bound to an immutable published version of
+the generic baseline deliverable workflow. Existing deliverables are backfilled.
+Owners, contributors, and internal reviewers receive distinct scoped assignments;
+the backend returns only eligible actions and enforces package readiness, current
+state, assignment, permission, reason, optimistic version, idempotency, and phase
+lock. Formal submission and withdrawal create evidence and transition the same
+workflow transactionally. The phase UI renders localized workflow state and only
+the actions returned by the backend.
+
+FILES_CHANGED:
+Installable lifecycle metadata profile, workflow repository/policy service,
+deliverable response/service/action API, migration 0017, OpenAPI/database/API
+specifications, phase deliverable UI/API/localization/tests, and current status.
+
+DATABASE_CHANGES:
+Migration 0017 installs the baseline lifecycle as ordinary versioned workflow data,
+creates target instances and assignments for existing deliverables, and appends
+their START events. Downgrade removes only deliverable instances and the marked
+system profile. New workspaces install the profile lazily on first deliverable.
+
+API_CHANGES:
+Added POST /deliverables/{deliverable_id}/actions/{action_key} for the allowlisted
+internal-review commands. Deliverable responses now include current workflow state,
+optimistic version, and permission/assignment/readiness-filtered available actions.
+
+TESTS_ADDED:
+Backend tests prove baseline metadata retains distinct contribution, internal-review,
+and formal-submission lanes and that configured readiness policy blocks transition.
+Frontend coverage proves the UI executes only the action returned by the backend.
+
+TEST_RESULTS:
+Focused backend Ruff and full app mypy pass; eight workflow/deliverable/OpenAPI tests
+pass. Migration 0017 upgrade, downgrade, and restored upgrade pass against PostgreSQL.
+Focused frontend type/lint checks and two deliverable interaction tests pass.
+
+SECURITY_IMPACT:
+The browser cannot invent authority from persona names. Every action is re-evaluated
+server-side against active workspace access, stable permission, scoped assignment,
+current state, configured condition, reason, version, idempotency, and lock state.
+Generic workflow endpoints enforce the same readiness/evidence policy, preventing a
+caller from bypassing the deliverable route.
+
+KNOWN_LIMITATIONS:
+External version-bound technical/project review outcomes and revision requests are
+the next REV-BE-002/SUB-BE-001 dependency. Employer acceptance remains separate and
+is not implied by internal readiness or formal submission.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+Implement version-bound external review outcomes and the revision-request path so a
+submitted package can return to preparation and be resubmitted with provenance.
+```
+
+---
+
+Version-bound external review checkpoint:
+
+```text
+DATE:
+2026-08-27
+
+MILESTONE:
+M5C governed external review and revision slice
+
+TASKS_COMPLETED:
+REV-DB-001 Review Comment Schema
+REV-BE-001 Review Comment API
+REV-BE-002 Version-Bound Review Outcomes and Sign-Off
+SUB-BE-001 external revision/resubmission provenance portion
+DEL-FE-001 external review/revision presentation portion
+
+SUMMARY:
+Formal submission recipients with project or technical review authority can append
+comments and record clarification, revision, recommendation, conditional
+recommendation, major-revision/rejection, or technical-sign-off evidence against
+the exact immutable submitted version. Backend-returned actions drive one generic
+phase deliverable UI. Revision outcomes atomically return the configurable
+deliverable workflow to preparation; later formal submissions retain their prior
+submission provenance.
+
+FILES_CHANGED:
+Review evidence models/migration/repository/service/routes, configurable workflow
+transitions and policy, OpenAPI/database/API specifications, phase deliverable
+UI/API/localization/tests, and current status.
+
+DATABASE_CHANGES:
+Migration 0018 adds append-only review_comments and review_outcomes with composite
+workspace/submission/version integrity, plus project and technical revision
+transitions and formal-recipient workflow assignments.
+
+API_CHANGES:
+Added POST /submissions/{submission_id}/review-comments and
+POST /submissions/{submission_id}/review-outcomes. Submission projections include
+version-bound history and only review actions authorized for the current user.
+
+TESTS_ADDED:
+Schema/policy coverage proves evidence tables, distinct authority lanes,
+anti-bypass policy, outcome validation, and backend-returned external-review UI.
+
+TEST_RESULTS:
+Backend Ruff and full app mypy pass; 12 focused backend tests pass. Migration 0018
+upgrade, downgrade, and restored upgrade pass against PostgreSQL. Frontend lint,
+type/build, and three focused deliverable interactions pass. Backend readiness and
+localhost:5173 are healthy.
+
+SECURITY_IMPACT:
+Review mutations require active workspace access, current formal-recipient
+assignment, lane-specific permission, current submitted state, latest
+non-withdrawn submission, phase mutability, idempotency, and workspace-safe
+references. Generic workflow calls cannot bypass review evidence. Sign-off and
+recommendation do not grant employer acceptance.
+
+KNOWN_LIMITATIONS:
+Comment resolution/response evidence and employer acceptance packages remain the
+next demo dependencies. External review currently targets the immutable submitted
+package; field-level anchors are deferred to contextual communication.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+Implement the acceptance package/decision foundation so an authorized employer
+representative can accept, conditionally accept, or reject immutable evidence
+without conflating review recommendations with contractual acceptance.
+```
+
+---
+
 # 27. Related Specifications
 
 ```text

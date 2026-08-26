@@ -429,7 +429,10 @@ class WorkflowService:
         payload: WorkflowTransitionRequest,
         audit: AuditContext,
     ) -> WorkflowInstanceResponse:
-        async with self.session.begin():
+        transaction = (
+            self.session.begin_nested() if self.session.in_transaction() else self.session.begin()
+        )
+        async with transaction:
             instance = await self.repository.accessible_instance(
                 instance_id, self.actor.user.id, lock=True
             )
@@ -460,6 +463,37 @@ class WorkflowService:
                 raise PermissionDeniedError
             if transition.reason_required and not payload.reason:
                 raise ResourceConflictError
+            if transition.policy.get("requires_package_readiness"):
+                if (
+                    instance.target_kind != "DELIVERABLE"
+                    or not await self.repository.deliverable_package_is_ready(instance.target_id)
+                ):
+                    raise ResourceConflictError
+            if transition.policy.get("requires_active_submission"):
+                if (
+                    instance.target_kind != "DELIVERABLE"
+                    or not await self.repository.has_active_submission_version(
+                        instance.target_id, payload.target_version
+                    )
+                ):
+                    raise ResourceConflictError
+            if transition.policy.get("requires_submission_withdrawal"):
+                if (
+                    instance.target_kind != "DELIVERABLE"
+                    or not await self.repository.latest_submission_is_withdrawn(instance.target_id)
+                ):
+                    raise ResourceConflictError
+            if transition.policy.get("requires_review_outcome"):
+                if (
+                    instance.target_kind != "DELIVERABLE"
+                    or not await self.repository.has_current_review_outcome(
+                        instance.target_id,
+                        self.actor.user.id,
+                        transition.authority_kind,
+                        payload.target_version or instance.target_version,
+                    )
+                ):
+                    raise ResourceConflictError
             previous_state = await self.repository.state(instance.current_state_id)
             resulting_state = await self.repository.state(transition.to_state_id)
             version = await self.repository.version(instance.definition_version_id)
@@ -524,6 +558,11 @@ class WorkflowService:
                 continue
             if transition.assignment_kind is not None and not await self.repository.has_assignment(
                 instance.id, self.actor.user.id, transition.assignment_kind
+            ):
+                continue
+            if transition.policy.get("requires_package_readiness") and (
+                instance.target_kind != "DELIVERABLE"
+                or not await self.repository.deliverable_package_is_ready(instance.target_id)
             ):
                 continue
             actions.append(

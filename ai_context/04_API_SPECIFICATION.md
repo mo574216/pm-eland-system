@@ -2106,6 +2106,7 @@ POST /phases/{phase_id}/deliverables
 GET  /deliverables/{deliverable_id}
 GET  /deliverables/{deliverable_id}/package-options
 POST /deliverables/{deliverable_id}/versions
+POST /deliverables/{deliverable_id}/actions/{action_key}
 POST /deliverables/{deliverable_id}/submissions
 POST /submissions/{submission_id}/withdrawals
 ```
@@ -2119,6 +2120,13 @@ requires `SUBMISSION_CREATE`, the owner assignment, readiness, active same-works
 recipients, an immutable package version, correct prior-submission provenance, and
 an idempotency key. Only the latest formal submission may be withdrawn, with a
 non-empty retained reason and audit record. Locked phases reject every mutation.
+
+Every deliverable is bound to an immutable published version of the installable
+`system_deliverable_lifecycle` metadata profile. Responses include the current
+localized state and only the caller's permission-, assignment-, state-, and
+readiness-eligible actions. Internal review actions use the deliverable action route;
+formal submit and withdrawal remain distinct evidence-producing routes and execute
+their workflow transition in the same transaction.
 
 ---
 
@@ -2444,6 +2452,22 @@ UX-FR-*    → generated-key creates and authorized lookup APIs
 RPT-FR-*   → /dashboards/*
 AUD-FR-*   → /audit/*
 ```
+
+---
+
+## 27.1 Governed Submission Review Commands
+
+```text
+POST /submissions/{submission_id}/review-comments
+POST /submissions/{submission_id}/review-outcomes
+```
+
+Both commands are idempotent, recipient-scoped, workspace-isolated, phase-lock
+aware, audited, and bound by the server to the submitted immutable version.
+Revision and major-revision outcomes require an optimistic workflow version and
+atomically return the deliverable to preparation. Other outcomes remain immutable
+review evidence. Technical sign-off and project recommendation never create an
+employer acceptance decision.
 
 ---
 

@@ -38,6 +38,12 @@ class Session:
     def begin(self) -> Transaction:
         return Transaction()
 
+    def begin_nested(self) -> Transaction:
+        return Transaction()
+
+    def in_transaction(self) -> bool:
+        return False
+
 
 class WorkspaceRepo:
     def __init__(self, workspace: Workspace) -> None:
@@ -59,6 +65,7 @@ class Repo:
         self.assignment = True
         self.accessible = True
         self.existing_event: WorkflowTransitionEvent | None = None
+        self.package_ready = True
         self.added: list[object] = []
         self.previous = WorkflowStateDefinition(
             id=instance.current_state_id,
@@ -94,6 +101,15 @@ class Repo:
 
     async def has_assignment(self, *_: object) -> bool:
         return self.assignment
+
+    async def deliverable_package_is_ready(self, *_: object) -> bool:
+        return self.package_ready
+
+    async def has_active_submission_version(self, *_: object) -> bool:
+        return True
+
+    async def latest_submission_is_withdrawn(self, *_: object) -> bool:
+        return True
 
     async def state(self, state_id: UUID) -> WorkflowStateDefinition:
         return self.previous if state_id == self.previous.id else self.resulting
@@ -174,10 +190,26 @@ def request() -> WorkflowTransitionRequest:
 
 @pytest.mark.asyncio
 async def test_transition_requires_distinct_permission_and_assignment() -> None:
-    result, repo = service()
+    result, _repo = service()
     with pytest.raises(PermissionDeniedError):
         await result.transition_instance(
             uuid4(), "submit", request(), AuditContext(uuid4(), None, None)
+        )
+
+
+@pytest.mark.asyncio
+async def test_transition_enforces_configured_deliverable_readiness_policy() -> None:
+    result, repo = service(PermissionCode.SUBMISSION_CREATE)
+    repo.instance.target_kind = "DELIVERABLE"
+    repo.transition_record.policy = {"requires_package_readiness": True}
+    repo.package_ready = False
+
+    with pytest.raises(ResourceConflictError):
+        await result.transition_instance(
+            repo.instance.id,
+            "submit",
+            request(),
+            AuditContext(uuid4(), None, None),
         )
 
     result, repo = service(PermissionCode.SUBMISSION_CREATE)

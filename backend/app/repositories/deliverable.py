@@ -11,6 +11,8 @@ from app.models.deliverable import (
     DeliverableAssignment,
     DeliverablePackageItem,
     DeliverableVersion,
+    ReviewComment,
+    ReviewOutcome,
     Submission,
     SubmissionRecipient,
     SubmissionWithdrawal,
@@ -25,6 +27,81 @@ class DeliverableRepository:
 
     def add_all(self, values: list[object]) -> None:
         self.session.add_all(values)
+
+    async def review_comments(self, submission_id: UUID) -> tuple[ReviewComment, ...]:
+        return tuple(
+            (
+                await self.session.scalars(
+                    select(ReviewComment)
+                    .where(ReviewComment.submission_id == submission_id)
+                    .order_by(ReviewComment.created_at, ReviewComment.id)
+                )
+            ).all()
+        )
+
+    async def review_outcomes(self, submission_id: UUID) -> tuple[ReviewOutcome, ...]:
+        return tuple(
+            (
+                await self.session.scalars(
+                    select(ReviewOutcome)
+                    .where(ReviewOutcome.submission_id == submission_id)
+                    .order_by(ReviewOutcome.created_at, ReviewOutcome.id)
+                )
+            ).all()
+        )
+
+    async def review_comment_by_idempotency(
+        self, submission_id: UUID, key: str
+    ) -> ReviewComment | None:
+        return cast(
+            ReviewComment | None,
+            await self.session.scalar(
+                select(ReviewComment).where(
+                    ReviewComment.submission_id == submission_id,
+                    ReviewComment.idempotency_key == key,
+                )
+            ),
+        )
+
+    async def review_outcome_by_idempotency(
+        self, submission_id: UUID, key: str
+    ) -> ReviewOutcome | None:
+        return cast(
+            ReviewOutcome | None,
+            await self.session.scalar(
+                select(ReviewOutcome).where(
+                    ReviewOutcome.submission_id == submission_id,
+                    ReviewOutcome.idempotency_key == key,
+                )
+            ),
+        )
+
+    async def is_submission_recipient(self, submission_id: UUID, user_id: UUID) -> bool:
+        return (
+            await self.session.scalar(
+                select(SubmissionRecipient.id).where(
+                    SubmissionRecipient.submission_id == submission_id,
+                    SubmissionRecipient.user_id == user_id,
+                )
+            )
+            is not None
+        )
+
+    async def review_comments_by_ids(
+        self, submission_id: UUID, comment_ids: set[UUID]
+    ) -> set[UUID]:
+        if not comment_ids:
+            return set()
+        return set(
+            (
+                await self.session.scalars(
+                    select(ReviewComment.id).where(
+                        ReviewComment.submission_id == submission_id,
+                        ReviewComment.id.in_(comment_ids),
+                    )
+                )
+            ).all()
+        )
 
     def add_audit_log(self, value: AuditLog) -> None:
         self.session.add(value)

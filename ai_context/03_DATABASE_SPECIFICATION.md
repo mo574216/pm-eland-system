@@ -1208,6 +1208,14 @@ append-only reasoned event; submission evidence is never updated or deleted in
 place. Composite workspace foreign keys prevent cross-workspace deliverable,
 version, prior-submission, recipient, or withdrawal associations.
 
+Migration `0017` installs a versioned baseline deliverable lifecycle as ordinary
+workflow-definition data and binds existing deliverables to instances and scoped
+assignments. Owners receive both `OWNER` and `CONTRIBUTOR` workflow assignments;
+contributors and internal reviewers retain their distinct lanes. New deliverables
+install the same profile lazily when absent, so new workspaces do not depend on a
+one-time migration seed. Administrators may publish successor definition versions;
+existing instances retain their original immutable version.
+
 `WORK-DB-001` and `COM-DB-001` SHALL similarly use generic workspace-scoped work
 items/dependencies/risks/issues and explicit-kind communication/notification records.
 Dependencies require cycle prevention. Notification and thread targets require
@@ -1780,6 +1788,17 @@ UX-FR-*    → generated-key and selector-supporting constraints
 RPT-FR-*   → dashboards
 AUD-FR-*   → audit_logs
 ```
+
+---
+
+## 36.1 Version-Bound Review Evidence
+
+`REV-DB-001` and `REV-BE-002` use `review_comments` and `review_outcomes` as
+append-only evidence. Both carry `workspace_id` and composite foreign keys to the
+exact submission and deliverable version, so later revisions cannot change what
+was reviewed. Outcome kind and authority lane are independent: project
+recommendation and technical sign-off cannot be mistaken for employer acceptance.
+Conditional recommendations retain their stated conditions as evidence.
 
 ---
 

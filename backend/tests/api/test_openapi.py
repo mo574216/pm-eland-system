@@ -34,6 +34,7 @@ def test_openapi_uses_version_31_and_exposes_health_routes(client: TestClient) -
     assert "/api/v1/phases/{phase_id}/deliverables" in document["paths"]
     assert "/api/v1/deliverables/{deliverable_id}" in document["paths"]
     assert "/api/v1/deliverables/{deliverable_id}/versions" in document["paths"]
+    assert "/api/v1/deliverables/{deliverable_id}/actions/{action_key}" in document["paths"]
     assert "/api/v1/deliverables/{deliverable_id}/submissions" in document["paths"]
     assert "/api/v1/submissions/{submission_id}/withdrawals" in document["paths"]
     upload = document["paths"]["/api/v1/entities/{entity_id}/documents"]["post"]
