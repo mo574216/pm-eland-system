@@ -1800,6 +1800,17 @@ was reviewed. Outcome kind and authority lane are independent: project
 recommendation and technical sign-off cannot be mistaken for employer acceptance.
 Conditional recommendations retain their stated conditions as evidence.
 
+## 36.2 Phase Acceptance Evidence and Conditions
+
+`ACC-DB-001` adds `acceptance_packages`, immutable package items bound to submission
+and deliverable-version evidence, immutable `acceptance_decisions`, assigned
+`acceptance_conditions`, append-only condition events, and one immutable closure
+record. All operational rows carry `workspace_id` and use composite workspace
+foreign keys where the referenced record is workspace-scoped. A conditional decision
+does not overwrite itself when conditions are satisfied; its closure is a new record.
+Project-manager recommendations remain package evidence only. Employer contractual
+acceptance is stored as its own authority lane.
+
 ---
 
 # 37. Related Specifications

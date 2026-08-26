@@ -2,6 +2,7 @@
 
 from fastapi import APIRouter
 
+from app.api.v1.acceptance import router as acceptance_router
 from app.api.v1.audit import router as audit_router
 from app.api.v1.auth import router as auth_router
 from app.api.v1.dashboards import router as dashboards_router
@@ -18,6 +19,7 @@ from app.api.v1.workflows import router as workflows_router
 from app.api.v1.workspaces import router as workspaces_router
 
 api_router = APIRouter()
+api_router.include_router(acceptance_router)
 api_router.include_router(audit_router)
 api_router.include_router(auth_router)
 api_router.include_router(dashboards_router)

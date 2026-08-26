@@ -4336,6 +4336,76 @@ without conflating review recommendations with contractual acceptance.
 
 ---
 
+Phase acceptance MVP checkpoint:
+
+```text
+DATE:
+2026-08-27
+
+MILESTONE:
+M5C contractual phase-acceptance demo slice
+
+TASKS_COMPLETED:
+ACC-DB-001 phase acceptance package/decision/condition schema
+ACC-BE-001 phase acceptance, condition evidence, verification, and closure portion
+ACC-FE-001 phase-context acceptance workspace portion
+
+SUMMARY:
+An authorized project manager can assemble an immutable phase package from current
+submitted deliverable versions and existing project recommendations, then assign an
+employer recipient by name. Only that recipient with contractual acceptance
+permission can accept, conditionally accept, or reject. Conditional decisions create
+assigned, versioned conditions; the responsible user submits immutable evidence, the
+assigned verifier verifies or rejects it, and the employer can record a separate
+closure after all mandatory conditions are satisfied.
+
+FILES_CHANGED:
+Acceptance models/migration/repository/service/routes, phase-context acceptance UI
+and API, OpenAPI/database/API specifications, focused tests, and current status.
+
+DATABASE_CHANGES:
+Migration 0019 adds immutable acceptance packages/items/decisions/closures and
+versioned condition projections with append-only events and workspace-safe foreign
+keys.
+
+API_CHANGES:
+Added backend-returned GET /phases/{phase_id}/acceptance-workspace and dedicated
+package, decision, condition evidence/verification, and closure commands.
+
+TESTS_ADDED:
+Schema validation verifies composite evidence scope, immutable decision constraints,
+and conditional-decision validation. Frontend coverage verifies that prepare controls
+are backend-authority-driven and use named people selectors.
+
+TEST_RESULTS:
+Backend Ruff and full app mypy pass; 12 focused backend tests pass. Migration 0019
+upgrade, downgrade, and restored upgrade pass against PostgreSQL. Frontend lint and
+five focused acceptance/deliverable UI tests pass. Runtime OpenAPI exposes the new
+routes and backend readiness is healthy.
+
+SECURITY_IMPACT:
+Authority is not inferred from a persona. Package preparation requires
+PROJECT_RECOMMEND; decision requires the explicitly assigned employer recipient and
+ACCEPTANCE_DECIDE; evidence requires the assigned responsible user; verification
+requires assigned verifier plus CONDITION_VERIFY. Package freshness, workspace
+membership, idempotency, optimistic condition version, and immutable evidence are
+enforced server-side. Acceptance/review lanes remain separate.
+
+KNOWN_LIMITATIONS:
+This MVP slice covers phase acceptance. Final workspace/project acceptance and
+exception/reopening policies remain deliberately deferred; automatic milestone and
+critical-finding evidence awaits the work/issue slice.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+Polish the first-demo flow with seeded/demo scenario guidance and resolve only
+blocking presentation defects before expanding into non-demo backlog capabilities.
+```
+
+---
+
 # 27. Related Specifications
 
 ```text

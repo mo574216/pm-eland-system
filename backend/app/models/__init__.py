@@ -1,5 +1,13 @@
 """Stable platform persistence models."""
 
+from app.models.acceptance import (
+    AcceptanceClosure,
+    AcceptanceCondition,
+    AcceptanceConditionEvent,
+    AcceptanceDecision,
+    AcceptancePackage,
+    AcceptancePackageItem,
+)
 from app.models.dashboard import Dashboard
 from app.models.deliverable import (
     Deliverable,
@@ -40,6 +48,12 @@ from app.models.workflow import (
 from app.models.workspace import Workspace, WorkspaceMembership
 
 __all__ = [
+    "AcceptanceClosure",
+    "AcceptanceCondition",
+    "AcceptanceConditionEvent",
+    "AcceptanceDecision",
+    "AcceptancePackage",
+    "AcceptancePackageItem",
     "AttributeDefinition",
     "AuditLog",
     "AuthSession",

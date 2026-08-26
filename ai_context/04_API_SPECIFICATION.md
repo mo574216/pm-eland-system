@@ -2469,6 +2469,24 @@ atomically return the deliverable to preparation. Other outcomes remain immutabl
 review evidence. Technical sign-off and project recommendation never create an
 employer acceptance decision.
 
+## 27.2 Phase Acceptance Commands
+
+```text
+GET  /phases/{phase_id}/acceptance-workspace
+POST /phases/{phase_id}/acceptance-packages
+POST /acceptance-packages/{package_id}/decisions
+POST /acceptance-conditions/{condition_id}/evidence
+POST /acceptance-conditions/{condition_id}/verification
+POST /acceptance-decisions/{decision_id}/closure
+```
+
+The backend assembles a package only from current submitted immutable versions with
+project recommendations. A package names its employer recipient. Only that active
+recipient with `ACCEPTANCE_DECIDE` can accept, conditionally accept, or reject;
+technical sign-off and project recommendation cannot substitute for it. Conditional
+closure requires each mandatory condition's evidence to have been verified by its
+assigned user with `CONDITION_VERIFY`.
+
 ---
 
 # 28. Related Specifications

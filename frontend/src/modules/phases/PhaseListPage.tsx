@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next'
 import { Navigate, useParams } from 'react-router-dom'
 
 import { ApiError } from '../../api/client'
+import { AcceptancePanel } from '../acceptance/AcceptancePanel'
 import { DeliverablesPanel } from '../deliverables/DeliverablesPanel'
 import { createPhase, listPhases, setPhaseLocked, updatePhaseStatus, type Phase, type PhaseStatus } from './phaseApi'
 
@@ -47,6 +48,7 @@ function PhaseCard({ phase }: { phase: Phase }) {
             {statuses.map((value) => <MenuItem key={value} value={value}>{t(`phases.status.${value}`)}</MenuItem>)}
           </TextField>
           <DeliverablesPanel locked={phase.is_locked} phaseId={phase.id} workspaceId={phase.workspace_id} />
+          <AcceptancePanel phaseId={phase.id} workspaceId={phase.workspace_id} />
         </Stack>
       </CardContent>
       <CardActions>
