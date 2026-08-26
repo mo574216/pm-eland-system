@@ -4615,6 +4615,59 @@ fix only observed MVP demo blockers before moving to the next dependency-ready t
 
 ---
 
+Live MVP browser walkthrough checkpoint:
+
+```text
+DATE:
+2026-08-27
+
+SUMMARY:
+Added an opt-in live browser smoke test for the staged local MVP. With runtime-only
+credentials it signs in through the real frontend/backend, opens the accessible
+workspace, navigates to phases, verifies the Persian staged phase and deliverable,
+and verifies that the desktop drawer is positioned on the right. No credential is
+stored in the test or repository. During staging, a Windows shell encoding error was
+handled through governed API operations: the mistaken local phase was explicitly
+archived and a correctly encoded Persian replacement phase/deliverable was created.
+
+FILES_CHANGED:
+Credential-free opt-in Playwright live-demo smoke test and current status.
+
+DATABASE_CHANGES:
+No schema change. Local demo state includes a correctly encoded active phase and
+assigned sample deliverable; the erroneous predecessor is retained as archived
+historical local setup rather than silently deleted.
+
+API_CHANGES:
+None.
+
+TESTS_ADDED:
+The opt-in test covers live authentication, workspace/phase navigation, staged
+Persian content, and right-side desktop drawer placement.
+
+TEST_RESULTS:
+The real local browser run passes against http://localhost:5173 and the Docker
+backend using runtime-only demo credentials.
+
+SECURITY_IMPACT:
+Credentials are consumed solely from LIVE_DEMO_USERNAME and LIVE_DEMO_PASSWORD at
+test runtime; test source and repository contain no username/password values.
+
+KNOWN_LIMITATIONS:
+The acceptance/review transitions remain deliberately unperformed so users can
+demonstrate them interactively. The archived local setup record is non-production
+demo history only.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+Exercise the next contractor-leader package and internal-review handoff in the live
+demo, then address only observed MVP blockers before broader backlog work.
+```
+
+---
+
 # 27. Related Specifications
 
 ```text
