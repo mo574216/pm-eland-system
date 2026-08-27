@@ -57,9 +57,7 @@ async def test_new_workflow_profile_flushes_each_composite_fk_dependency_layer()
     await value._ensure_workflow_profile(uuid4())
 
     added_types = [
-        [type(item) for item in batch]
-        for action, batch in recorder.operations
-        if action == "add"
+        [type(item) for item in batch] for action, batch in recorder.operations if action == "add"
     ]
     assert added_types == [
         [WorkflowDefinition],
@@ -68,7 +66,14 @@ async def test_new_workflow_profile_flushes_each_composite_fk_dependency_layer()
         [WorkflowTransitionDefinition] * len(DELIVERABLE_TRANSITIONS),
     ]
     assert [action for action, _ in recorder.operations] == [
-        "add", "flush", "add", "flush", "add", "flush", "add", "flush"
+        "add",
+        "flush",
+        "add",
+        "flush",
+        "add",
+        "flush",
+        "add",
+        "flush",
     ]
 
 
@@ -79,22 +84,44 @@ async def test_workflow_instance_is_flushed_before_composite_fk_children() -> No
     value.workflow_repository = recorder  # type: ignore[assignment]
     workspace_id = uuid4()
     definition_version = WorkflowDefinitionVersion(
-        id=uuid4(), workspace_id=workspace_id, definition_id=uuid4(), version_number=1,
-        status="PUBLISHED", configuration={},
+        id=uuid4(),
+        workspace_id=workspace_id,
+        definition_id=uuid4(),
+        version_number=1,
+        status="PUBLISHED",
+        configuration={},
     )
     state = WorkflowStateDefinition(
-        id=uuid4(), workspace_id=workspace_id, definition_version_id=definition_version.id,
-        key="preparation", label="Preparation", sequence_number=1, is_initial=True,
-        is_terminal=False, configuration={},
+        id=uuid4(),
+        workspace_id=workspace_id,
+        definition_version_id=definition_version.id,
+        key="preparation",
+        label="Preparation",
+        sequence_number=1,
+        is_initial=True,
+        is_terminal=False,
+        configuration={},
     )
     deliverable = Deliverable(
-        id=uuid4(), workspace_id=workspace_id, phase_id=uuid4(), key="delivery_demo",
-        name="Demo", description=None, owner_id=value.actor.user.id,
-        internal_reviewer_id=None, requirements=[], created_by=value.actor.user.id, version=1,
+        id=uuid4(),
+        workspace_id=workspace_id,
+        phase_id=uuid4(),
+        key="delivery_demo",
+        name="Demo",
+        description=None,
+        owner_id=value.actor.user.id,
+        internal_reviewer_id=None,
+        requirements=[],
+        created_by=value.actor.user.id,
+        version=1,
     )
     assignment = DeliverableAssignment(
-        id=uuid4(), workspace_id=workspace_id, deliverable_id=deliverable.id,
-        user_id=value.actor.user.id, assignment_kind="OWNER", assigned_by=value.actor.user.id,
+        id=uuid4(),
+        workspace_id=workspace_id,
+        deliverable_id=deliverable.id,
+        user_id=value.actor.user.id,
+        assignment_kind="OWNER",
+        assigned_by=value.actor.user.id,
     )
 
     await value._create_workflow_instance(deliverable, definition_version, state, [assignment])

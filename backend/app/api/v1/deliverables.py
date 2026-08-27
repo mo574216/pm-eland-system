@@ -60,7 +60,8 @@ async def list_deliverables(
 
 @router.get("/phases/{phase_id}/deliverable-assignment-options")
 async def list_deliverable_assignment_options(
-    phase_id: UUID, lane: Annotated[Literal["CONTRIBUTOR", "INTERNAL_REVIEWER"], Query()],
+    phase_id: UUID,
+    lane: Annotated[Literal["CONTRIBUTOR", "INTERNAL_REVIEWER"], Query()],
     actor: Annotated[AuthenticatedIdentity, Depends(get_current_identity)],
     session: Annotated[AsyncSession, Depends(get_database_session)],
 ) -> dict[str, object]:

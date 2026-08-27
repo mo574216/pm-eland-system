@@ -542,14 +542,11 @@ class DeliverableService:
                 != contributor_ids
             ):
                 raise PermissionDeniedError
-            if (
-                await self.repository.active_member_ids_with_permission(
-                    phase.workspace_id,
-                    {payload.internal_reviewer_id},
-                    PermissionCode.DELIVERABLE_INTERNAL_REVIEW.value,
-                )
-                != {payload.internal_reviewer_id}
-            ):
+            if await self.repository.active_member_ids_with_permission(
+                phase.workspace_id,
+                {payload.internal_reviewer_id},
+                PermissionCode.DELIVERABLE_INTERNAL_REVIEW.value,
+            ) != {payload.internal_reviewer_id}:
                 raise PermissionDeniedError
             value = Deliverable(
                 id=uuid4(),
