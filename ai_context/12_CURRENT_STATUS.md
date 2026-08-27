@@ -4839,6 +4839,32 @@ address only an observed MVP demo blocker before moving to acceptance or wider w
 
 ---
 
+MVP conditional-acceptance persistence and live-verification checkpoint:
+
+```text
+DATE: 2026-08-27
+SUMMARY: Fixed a composite foreign-key persistence defect in conditional acceptance:
+the immutable employer decision is now flushed before its child conditions. The
+live MVP acceptance phase then completed the governed path: recommendation-backed
+package, employer conditional acceptance, contractor evidence submission, employer
+verification, and conditional-acceptance closure.
+DATABASE_CHANGES: None.
+API_CHANGES: None.
+TESTS_ADDED: Regression coverage proves decision-before-condition flush ordering.
+TEST_RESULTS: Affected backend Ruff and mypy pass; the focused regression test
+passes. Live API verification returned SUBMITTED_FOR_VERIFICATION, SATISFIED, and a
+closed CONDITIONAL_ACCEPT decision while retaining the phase lock.
+SECURITY_IMPACT: The fix preserves one transaction and audit boundary. The live
+walkthrough used distinct manager, contractor-leader, and employer identities;
+conditional acceptance did not grant evidence or verification authority across
+lanes.
+ARCHITECTURE_DEVIATIONS: None.
+NEXT_TASK: Show the staged acceptance result in the frontend and address only a
+visible MVP demo blocker before starting broader backlog work.
+```
+
+---
+
 # 27. Related Specifications
 
 ```text

@@ -367,7 +367,13 @@ class AcceptanceService:
                 )
                 for item in payload.conditions
             ]
-            self.repository.add_all([decision, *conditions])
+            # The scoped foreign key from conditions to their decision requires the
+            # immutable parent decision to exist before child conditions are
+            # flushed. Keep both writes in this transaction and audit boundary.
+            self.repository.add_all([decision])
+            await self.repository.flush()
+            condition_rows: list[object] = [*conditions]
+            self.repository.add_all(condition_rows)
             if payload.decision_kind in {"ACCEPT", "CONDITIONAL_ACCEPT"}:
                 await self.phase_repository.set_lock(
                     package.phase_id, locked=True, actor_id=self.actor.user.id
