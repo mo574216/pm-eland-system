@@ -209,10 +209,14 @@ export function DeliverablesPanel({ phaseId, workspaceId, locked }: { phaseId: s
     () => members.data?.filter((member) => member.status === 'ACTIVE') ?? [],
     [members.data],
   )
-  const asPickerMembers = (values: typeof contributors.data): WorkspaceMember[] =>
-    values?.map((member) => ({ ...member, id: member.user_id, role_id: null, status: 'ACTIVE', created_at: '' })) ?? []
-  const eligibleContributors = useMemo(() => asPickerMembers(contributors.data), [contributors.data])
-  const eligibleReviewers = useMemo(() => asPickerMembers(reviewers.data), [reviewers.data])
+  const eligibleContributors = useMemo<WorkspaceMember[]>(
+    () => contributors.data?.map((member) => ({ ...member, id: member.user_id, role_id: null, status: 'ACTIVE', created_at: '' })) ?? [],
+    [contributors.data],
+  )
+  const eligibleReviewers = useMemo<WorkspaceMember[]>(
+    () => reviewers.data?.map((member) => ({ ...member, id: member.user_id, role_id: null, status: 'ACTIVE', created_at: '' })) ?? [],
+    [reviewers.data],
+  )
   const create = useMutation({
     mutationFn: (payload: DeliverableCreate) => createDeliverable(phaseId, payload),
     onSuccess: async () => {

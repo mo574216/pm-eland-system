@@ -1602,6 +1602,27 @@ paths:
         '422': {$ref: '#/components/responses/ValidationError'}
         '423': {$ref: '#/components/responses/Locked'}
 
+  /phases/{phaseId}/deliverable-assignment-options:
+    parameters:
+      - $ref: '#/components/parameters/PhaseId'
+    get:
+      tags: [Deliverables]
+      operationId: listDeliverableAssignmentOptions
+      summary: List permission-compatible people for a deliverable assignment lane
+      parameters:
+        - name: lane
+          in: query
+          required: true
+          schema: {type: string, enum: [CONTRIBUTOR, INTERNAL_REVIEWER]}
+      responses:
+        '200':
+          description: Active workspace members eligible for the requested lane
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SuccessEnvelope'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+
   /deliverables/{deliverableId}:
     get:
       tags: [Deliverables]

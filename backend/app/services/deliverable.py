@@ -54,6 +54,7 @@ from app.schemas.deliverable import (
     DeliverableAssigneeOption,
     DeliverableCreate,
     DeliverableReadiness,
+    DeliverableRequirement,
     DeliverableResponse,
     DeliverableVersionCreate,
     DeliverableVersionResponse,
@@ -498,7 +499,10 @@ class DeliverableService:
             ],
             internal_due_at=value.internal_due_at,
             official_due_at=value.official_due_at,
-            requirements=value.requirements,
+            requirements=[
+                DeliverableRequirement.model_validate(requirement)
+                for requirement in value.requirements
+            ],
             readiness=self._readiness(value, items),
             latest_version=await self._version_response(latest_version) if latest_version else None,
             latest_submission=(

@@ -4737,6 +4737,28 @@ continue the internal-review handoff.
 
 ---
 
+Deliverable permission-compatible selector checkpoint:
+
+```text
+DATE: 2026-08-27
+SUMMARY: The phase deliverable workspace now loads separate contributor and
+internal-reviewer choices from the server, so its Persian assignment fields show
+only people who can carry out the selected lane.
+DATABASE_CHANGES: None.
+API_CHANGES: Added GET /phases/{phase_id}/deliverable-assignment-options with the
+required CONTRIBUTOR or INTERNAL_REVIEWER lane query.
+TEST_RESULTS: Ruff, mypy, frontend typecheck, and OpenAPI YAML parsing pass; live
+local verification returned the authorized demo leader and excluded the technical
+reviewer from the internal-review selector.
+SECURITY_IMPACT: The route requires PHASE_MANAGE, is workspace-scoped, exposes only
+safe member display fields, and derives eligibility from permissions rather than
+role-name literals. Creation remains independently server-validated.
+ARCHITECTURE_DEVIATIONS: None.
+NEXT_TASK: Complete the most visible internal-review handoff for the MVP demo.
+```
+
+---
+
 # 27. Related Specifications
 
 ```text

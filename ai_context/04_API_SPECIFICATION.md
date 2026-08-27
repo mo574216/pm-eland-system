@@ -2108,6 +2108,7 @@ Implemented phase-context deliverable and submission routes:
 ```text
 GET  /phases/{phase_id}/deliverables
 POST /phases/{phase_id}/deliverables
+GET  /phases/{phase_id}/deliverable-assignment-options?lane=CONTRIBUTOR|INTERNAL_REVIEWER
 GET  /deliverables/{deliverable_id}
 GET  /deliverables/{deliverable_id}/package-options
 POST /deliverables/{deliverable_id}/versions
@@ -2117,7 +2118,11 @@ POST /submissions/{submission_id}/withdrawals
 ```
 
 Creation uses named-selector IDs resolved by the frontend but revalidates active
-same-workspace membership in the backend. Package-option search requires at least
+same-workspace membership and assignment-lane permissions in the backend. The
+assignment-options route requires `PHASE_MANAGE` and returns only active members
+whose role grants the lane's required permission (`DELIVERABLE_CONTRIBUTE` or
+`DELIVERABLE_INTERNAL_REVIEW`); it is an aid to selection and never replaces
+server-side validation. Package-option search requires at least
 two characters, is capped at 20 safe results, and requires both contribution
 permission and a deliverable owner/contributor assignment. Creating a package
 version snapshots exact allowlisted resources and their versions. Formal submission
