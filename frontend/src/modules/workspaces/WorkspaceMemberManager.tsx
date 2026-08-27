@@ -1,4 +1,4 @@
-import { Alert, Autocomplete, Button, CircularProgress, List, ListItem, ListItemText, Stack, TextField, Typography } from '@mui/material'
+import { Alert, Autocomplete, Button, Chip, CircularProgress, List, ListItem, ListItemText, Stack, TextField, Typography } from '@mui/material'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState, type FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -102,8 +102,12 @@ export function WorkspaceMemberManager({ workspaceId }: { workspaceId: string })
           >
             <ListItemText
               primary={member.display_name ?? member.username}
-              secondary={member.role_code ?? t('workspaces.noRole')}
+              secondary={[
+                member.username !== member.display_name ? t('workspaces.username', { username: member.username }) : null,
+                member.role_description,
+              ].filter(Boolean).join(' — ')}
             />
+            <Chip label={member.role_name ?? t('workspaces.noRole')} size="small" sx={{ me: 9 }} />
           </ListItem>
         ))}
       </List>

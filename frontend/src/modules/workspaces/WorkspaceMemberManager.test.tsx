@@ -39,6 +39,8 @@ describe('WorkspaceMemberManager', () => {
       display_name: 'تحلیلگر',
       role_id: roleId,
       role_code: 'ANALYST',
+      role_name: 'تحلیلگر',
+      role_description: 'ثبت و تکمیل اطلاعات پروژه',
       status: 'ACTIVE',
       created_at: '2026-08-22T00:00:00Z',
     })
@@ -70,6 +72,8 @@ describe('WorkspaceMemberManager', () => {
         display_name: 'تحلیلگر',
         role_id: roleId,
         role_code: 'ANALYST',
+        role_name: 'تحلیلگر',
+        role_description: 'ثبت و تکمیل اطلاعات پروژه',
         status: 'ACTIVE',
         created_at: '2026-08-22T00:00:00Z',
       },
@@ -80,5 +84,7 @@ describe('WorkspaceMemberManager', () => {
     await user.click(await screen.findByRole('button', { name: 'حذف عضو' }))
 
     expect(removeWorkspaceMember).toHaveBeenCalledWith(workspaceId, userId)
+    expect(screen.getAllByText('تحلیلگر')).not.toHaveLength(0)
+    expect(screen.getByText(/ثبت و تکمیل اطلاعات پروژه/)).toBeInTheDocument()
   })
 })

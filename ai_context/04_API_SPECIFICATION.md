@@ -594,9 +594,9 @@ WORKSPACE_READ
 ```
 
 The roster is limited to the requested accessible workspace and contains only the
-safe display identity, current workspace role, and membership status needed by
-project assignment selectors. It does not grant member add/remove authority or
-directory search.
+safe display identity, current workspace role code plus human-readable role name and
+description, and membership status needed by project assignment selectors. It does
+not grant member add/remove authority or directory search.
 
 ---
 

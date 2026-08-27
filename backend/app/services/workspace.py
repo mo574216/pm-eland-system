@@ -246,6 +246,8 @@ class WorkspaceService:
             username=target.username,
             display_name=target.display_name,
             role_code=role.code,
+            role_name=role.name,
+            role_description=role.description,
         )
 
     async def remove_member(self, workspace_id: UUID, user_id: UUID, audit: AuditContext) -> None:

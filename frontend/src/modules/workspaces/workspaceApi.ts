@@ -28,6 +28,8 @@ export interface WorkspaceMember {
   display_name: string | null
   role_id: string | null
   role_code: string | null
+  role_name?: string | null
+  role_description?: string | null
   status: 'ACTIVE' | 'SUSPENDED'
   created_at: string
 }

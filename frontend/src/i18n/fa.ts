@@ -351,6 +351,7 @@ export const fa = {
     staleVersion: 'این فضای کاری پس از بارگذاری تغییر کرده است. صفحه را تازه‌سازی کنید.',
     title: 'فضاهای کاری',
     userId: 'شناسه کاربر',
+    username: 'نام کاربری: {{username}}',
   },
   metadata: {
     add: 'افزودن ویژگی',

@@ -65,6 +65,8 @@ class WorkspaceMemberResponse(BaseModel):
     display_name: str | None
     role_id: UUID | None
     role_code: str | None
+    role_name: str | None
+    role_description: str | None
     status: str
     created_at: datetime
 

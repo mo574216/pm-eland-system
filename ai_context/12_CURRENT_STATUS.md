@@ -4929,6 +4929,50 @@ select the next highest-impact demo capability from the dependency-ready backlog
 
 ---
 
+MVP workspace member role-label checkpoint:
+
+```text
+DATE: 2026-08-27
+SUMMARY: Workspace member administration now presents a person's configured role
+with its human-readable name and safe description, rather than requiring an
+administrator to interpret the role code. The existing searchable person and role
+selectors remain the only normal mutation path; technical IDs remain API-only.
+
+FILES_CHANGED:
+Workspace member roster projection, OpenAPI/API specification wording, Persian UI,
+focused UI coverage, and current status.
+
+DATABASE_CHANGES:
+None.
+
+API_CHANGES:
+The existing workspace-member response adds nullable `role_name` and
+`role_description` display fields. They are returned only from the already
+workspace-scoped safe roster endpoint.
+
+TESTS_ADDED:
+The existing member-manager coverage now verifies the human-readable role label and
+description are rendered in the roster.
+
+TEST_RESULTS:
+Focused member-manager UI tests pass (2 tests). Frontend lint and full TypeScript
+type checking pass. Affected backend Ruff formatting/lint and mypy pass.
+
+SECURITY_IMPACT:
+No new lookup, permission, or mutation capability. The additive display fields come
+from the same authorized workspace roster and do not expose role IDs or broaden
+directory enumeration.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+Run the short visual browser walkthrough of the governed MVP flow, then prioritize
+the next visible demo blocker from the dependency-ready backlog.
+```
+
+---
+
 # 27. Related Specifications
 
 ```text

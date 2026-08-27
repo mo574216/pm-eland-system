@@ -17,6 +17,8 @@ class WorkspaceMemberRecord:
     username: str
     display_name: str | None
     role_code: str | None
+    role_name: str | None
+    role_description: str | None
 
 
 class WorkspaceRepository:
@@ -192,7 +194,14 @@ class WorkspaceRepository:
 
     async def list_members(self, workspace_id: UUID) -> tuple[WorkspaceMemberRecord, ...]:
         statement = (
-            select(WorkspaceMembership, User.username, User.display_name, Role.code)
+            select(
+                WorkspaceMembership,
+                User.username,
+                User.display_name,
+                Role.code,
+                Role.name,
+                Role.description,
+            )
             .join(User, User.id == WorkspaceMembership.user_id)
             .outerjoin(Role, Role.id == WorkspaceMembership.role_id)
             .where(WorkspaceMembership.workspace_id == workspace_id)
@@ -200,8 +209,15 @@ class WorkspaceRepository:
         )
         rows = (await self.session.execute(statement)).all()
         return tuple(
-            WorkspaceMemberRecord(membership, username, display_name, role_code)
-            for membership, username, display_name, role_code in rows
+            WorkspaceMemberRecord(
+                membership,
+                username,
+                display_name,
+                role_code,
+                role_name,
+                role_description,
+            )
+            for membership, username, display_name, role_code, role_name, role_description in rows
         )
 
     async def remove_membership(self, membership_id: UUID) -> bool:

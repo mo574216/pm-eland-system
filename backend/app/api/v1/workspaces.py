@@ -47,6 +47,8 @@ def _member_response(record: WorkspaceMemberRecord) -> WorkspaceMemberResponse:
         display_name=record.display_name,
         role_id=record.membership.role_id,
         role_code=record.role_code,
+        role_name=record.role_name,
+        role_description=record.role_description,
         status=record.membership.status,
         created_at=record.membership.created_at,
     )
