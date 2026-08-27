@@ -1,5 +1,5 @@
-import { LockOpenOutlined, LockOutlined } from '@mui/icons-material'
-import { Alert, Button, Card, CardActions, CardContent, Chip, CircularProgress, MenuItem, Stack, TextField, Typography } from '@mui/material'
+import { CloudUploadOutlined, LockOpenOutlined, LockOutlined } from '@mui/icons-material'
+import { Alert, Button, Card, CardActions, CardContent, Chip, CircularProgress, Collapse, MenuItem, Stack, TextField, Typography } from '@mui/material'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
@@ -7,7 +7,9 @@ import { useTranslation } from 'react-i18next'
 import { Navigate, useParams } from 'react-router-dom'
 
 import { ApiError } from '../../api/client'
+import { AcceptancePanel } from '../acceptance/AcceptancePanel'
 import { DeliverablesPanel } from '../deliverables/DeliverablesPanel'
+import { ImportWizard } from '../imports/ImportWizardPage'
 import { createPhase, listPhases, setPhaseLocked, updatePhaseStatus, type Phase, type PhaseStatus } from './phaseApi'
 
 interface CreateValues { name: string; description: string; sequenceNumber: number }
@@ -19,6 +21,7 @@ function PhaseCard({ phase }: { phase: Phase }) {
   const queryClient = useQueryClient()
   const [status, setStatus] = useState<PhaseStatus>(phase.status)
   const [error, setError] = useState<string | null>(null)
+  const [importing, setImporting] = useState(false)
   const refresh = async () => queryClient.invalidateQueries({ queryKey: ['phases', phase.workspace_id] })
   const statusMutation = useMutation({
     mutationFn: () => updatePhaseStatus(phase, status), onSuccess: refresh,
@@ -47,6 +50,21 @@ function PhaseCard({ phase }: { phase: Phase }) {
             {statuses.map((value) => <MenuItem key={value} value={value}>{t(`phases.status.${value}`)}</MenuItem>)}
           </TextField>
           <DeliverablesPanel locked={phase.is_locked} phaseId={phase.id} workspaceId={phase.workspace_id} />
+          <Stack direction={{ xs: 'column', sm: 'row' }} sx={{ alignItems: { sm: 'center' }, justifyContent: 'space-between' }}>
+            <Typography color="text.secondary" variant="body2">{t('imports.phaseContextHint')}</Typography>
+            <Button disabled={phase.is_locked} onClick={() => setImporting((value) => !value)} startIcon={<CloudUploadOutlined />} variant="outlined">
+              {t('imports.openInPhase')}
+            </Button>
+          </Stack>
+          <Collapse in={importing && !phase.is_locked}>
+            <ImportWizard
+              description={t('imports.phaseDescription', { phase: phase.name })}
+              onComplete={() => setImporting(false)}
+              title={t('imports.phaseTitle', { phase: phase.name })}
+              workspaceId={phase.workspace_id}
+            />
+          </Collapse>
+          <AcceptancePanel phaseId={phase.id} workspaceId={phase.workspace_id} />
         </Stack>
       </CardContent>
       <CardActions>

@@ -22,6 +22,7 @@ import { ApiError } from '../../api/client'
 import { listWorkspaceMembers, type WorkspaceMember } from '../workspaces/workspaceApi'
 import {
   createDeliverable,
+  listDeliverableAssignmentOptions,
   createDeliverableVersion,
   addSubmissionReviewComment,
   listDeliverables,
@@ -196,9 +197,25 @@ export function DeliverablesPanel({ phaseId, workspaceId, locked }: { phaseId: s
   const members = useQuery({
     queryKey: ['workspace-members', workspaceId], queryFn: () => listWorkspaceMembers(workspaceId),
   })
+  const contributors = useQuery({
+    queryKey: ['deliverable-assignees', phaseId, 'CONTRIBUTOR'],
+    queryFn: () => listDeliverableAssignmentOptions(phaseId, 'CONTRIBUTOR'),
+  })
+  const reviewers = useQuery({
+    queryKey: ['deliverable-assignees', phaseId, 'INTERNAL_REVIEWER'],
+    queryFn: () => listDeliverableAssignmentOptions(phaseId, 'INTERNAL_REVIEWER'),
+  })
   const activeMembers = useMemo(
     () => members.data?.filter((member) => member.status === 'ACTIVE') ?? [],
     [members.data],
+  )
+  const eligibleContributors = useMemo<WorkspaceMember[]>(
+    () => contributors.data?.map((member) => ({ ...member, id: member.user_id, role_id: null, status: 'ACTIVE', created_at: '' })) ?? [],
+    [contributors.data],
+  )
+  const eligibleReviewers = useMemo<WorkspaceMember[]>(
+    () => reviewers.data?.map((member) => ({ ...member, id: member.user_id, role_id: null, status: 'ACTIVE', created_at: '' })) ?? [],
+    [reviewers.data],
   )
   const create = useMutation({
     mutationFn: (payload: DeliverableCreate) => createDeliverable(phaseId, payload),
@@ -260,9 +277,9 @@ export function DeliverablesPanel({ phaseId, workspaceId, locked }: { phaseId: s
           {error ? <Alert severity="error">{error}</Alert> : null}
           <TextField label={t('deliverables.name')} onChange={(event) => setForm({ ...form, name: event.target.value })} required value={form.name} />
           <TextField label={t('deliverables.description')} multiline onChange={(event) => setForm({ ...form, description: event.target.value })} value={form.description} />
-          <Autocomplete getOptionLabel={memberLabel} loading={members.isPending} onChange={(_, value) => setForm({ ...form, owner: value })} options={activeMembers} renderInput={(params) => <TextField {...params} label={t('deliverables.owner')} required />} value={form.owner} />
-          <Autocomplete getOptionLabel={memberLabel} loading={members.isPending} multiple onChange={(_, value) => setForm({ ...form, contributors: value })} options={activeMembers} renderInput={(params) => <TextField {...params} label={t('deliverables.contributors')} />} value={form.contributors} />
-          <Autocomplete getOptionLabel={memberLabel} loading={members.isPending} onChange={(_, value) => setForm({ ...form, reviewer: value })} options={activeMembers} renderInput={(params) => <TextField {...params} label={t('deliverables.internalReviewer')} />} value={form.reviewer} />
+          <Autocomplete getOptionLabel={memberLabel} loading={contributors.isPending} onChange={(_, value) => setForm({ ...form, owner: value })} options={eligibleContributors} renderInput={(params) => <TextField {...params} label={t('deliverables.owner')} required />} value={form.owner} />
+          <Autocomplete getOptionLabel={memberLabel} loading={contributors.isPending} multiple onChange={(_, value) => setForm({ ...form, contributors: value })} options={eligibleContributors} renderInput={(params) => <TextField {...params} label={t('deliverables.contributors')} />} value={form.contributors} />
+          <Autocomplete getOptionLabel={memberLabel} loading={reviewers.isPending} onChange={(_, value) => setForm({ ...form, reviewer: value })} options={eligibleReviewers} renderInput={(params) => <TextField {...params} label={t('deliverables.internalReviewer')} />} value={form.reviewer} />
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
             <TextField fullWidth label={t('deliverables.internalDue')} onChange={(event) => setForm({ ...form, internalDue: event.target.value })} slotProps={{ inputLabel: { shrink: true } }} type="datetime-local" value={form.internalDue} />
             <TextField fullWidth label={t('deliverables.officialDue')} onChange={(event) => setForm({ ...form, officialDue: event.target.value })} slotProps={{ inputLabel: { shrink: true } }} type="datetime-local" value={form.officialDue} />
@@ -280,6 +297,8 @@ export function DeliverablesPanel({ phaseId, workspaceId, locked }: { phaseId: s
         const denominator = Math.max(item.readiness.total_required, 1)
         const progress = item.readiness.ready ? 100 : (item.readiness.completed_required / denominator) * 100
         const owner = activeMembers.find((member) => member.user_id === item.owner_id)
+        const reviewer = activeMembers.find((member) => member.user_id === item.internal_reviewer_id)
+        const nextAction = item.workflow?.available_actions[0]
         return (
           <Box key={item.id} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 3, p: 2 }}>
             <Stack spacing={1.25}>
@@ -289,8 +308,10 @@ export function DeliverablesPanel({ phaseId, workspaceId, locked }: { phaseId: s
               </Stack>
               {item.description ? <Typography color="text.secondary" variant="body2">{item.description}</Typography> : null}
               <Typography variant="body2">{t('deliverables.ownerValue', { name: owner ? memberLabel(owner) : t('deliverables.unassigned') })}</Typography>
+              <Typography color="text.secondary" variant="body2">{t('deliverables.internalReviewerValue', { name: reviewer ? memberLabel(reviewer) : t('deliverables.unassigned') })}</Typography>
               <LinearProgress value={progress} variant="determinate" />
               {item.workflow ? <Chip color="primary" label={item.workflow.current_state_label} size="small" sx={{ alignSelf: 'flex-start' }} /> : null}
+              {nextAction ? <Alert severity="info" sx={{ py: 0 }}>{t('deliverables.nextAction', { action: nextAction.label })}</Alert> : null}
               <Typography color="text.secondary" variant="caption">
                 {item.latest_version ? t('deliverables.latestVersion', { number: item.latest_version.version_number.toLocaleString('fa-IR') }) : t('deliverables.noVersion')}
               </Typography>

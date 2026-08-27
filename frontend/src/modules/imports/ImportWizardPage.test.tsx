@@ -1,6 +1,6 @@
 import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { MemoryRouter, Route, Routes } from 'react-router-dom'
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 
 import { renderWithProviders } from '../../test/render'
 import {
@@ -58,6 +58,22 @@ const mockedResolveConflict = vi.mocked(resolveImportConflict)
 const mockedCommit = vi.mocked(commitImport)
 
 describe('ImportWizardPage', () => {
+  it('redirects the legacy standalone route to phase work', async () => {
+    function LocationProbe() {
+      return <span data-testid="location">{useLocation().pathname}</span>
+    }
+    renderWithProviders(
+      <MemoryRouter initialEntries={['/workspaces/workspace-1/imports']}>
+        <Routes>
+          <Route path="/workspaces/:workspaceId/imports" element={<ImportWizardPage />} />
+          <Route path="/workspaces/:workspaceId/phases" element={<LocationProbe />} />
+        </Routes>
+      </MemoryRouter>,
+    )
+
+    expect(await screen.findByTestId('location')).toHaveTextContent('/workspaces/workspace-1/phases')
+  })
+
   it('renders as an embeddable workflow with contextual heading', () => {
     renderWithProviders(
       <ImportWizard
@@ -88,11 +104,7 @@ describe('ImportWizardPage', () => {
     })
     const user = userEvent.setup()
     renderWithProviders(
-      <MemoryRouter initialEntries={['/workspaces/workspace-1/imports']}>
-        <Routes>
-          <Route path="/workspaces/:workspaceId/imports" element={<ImportWizardPage />} />
-        </Routes>
-      </MemoryRouter>,
+      <ImportWizard workspaceId="workspace-1" />,
     )
 
     const file = new File(['Name,Score\nAli,4\nSara,5'], 'people.csv', { type: 'text/csv' })

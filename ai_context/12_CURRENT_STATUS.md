@@ -4336,6 +4336,558 @@ without conflating review recommendations with contractual acceptance.
 
 ---
 
+Phase acceptance MVP checkpoint:
+
+```text
+DATE:
+2026-08-27
+
+MILESTONE:
+M5C contractual phase-acceptance demo slice
+
+TASKS_COMPLETED:
+ACC-DB-001 phase acceptance package/decision/condition schema
+ACC-BE-001 phase acceptance, condition evidence, verification, and closure portion
+ACC-FE-001 phase-context acceptance workspace portion
+
+SUMMARY:
+An authorized project manager can assemble an immutable phase package from current
+submitted deliverable versions and existing project recommendations, then assign an
+employer recipient by name. Only that recipient with contractual acceptance
+permission can accept, conditionally accept, or reject. Conditional decisions create
+assigned, versioned conditions; the responsible user submits immutable evidence, the
+assigned verifier verifies or rejects it, and the employer can record a separate
+closure after all mandatory conditions are satisfied.
+
+FILES_CHANGED:
+Acceptance models/migration/repository/service/routes, phase-context acceptance UI
+and API, OpenAPI/database/API specifications, focused tests, and current status.
+
+DATABASE_CHANGES:
+Migration 0019 adds immutable acceptance packages/items/decisions/closures and
+versioned condition projections with append-only events and workspace-safe foreign
+keys.
+
+API_CHANGES:
+Added backend-returned GET /phases/{phase_id}/acceptance-workspace and dedicated
+package, decision, condition evidence/verification, and closure commands.
+
+TESTS_ADDED:
+Schema validation verifies composite evidence scope, immutable decision constraints,
+and conditional-decision validation. Frontend coverage verifies that prepare controls
+are backend-authority-driven and use named people selectors.
+
+TEST_RESULTS:
+Backend Ruff and full app mypy pass; 12 focused backend tests pass. Migration 0019
+upgrade, downgrade, and restored upgrade pass against PostgreSQL. Frontend lint and
+five focused acceptance/deliverable UI tests pass. Runtime OpenAPI exposes the new
+routes and backend readiness is healthy.
+
+SECURITY_IMPACT:
+Authority is not inferred from a persona. Package preparation requires
+PROJECT_RECOMMEND; decision requires the explicitly assigned employer recipient and
+ACCEPTANCE_DECIDE; evidence requires the assigned responsible user; verification
+requires assigned verifier plus CONDITION_VERIFY. Package freshness, workspace
+membership, idempotency, optimistic condition version, and immutable evidence are
+enforced server-side. Acceptance/review lanes remain separate.
+
+KNOWN_LIMITATIONS:
+This MVP slice covers phase acceptance. Final workspace/project acceptance and
+exception/reopening policies remain deliberately deferred; automatic milestone and
+critical-finding evidence awaits the work/issue slice.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+Polish the first-demo flow with seeded/demo scenario guidance and resolve only
+blocking presentation defects before expanding into non-demo backlog capabilities.
+```
+
+---
+
+MVP demo-readiness checkpoint:
+
+```text
+DATE:
+2026-08-27
+
+SUMMARY:
+The local demo database was audited and contains only the administrator account,
+so a governed hand-off cannot be demonstrated until distinct personas are added.
+An opt-in development-only bootstrap now safely creates/reuses a project manager,
+contractor leader, technical reviewer, and employer representative for exactly one
+named workspace. It requires a caller-supplied 12+ character runtime password,
+never prints or overwrites a password, is idempotent for role/membership setup, is
+audited, and is disabled in production. A concise Persian-first demo walkthrough
+documents the full end-to-end flow.
+
+FILES_CHANGED:
+Development-only demo persona bootstrap, safety tests, and MVP walkthrough.
+
+DATABASE_CHANGES:
+None. The bootstrap uses existing identity, role, membership, and audit tables.
+
+API_CHANGES:
+None.
+
+TESTS_ADDED:
+Explicit workspace scope/password validation, required authority-lane coverage, and
+production disablement tests.
+
+TEST_RESULTS:
+Focused Ruff, mypy, and six bootstrap safety tests pass.
+
+SECURITY_IMPACT:
+No default or source-controlled password exists. The tool is local-development
+only, preserves existing credentials, rejects ambiguous workspace scope, and writes
+auditable membership changes.
+
+KNOWN_LIMITATIONS:
+The operator must choose and provide the local demo password when running the
+bootstrap; no credentials are created automatically or disclosed by the repository.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+Run the opt-in persona bootstrap with a user-chosen local password, then perform a
+short visual MVP walkthrough and address only observed demo-blocking defects.
+```
+
+---
+
+Phase-context import MVP checkpoint:
+
+```text
+DATE:
+2026-08-27
+
+SUMMARY:
+Operational import is now launched inside a selected project phase, where users
+work with its deliverables and acceptance actions. The same generic, metadata-driven
+import wizard is reused; it has not gained phase-specific persistence or bypassed
+its existing server-authorized upload, dry-run, explicit conflict-resolution, and
+idempotent commit protections. The routine workspace sidebar no longer exposes a
+standalone import destination. Its legacy URL redirects safely to phase work.
+
+FILES_CHANGED:
+Phase workspace UI, generic import route behavior, routine navigation, Persian
+localized contextual labels, focused frontend tests, and current status.
+
+DATABASE_CHANGES:
+None.
+
+API_CHANGES:
+None. Existing generic import endpoints and contracts are unchanged.
+
+TESTS_ADDED:
+Focused coverage verifies the phase opens the reusable import workflow with its
+selected phase context and that the old standalone URL redirects to phase work.
+
+TEST_RESULTS:
+Frontend type check and lint pass. Five focused phase/import frontend tests pass.
+
+SECURITY_IMPACT:
+No authorization or import safety control changes. Workspace scope continues to be
+derived by the existing import API; dry-run and explicit conflict decisions remain
+required before a material commit.
+
+KNOWN_LIMITATIONS:
+This MVP entry point provides operational context, not a new persistence association
+between an import job and a governed deliverable. The imported canonical data can be
+selected into the existing immutable deliverable package flow.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+Run the opt-in local persona bootstrap with a user-chosen password and complete the
+short visual governed-delivery walkthrough; address only observed demo blockers.
+```
+
+---
+
+Local MVP demo activation checkpoint:
+
+```text
+DATE:
+2026-08-27
+
+SUMMARY:
+The local development environment is running: Vite responds on localhost:5173 and
+the Docker backend container is healthy on localhost:8000. The opt-in demo bootstrap
+was run for the existing demo workspace. It created/reused the separate project
+manager, contractor leader, technical reviewer, and employer representative
+accounts, and direct backend login verification succeeded for each role.
+
+FILES_CHANGED:
+Current status only.
+
+DATABASE_CHANGES:
+No schema change. Local development identity/membership and corresponding audit
+records were created or reused by the existing opt-in bootstrap.
+
+API_CHANGES:
+None.
+
+TEST_RESULTS:
+Verified live frontend availability, healthy backend container, and successful
+credential login for all four governed-delivery demo roles without exposing tokens.
+
+SECURITY_IMPACT:
+The demonstration password exists only as a runtime local-development credential;
+it was not committed, logged by the bootstrap, or written to configuration. The
+bootstrap remains production-disabled and idempotent.
+
+KNOWN_LIMITATIONS:
+The workspace deliberately starts without fabricated phase or deliverable records.
+Use the walkthrough to create the visible governed-delivery evidence interactively.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+Use the active local personas to execute a short visual governed-delivery walkthrough
+and address only observed demo blockers before beginning the next dependency-ready
+MVP backlog slice.
+```
+
+---
+
+Demo assignment and workflow persistence checkpoint:
+
+```text
+DATE:
+2026-08-27
+
+SUMMARY:
+Resolved a first-demo blocker: a Project Manager with workspace read access could
+not retrieve the safe same-workspace roster needed by the existing named owner and
+internal-reviewer selectors. Roster reading now requires WORKSPACE_READ, while
+membership add/remove, external candidate search, and role assignment still require
+WORKSPACE_MANAGE. During live demo staging, a composite foreign-key ordering defect
+in baseline deliverable workflow creation was found and fixed. New workflow profiles
+now persist definition, version, states, transitions, instance, assignments, and
+event in dependency order within the same audited transaction.
+
+FILES_CHANGED:
+Workspace authorization service and tests; deliverable workflow persistence service
+and regression tests; API/OpenAPI wording; current status.
+
+DATABASE_CHANGES:
+None. The local demo database now contains one explicitly named in-progress phase
+and one assigned sample deliverable in its governed preparation state.
+
+API_CHANGES:
+GET /workspaces/{workspaceId}/members now requires WORKSPACE_READ rather than
+WORKSPACE_MANAGE. Its response remains a scoped safe display roster; membership
+mutations and directory search are unchanged.
+
+TESTS_ADDED:
+Workspace-read roster authorization coverage and workflow composite-FK persistence
+ordering regression coverage.
+
+TEST_RESULTS:
+Ruff and mypy pass for affected backend services. Seventeen focused workspace,
+deliverable-schema, workflow-schema, and workflow-persistence tests pass. Live local
+verification confirms a Project Manager receives the scoped roster and can create
+the staged deliverable with owner/reviewer assignments and preparation workflow.
+
+SECURITY_IMPACT:
+Roster access remains limited to an accessible workspace and exposes only existing
+member display identity, assigned workspace profile, and status. No member-management
+or directory-enumeration capability was broadened. Workflow constraints remain
+enforced; the fix preserves rather than bypasses their ordered integrity checks.
+
+KNOWN_LIMITATIONS:
+The staged deliverable is intentionally at preparation so the contractor-leader,
+review, and employer hand-offs can be demonstrated interactively. Contextual form
+and import backend bindings remain correctly deferred to their contract-first tasks.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+Perform the short visual governed-delivery walkthrough from the staged phase and
+fix only observed MVP demo blockers before moving to the next dependency-ready task.
+```
+
+---
+
+Live MVP browser walkthrough checkpoint:
+
+```text
+DATE:
+2026-08-27
+
+SUMMARY:
+Added an opt-in live browser smoke test for the staged local MVP. With runtime-only
+credentials it signs in through the real frontend/backend, opens the accessible
+workspace, navigates to phases, verifies the Persian staged phase and deliverable,
+and verifies that the desktop drawer is positioned on the right. No credential is
+stored in the test or repository. During staging, a Windows shell encoding error was
+handled through governed API operations: the mistaken local phase was explicitly
+archived and a correctly encoded Persian replacement phase/deliverable was created.
+
+FILES_CHANGED:
+Credential-free opt-in Playwright live-demo smoke test and current status.
+
+DATABASE_CHANGES:
+No schema change. Local demo state includes a correctly encoded active phase and
+assigned sample deliverable; the erroneous predecessor is retained as archived
+historical local setup rather than silently deleted.
+
+API_CHANGES:
+None.
+
+TESTS_ADDED:
+The opt-in test covers live authentication, workspace/phase navigation, staged
+Persian content, and right-side desktop drawer placement.
+
+TEST_RESULTS:
+The real local browser run passes against http://localhost:5173 and the Docker
+backend using runtime-only demo credentials.
+
+SECURITY_IMPACT:
+Credentials are consumed solely from LIVE_DEMO_USERNAME and LIVE_DEMO_PASSWORD at
+test runtime; test source and repository contain no username/password values.
+
+KNOWN_LIMITATIONS:
+The acceptance/review transitions remain deliberately unperformed so users can
+demonstrate them interactively. The archived local setup record is non-production
+demo history only.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+Exercise the next contractor-leader package and internal-review handoff in the live
+demo, then address only observed MVP blockers before broader backlog work.
+```
+
+---
+
+Immutable package persistence checkpoint:
+
+```text
+DATE:
+2026-08-27
+
+SUMMARY:
+The live contractor-leader walkthrough exposed and fixed a second composite-FK
+persistence ordering defect: immutable deliverable package items could be flushed
+before their parent version. The service now flushes the version first, then items,
+while preserving the same transaction/audit boundary. The staged contractor leader
+successfully created immutable package version 1 from an authorized existing entity;
+the workflow now exposes only the configured internal-review request action.
+
+FILES_CHANGED:
+Deliverable package-version persistence ordering and current status.
+
+DATABASE_CHANGES:
+None. Local staged deliverable now has immutable package version 1 containing the
+authorized Demo Child entity snapshot.
+
+API_CHANGES:
+None.
+
+TEST_RESULTS:
+Ruff and mypy pass for the affected deliverable service. Nine focused deliverable
+schema, workflow schema, and persistence-ordering tests pass. The real local
+contractor-leader API command successfully created and read the immutable package.
+
+SECURITY_IMPACT:
+No authorization or version immutability relaxation. The owner/contributor and
+workspace checks, phase lock check, package-resource authorization, and transaction
+audit remain authoritative.
+
+KNOWN_LIMITATIONS:
+The internal-review request remains unperformed so it can be demonstrated visibly;
+further review/submission/acceptance handoffs remain available for the walkthrough.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+Exercise the contractor internal-review transition in the live demo and address only
+observed MVP blockers before broader backlog work.
+```
+
+---
+
+Deliverable assignment authority checkpoint:
+
+```text
+DATE: 2026-08-27
+SUMMARY: Deliverable creation now validates assignment-lane permissions from the
+active workspace membership role: owner/contributors require DELIVERABLE_CONTRIBUTE
+and the internal reviewer requires DELIVERABLE_INTERNAL_REVIEW. This prevents an
+otherwise active technical reviewer from being assigned to contractor internal QA.
+DATABASE_CHANGES: None.
+API_CHANGES: None.
+TEST_RESULTS: Ruff and mypy pass for affected services; live API verification
+rejected the invalid technical-reviewer assignment before creating a deliverable.
+SECURITY_IMPACT: Assignment authority is enforced server-side from permissions, not
+role-name checks or frontend hiding.
+ARCHITECTURE_DEVIATIONS: None.
+NEXT_TASK: Provide permission-compatible assignment options in the selector, then
+continue the internal-review handoff.
+```
+
+---
+
+Deliverable permission-compatible selector checkpoint:
+
+```text
+DATE: 2026-08-27
+SUMMARY: The phase deliverable workspace now loads separate contributor and
+internal-reviewer choices from the server, so its Persian assignment fields show
+only people who can carry out the selected lane.
+DATABASE_CHANGES: None.
+API_CHANGES: Added GET /phases/{phase_id}/deliverable-assignment-options with the
+required CONTRIBUTOR or INTERNAL_REVIEWER lane query.
+TEST_RESULTS: Ruff, mypy, frontend typecheck, and OpenAPI YAML parsing pass; live
+local verification returned the authorized demo leader and excluded the technical
+reviewer from the internal-review selector.
+SECURITY_IMPACT: The route requires PHASE_MANAGE, is workspace-scoped, exposes only
+safe member display fields, and derives eligibility from permissions rather than
+role-name literals. Creation remains independently server-validated.
+ARCHITECTURE_DEVIATIONS: None.
+NEXT_TASK: Complete the most visible internal-review handoff for the MVP demo.
+```
+
+---
+
+MVP internal-review handoff presentation checkpoint:
+
+```text
+DATE: 2026-08-27
+SUMMARY: The phase deliverable card now shows its named internal reviewer and the
+next action authorized for the current signed-in user. This makes the contractor
+preparation-to-internal-review handoff legible in the demo without encoding role
+names or workflow states in the browser.
+DATABASE_CHANGES: None.
+API_CHANGES: None. The display consumes the existing server-filtered workflow
+projection and safe workspace roster.
+TESTS_ADDED: The deliverable workspace fixture now supplies permission-filtered
+assignee options and verifies the server-returned next action is shown.
+<<<<<<< HEAD
+TEST_RESULTS: Focused deliverable UI test passes (3 tests). A direct ESLint run on
+the affected files and the frontend application TypeScript check pass. The default
+Vitest invocation was slower than the local execution window, so the focused run
+uses an explicit short per-test timeout; broad test work remains deferred per MVP
+prototyping direction.
+=======
+TEST_RESULTS: Source diff has no whitespace errors. The focused Vitest process
+started but did not complete within the local 30-second execution window; broad
+test work is intentionally deferred per MVP prototyping direction.
+>>>>>>> 7e4f3e890f3c5ac9ff26a7c5fcf3d32bcebe6ee2
+SECURITY_IMPACT: No new client authority. The displayed action is only the
+backend-filtered available action; transition authorization remains server-side.
+ARCHITECTURE_DEVIATIONS: None.
+NEXT_TASK: Diagnose the local frontend test-runner delay, then verify the staged
+contractor-leader internal-review transition in the live demo.
+```
+
+---
+
+MVP internal-review live-verification checkpoint:
+
+```text
+DATE: 2026-08-27
+SUMMARY: The local live walkthrough now includes a separate clearly labeled MVP
+validation deliverable, created through the manager API with the contractor leader
+as owner, contributor, and permission-compatible internal reviewer. The leader
+created an immutable package and successfully handed it to internal review.
+TEST_RESULTS: The live backend returned `internal_review` and only the assigned
+leader's configured `request_correction` and `mark_ready` actions. The focused
+frontend test passes (3 tests); affected-file ESLint and frontend TypeScript pass.
+SECURITY_IMPACT: The validation confirmed that an earlier historically misassigned
+technical reviewer remains unable to act as contractor internal reviewer, while a
+permission-compatible current assignment can proceed. No direct database edits or
+authority bypasses were used.
+ARCHITECTURE_DEVIATIONS: None.
+NEXT_TASK: Use this staged handoff to complete the visible formal-submission and
+version-bound external-review demonstration before advancing broader backlog work.
+```
+
+---
+
+MVP formal-submission and external-review live-verification checkpoint:
+
+```text
+DATE: 2026-08-27
+SUMMARY: The same local MVP validation deliverable passed contractor internal
+approval, was formally submitted as immutable package version 1 to the project
+manager, and received a version-bound project-review clarification. This proves the
+visible contractor-leader -> formal submission -> project-review leg without
+conflating any of these authority lanes.
+DATABASE_CHANGES: None.
+API_CHANGES: None.
+TEST_RESULTS: Live API verification confirmed the submitted state, sequence 1,
+bound package version, project-only revision transition, and the configured
+project-review outcomes. The contractor-leader view retrieves the persisted
+CLARIFICATION outcome against the same immutable submitted version.
+SECURITY_IMPACT: All mutations used normal authenticated APIs, active same-workspace
+recipient checks, assignment/permission-filtered actions, optimistic versions, and
+idempotency keys. No direct database writes or role-name authorization occurred.
+ARCHITECTURE_DEVIATIONS: None.
+NEXT_TASK: Present the staged external-review outcome in the live frontend and
+address only an observed MVP demo blocker before moving to acceptance or wider work.
+```
+
+---
+
+MVP conditional-acceptance persistence and live-verification checkpoint:
+
+```text
+DATE: 2026-08-27
+SUMMARY: Fixed a composite foreign-key persistence defect in conditional acceptance:
+the immutable employer decision is now flushed before its child conditions. The
+live MVP acceptance phase then completed the governed path: recommendation-backed
+package, employer conditional acceptance, contractor evidence submission, employer
+verification, and conditional-acceptance closure.
+DATABASE_CHANGES: None.
+API_CHANGES: None.
+TESTS_ADDED: Regression coverage proves decision-before-condition flush ordering.
+TEST_RESULTS: Affected backend Ruff and mypy pass; the focused regression test
+passes. Live API verification returned SUBMITTED_FOR_VERIFICATION, SATISFIED, and a
+closed CONDITIONAL_ACCEPT decision while retaining the phase lock.
+SECURITY_IMPACT: The fix preserves one transaction and audit boundary. The live
+walkthrough used distinct manager, contractor-leader, and employer identities;
+conditional acceptance did not grant evidence or verification authority across
+lanes.
+ARCHITECTURE_DEVIATIONS: None.
+NEXT_TASK: Show the staged acceptance result in the frontend and address only a
+visible MVP demo blocker before starting broader backlog work.
+```
+
+---
+
+MVP permission-compatible acceptance-recipient checkpoint:
+
+```text
+DATE: 2026-08-27
+SUMMARY: The phase acceptance workspace now presents only active same-workspace
+people who can actually make an `ACCEPTANCE_DECIDE` decision. Package creation
+independently revalidates that permission, preventing a manager from creating an
+acceptance package that cannot be acted on by its named recipient.
+DATABASE_CHANGES: None.
+API_CHANGES: Added GET /phases/{phase_id}/acceptance-recipient-options.
+TEST_RESULTS: Affected backend Ruff/mypy and frontend ESLint/TypeScript pass. The
+focused acceptance-panel test passes (2 tests), and live manager verification
+returned only the employer demo persona for the staged acceptance phase.
+SECURITY_IMPACT: Lookup requires PROJECT_RECOMMEND, is workspace-scoped, exposes
+only safe display fields, and derives eligibility from role grants. Server-side
+package creation rechecks the grant; UI filtering is not authorization.
+ARCHITECTURE_DEVIATIONS: None.
+NEXT_TASK: Present the completed staged acceptance package in the frontend and
+address only an observed MVP demo blocker before wider backlog work.
+```
+
+---
+
 # 27. Related Specifications
 
 ```text

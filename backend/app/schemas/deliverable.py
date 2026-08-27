@@ -53,6 +53,13 @@ class PackageResourceOption(BaseModel):
     resource_version: int | None
 
 
+class DeliverableAssigneeOption(BaseModel):
+    user_id: UUID
+    username: str
+    display_name: str | None
+    role_code: str | None
+
+
 class DeliverableVersionCreate(BaseModel):
     summary: Annotated[str | None, Field(max_length=5000)] = None
     items: Annotated[list[DeliverablePackageItemCreate], Field(min_length=1, max_length=200)]

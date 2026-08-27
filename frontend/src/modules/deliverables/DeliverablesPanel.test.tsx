@@ -7,6 +7,7 @@ import { DeliverablesPanel } from './DeliverablesPanel'
 import {
   createDeliverable,
   createDeliverableVersion,
+  listDeliverableAssignmentOptions,
   recordSubmissionReviewOutcome,
   listDeliverables,
   searchPackageOptions,
@@ -19,6 +20,7 @@ import {
 vi.mock('../workspaces/workspaceApi', () => ({ listWorkspaceMembers: vi.fn() }))
 vi.mock('./deliverableApi', () => ({
   createDeliverable: vi.fn(), createDeliverableVersion: vi.fn(), listDeliverables: vi.fn(),
+  listDeliverableAssignmentOptions: vi.fn(),
   searchPackageOptions: vi.fn(), submitDeliverable: vi.fn(), withdrawSubmission: vi.fn(),
   transitionDeliverableReview: vi.fn(),
   recordSubmissionReviewOutcome: vi.fn(), addSubmissionReviewComment: vi.fn(),
@@ -42,6 +44,10 @@ const deliverable = {
 describe('DeliverablesPanel', () => {
   beforeEach(() => {
     vi.mocked(listWorkspaceMembers).mockResolvedValue([member])
+    vi.mocked(listDeliverableAssignmentOptions).mockResolvedValue([{
+      user_id: member.user_id, username: member.username, display_name: member.display_name,
+      role_code: member.role_code,
+    }])
     vi.mocked(listDeliverables).mockResolvedValue([deliverable])
     vi.mocked(createDeliverable).mockResolvedValue(deliverable)
     vi.mocked(createDeliverableVersion).mockResolvedValue(deliverable)
@@ -85,6 +91,7 @@ describe('DeliverablesPanel', () => {
     }])
     renderWithProviders(<DeliverablesPanel locked={false} phaseId="phase-1" workspaceId="workspace-1" />)
 
+    expect(await screen.findByText('اقدام قابل انجام برای شما: ارسال برای بازبینی داخلی')).toBeVisible()
     await user.click(await screen.findByRole('button', { name: 'ارسال برای بازبینی داخلی' }))
     expect(transitionDeliverableReview).toHaveBeenCalledWith(
       deliverable.id, 1, 'request_internal_review', null,

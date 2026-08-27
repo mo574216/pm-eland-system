@@ -51,8 +51,10 @@ from app.repositories.phase import PhaseRepository
 from app.repositories.workflow import WorkflowRepository
 from app.repositories.workspace import WorkspaceRepository
 from app.schemas.deliverable import (
+    DeliverableAssigneeOption,
     DeliverableCreate,
     DeliverableReadiness,
+    DeliverableRequirement,
     DeliverableResponse,
     DeliverableVersionCreate,
     DeliverableVersionResponse,
@@ -165,10 +167,20 @@ class DeliverableService:
                 policy,
             ) in DELIVERABLE_TRANSITIONS
         ]
-        self.workflow_repository.add_all([definition, version, *states.values(), *transitions])
+        # These rows use composite workspace-scoped foreign keys. Persist each
+        # dependency layer before handing its identifiers to the next layer; ORM
+        # ordering cannot reliably infer this from the composite constraints.
+        self.workflow_repository.add_all([definition])
+        await self.workflow_repository.flush()
+        self.workflow_repository.add_all([version])
+        await self.workflow_repository.flush()
+        self.workflow_repository.add_all(list(states.values()))
+        await self.workflow_repository.flush()
+        self.workflow_repository.add_all([*transitions])
+        await self.workflow_repository.flush()
         return version, states["preparation"]
 
-    def _create_workflow_instance(
+    async def _create_workflow_instance(
         self,
         deliverable: Deliverable,
         definition_version: WorkflowDefinitionVersion,
@@ -217,7 +229,12 @@ class DeliverableService:
             context={"profile": DELIVERABLE_WORKFLOW_KEY},
             idempotency_key=f"deliverable-start:{deliverable.id}",
         )
-        self.workflow_repository.add_all([instance, *workflow_assignments, event])
+        # The assignment table has a composite FK to the instance. SQLAlchemy cannot
+        # infer the required ordering from that composite constraint alone, so flush
+        # the instance graph before adding its assignment/event children.
+        self.workflow_repository.add_all([instance])
+        await self.workflow_repository.flush()
+        self.workflow_repository.add_all([*workflow_assignments, event])
         return instance
 
     async def _effective_permissions(self, workspace_id: UUID) -> frozenset[str]:
@@ -482,7 +499,10 @@ class DeliverableService:
             ],
             internal_due_at=value.internal_due_at,
             official_due_at=value.official_due_at,
-            requirements=value.requirements,
+            requirements=[
+                DeliverableRequirement.model_validate(requirement)
+                for requirement in value.requirements
+            ],
             readiness=self._readiness(value, items),
             latest_version=await self._version_response(latest_version) if latest_version else None,
             latest_submission=(
@@ -514,6 +534,20 @@ class DeliverableService:
                 != participant_ids
             ):
                 raise ResourceNotFoundError
+            contributor_ids = {payload.owner_id, *payload.contributor_ids}
+            if (
+                await self.repository.active_member_ids_with_permission(
+                    phase.workspace_id, contributor_ids, PermissionCode.DELIVERABLE_CONTRIBUTE.value
+                )
+                != contributor_ids
+            ):
+                raise PermissionDeniedError
+            if await self.repository.active_member_ids_with_permission(
+                phase.workspace_id,
+                {payload.internal_reviewer_id},
+                PermissionCode.DELIVERABLE_INTERNAL_REVIEW.value,
+            ) != {payload.internal_reviewer_id}:
+                raise PermissionDeniedError
             value = Deliverable(
                 id=uuid4(),
                 workspace_id=phase.workspace_id,
@@ -565,7 +599,7 @@ class DeliverableService:
                 phase.workspace_id
             )
             self.repository.add_all([value, *assignments])
-            workflow_instance = self._create_workflow_instance(
+            workflow_instance = await self._create_workflow_instance(
                 value, workflow_version, initial_state, assignments
             )
             self.repository.add_audit_log(
@@ -593,6 +627,26 @@ class DeliverableService:
             except IntegrityError as exc:
                 raise ResourceConflictError from exc
         return await self._response(value)
+
+    async def assignment_options(
+        self, phase_id: UUID, lane: str
+    ) -> list[DeliverableAssigneeOption]:
+        phase = await self.phase_repository.accessible_phase(phase_id, self.actor.user.id)
+        if phase is None:
+            raise ResourceNotFoundError
+        await self._require(phase.workspace_id, PermissionCode.PHASE_MANAGE)
+        permission = (
+            PermissionCode.DELIVERABLE_INTERNAL_REVIEW
+            if lane == "INTERNAL_REVIEWER"
+            else PermissionCode.DELIVERABLE_CONTRIBUTE
+        )
+        rows = await self.repository.assignment_options(phase.workspace_id, permission.value)
+        return [
+            DeliverableAssigneeOption(
+                user_id=row[0], username=row[1], display_name=row[2], role_code=row[3]
+            )
+            for row in rows
+        ]
 
     async def list_for_phase(self, phase_id: UUID) -> list[DeliverableResponse]:
         phase = await self.phase_repository.accessible_phase(phase_id, self.actor.user.id)
@@ -734,7 +788,11 @@ class DeliverableService:
                         else {},
                     )
                 )
-            self.repository.add_all([version, *records])
+            # Package items reference the immutable version through a composite
+            # workspace-scoped FK, so persist the version before its item records.
+            self.repository.add_all([version])
+            await self.repository.flush()
+            self.repository.add_all([*records])
             self.repository.add_audit_log(
                 self._audit(
                     value.workspace_id,

@@ -126,6 +126,22 @@ export interface DeliverableCreate {
   requirements: DeliverableRequirement[]
 }
 
+export interface DeliverableAssigneeOption {
+  user_id: string
+  username: string
+  display_name: string | null
+  role_code: string | null
+}
+
+export function listDeliverableAssignmentOptions(
+  phaseId: string,
+  lane: 'CONTRIBUTOR' | 'INTERNAL_REVIEWER',
+): Promise<DeliverableAssigneeOption[]> {
+  return apiRequest<DeliverableAssigneeOption[]>(
+    `/phases/${phaseId}/deliverable-assignment-options?lane=${lane}`,
+  )
+}
+
 export function listDeliverables(phaseId: string): Promise<Deliverable[]> {
   return apiRequest<Deliverable[]>(`/phases/${phaseId}/deliverables`)
 }

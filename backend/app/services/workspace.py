@@ -172,7 +172,9 @@ class WorkspaceService:
         return updated
 
     async def list_members(self, workspace_id: UUID) -> tuple[WorkspaceMemberRecord, ...]:
-        await self._require_workspace_permission(workspace_id, PermissionCode.WORKSPACE_MANAGE)
+        # Project work assigns existing workspace participants by name. Reading this
+        # scoped roster does not grant membership administration or directory search.
+        await self._require_workspace_permission(workspace_id, PermissionCode.WORKSPACE_READ)
         return await self.repository.list_members(workspace_id)
 
     async def search_member_candidates(

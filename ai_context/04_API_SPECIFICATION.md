@@ -590,8 +590,13 @@ List workspace members.
 ### Permission
 
 ```text
-WORKSPACE_MANAGE
+WORKSPACE_READ
 ```
+
+The roster is limited to the requested accessible workspace and contains only the
+safe display identity, current workspace role, and membership status needed by
+project assignment selectors. It does not grant member add/remove authority or
+directory search.
 
 ---
 
@@ -2103,6 +2108,7 @@ Implemented phase-context deliverable and submission routes:
 ```text
 GET  /phases/{phase_id}/deliverables
 POST /phases/{phase_id}/deliverables
+GET  /phases/{phase_id}/deliverable-assignment-options?lane=CONTRIBUTOR|INTERNAL_REVIEWER
 GET  /deliverables/{deliverable_id}
 GET  /deliverables/{deliverable_id}/package-options
 POST /deliverables/{deliverable_id}/versions
@@ -2112,7 +2118,11 @@ POST /submissions/{submission_id}/withdrawals
 ```
 
 Creation uses named-selector IDs resolved by the frontend but revalidates active
-same-workspace membership in the backend. Package-option search requires at least
+same-workspace membership and assignment-lane permissions in the backend. The
+assignment-options route requires `PHASE_MANAGE` and returns only active members
+whose role grants the lane's required permission (`DELIVERABLE_CONTRIBUTE` or
+`DELIVERABLE_INTERNAL_REVIEW`); it is an aid to selection and never replaces
+server-side validation. Package-option search requires at least
 two characters, is capped at 20 safe results, and requires both contribution
 permission and a deliverable owner/contributor assignment. Creating a package
 version snapshots exact allowlisted resources and their versions. Formal submission
@@ -2468,6 +2478,28 @@ Revision and major-revision outcomes require an optimistic workflow version and
 atomically return the deliverable to preparation. Other outcomes remain immutable
 review evidence. Technical sign-off and project recommendation never create an
 employer acceptance decision.
+
+## 27.2 Phase Acceptance Commands
+
+```text
+GET  /phases/{phase_id}/acceptance-workspace
+GET  /phases/{phase_id}/acceptance-recipient-options
+POST /phases/{phase_id}/acceptance-packages
+POST /acceptance-packages/{package_id}/decisions
+POST /acceptance-conditions/{condition_id}/evidence
+POST /acceptance-conditions/{condition_id}/verification
+POST /acceptance-decisions/{decision_id}/closure
+```
+
+The backend assembles a package only from current submitted immutable versions with
+project recommendations. The recipient lookup requires `PROJECT_RECOMMEND` and
+returns only active same-workspace people whose membership role grants
+`ACCEPTANCE_DECIDE`; package creation independently revalidates that authority.
+A package names its employer recipient. Only that active
+recipient with `ACCEPTANCE_DECIDE` can accept, conditionally accept, or reject;
+technical sign-off and project recommendation cannot substitute for it. Conditional
+closure requires each mandatory condition's evidence to have been verified by its
+assigned user with `CONDITION_VERIFY`.
 
 ---
 
