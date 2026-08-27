@@ -297,6 +297,8 @@ export function DeliverablesPanel({ phaseId, workspaceId, locked }: { phaseId: s
         const denominator = Math.max(item.readiness.total_required, 1)
         const progress = item.readiness.ready ? 100 : (item.readiness.completed_required / denominator) * 100
         const owner = activeMembers.find((member) => member.user_id === item.owner_id)
+        const reviewer = activeMembers.find((member) => member.user_id === item.internal_reviewer_id)
+        const nextAction = item.workflow?.available_actions[0]
         return (
           <Box key={item.id} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 3, p: 2 }}>
             <Stack spacing={1.25}>
@@ -306,8 +308,10 @@ export function DeliverablesPanel({ phaseId, workspaceId, locked }: { phaseId: s
               </Stack>
               {item.description ? <Typography color="text.secondary" variant="body2">{item.description}</Typography> : null}
               <Typography variant="body2">{t('deliverables.ownerValue', { name: owner ? memberLabel(owner) : t('deliverables.unassigned') })}</Typography>
+              <Typography color="text.secondary" variant="body2">{t('deliverables.internalReviewerValue', { name: reviewer ? memberLabel(reviewer) : t('deliverables.unassigned') })}</Typography>
               <LinearProgress value={progress} variant="determinate" />
               {item.workflow ? <Chip color="primary" label={item.workflow.current_state_label} size="small" sx={{ alignSelf: 'flex-start' }} /> : null}
+              {nextAction ? <Alert severity="info" sx={{ py: 0 }}>{t('deliverables.nextAction', { action: nextAction.label })}</Alert> : null}
               <Typography color="text.secondary" variant="caption">
                 {item.latest_version ? t('deliverables.latestVersion', { number: item.latest_version.version_number.toLocaleString('fa-IR') }) : t('deliverables.noVersion')}
               </Typography>

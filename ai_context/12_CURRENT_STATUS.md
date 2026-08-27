@@ -4759,6 +4759,31 @@ NEXT_TASK: Complete the most visible internal-review handoff for the MVP demo.
 
 ---
 
+MVP internal-review handoff presentation checkpoint:
+
+```text
+DATE: 2026-08-27
+SUMMARY: The phase deliverable card now shows its named internal reviewer and the
+next action authorized for the current signed-in user. This makes the contractor
+preparation-to-internal-review handoff legible in the demo without encoding role
+names or workflow states in the browser.
+DATABASE_CHANGES: None.
+API_CHANGES: None. The display consumes the existing server-filtered workflow
+projection and safe workspace roster.
+TESTS_ADDED: The deliverable workspace fixture now supplies permission-filtered
+assignee options and verifies the server-returned next action is shown.
+TEST_RESULTS: Source diff has no whitespace errors. The focused Vitest process
+started but did not complete within the local 30-second execution window; broad
+test work is intentionally deferred per MVP prototyping direction.
+SECURITY_IMPACT: No new client authority. The displayed action is only the
+backend-filtered available action; transition authorization remains server-side.
+ARCHITECTURE_DEVIATIONS: None.
+NEXT_TASK: Diagnose the local frontend test-runner delay, then verify the staged
+contractor-leader internal-review transition in the live demo.
+```
+
+---
+
 # 27. Related Specifications
 
 ```text
