@@ -4814,6 +4814,31 @@ version-bound external-review demonstration before advancing broader backlog wor
 
 ---
 
+MVP formal-submission and external-review live-verification checkpoint:
+
+```text
+DATE: 2026-08-27
+SUMMARY: The same local MVP validation deliverable passed contractor internal
+approval, was formally submitted as immutable package version 1 to the project
+manager, and received a version-bound project-review clarification. This proves the
+visible contractor-leader -> formal submission -> project-review leg without
+conflating any of these authority lanes.
+DATABASE_CHANGES: None.
+API_CHANGES: None.
+TEST_RESULTS: Live API verification confirmed the submitted state, sequence 1,
+bound package version, project-only revision transition, and the configured
+project-review outcomes. The contractor-leader view retrieves the persisted
+CLARIFICATION outcome against the same immutable submitted version.
+SECURITY_IMPACT: All mutations used normal authenticated APIs, active same-workspace
+recipient checks, assignment/permission-filtered actions, optimistic versions, and
+idempotency keys. No direct database writes or role-name authorization occurred.
+ARCHITECTURE_DEVIATIONS: None.
+NEXT_TASK: Present the staged external-review outcome in the live frontend and
+address only an observed MVP demo blocker before moving to acceptance or wider work.
+```
+
+---
+
 # 27. Related Specifications
 
 ```text
