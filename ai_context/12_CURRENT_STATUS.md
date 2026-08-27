@@ -4772,16 +4772,44 @@ API_CHANGES: None. The display consumes the existing server-filtered workflow
 projection and safe workspace roster.
 TESTS_ADDED: The deliverable workspace fixture now supplies permission-filtered
 assignee options and verifies the server-returned next action is shown.
+<<<<<<< HEAD
 TEST_RESULTS: Focused deliverable UI test passes (3 tests). A direct ESLint run on
 the affected files and the frontend application TypeScript check pass. The default
 Vitest invocation was slower than the local execution window, so the focused run
 uses an explicit short per-test timeout; broad test work remains deferred per MVP
 prototyping direction.
+=======
+TEST_RESULTS: Source diff has no whitespace errors. The focused Vitest process
+started but did not complete within the local 30-second execution window; broad
+test work is intentionally deferred per MVP prototyping direction.
+>>>>>>> 7e4f3e890f3c5ac9ff26a7c5fcf3d32bcebe6ee2
 SECURITY_IMPACT: No new client authority. The displayed action is only the
 backend-filtered available action; transition authorization remains server-side.
 ARCHITECTURE_DEVIATIONS: None.
 NEXT_TASK: Diagnose the local frontend test-runner delay, then verify the staged
 contractor-leader internal-review transition in the live demo.
+```
+
+---
+
+MVP internal-review live-verification checkpoint:
+
+```text
+DATE: 2026-08-27
+SUMMARY: The local live walkthrough now includes a separate clearly labeled MVP
+validation deliverable, created through the manager API with the contractor leader
+as owner, contributor, and permission-compatible internal reviewer. The leader
+created an immutable package and successfully handed it to internal review.
+TEST_RESULTS: The live backend returned `internal_review` and only the assigned
+leader's configured `request_correction` and `mark_ready` actions. The focused
+frontend test passes (3 tests); affected-file ESLint and frontend TypeScript pass.
+SECURITY_IMPACT: The validation confirmed that an earlier historically misassigned
+technical reviewer remains unable to act as contractor internal reviewer, while a
+permission-compatible current assignment can proceed. No direct database edits or
+authority bypasses were used.
+ARCHITECTURE_DEVIATIONS: None.
+NEXT_TASK: Use this staged handoff to complete the visible formal-submission and
+version-bound external-review demonstration before advancing broader backlog work.
 ```
 
 ---
