@@ -51,6 +51,7 @@ from app.repositories.phase import PhaseRepository
 from app.repositories.workflow import WorkflowRepository
 from app.repositories.workspace import WorkspaceRepository
 from app.schemas.deliverable import (
+    DeliverableAssigneeOption,
     DeliverableCreate,
     DeliverableReadiness,
     DeliverableResponse,
@@ -625,6 +626,26 @@ class DeliverableService:
             except IntegrityError as exc:
                 raise ResourceConflictError from exc
         return await self._response(value)
+
+    async def assignment_options(
+        self, phase_id: UUID, lane: str
+    ) -> list[DeliverableAssigneeOption]:
+        phase = await self.phase_repository.accessible_phase(phase_id, self.actor.user.id)
+        if phase is None:
+            raise ResourceNotFoundError
+        await self._require(phase.workspace_id, PermissionCode.PHASE_MANAGE)
+        permission = (
+            PermissionCode.DELIVERABLE_INTERNAL_REVIEW
+            if lane == "INTERNAL_REVIEWER"
+            else PermissionCode.DELIVERABLE_CONTRIBUTE
+        )
+        rows = await self.repository.assignment_options(phase.workspace_id, permission.value)
+        return [
+            DeliverableAssigneeOption(
+                user_id=row[0], username=row[1], display_name=row[2], role_code=row[3]
+            )
+            for row in rows
+        ]
 
     async def list_for_phase(self, phase_id: UUID) -> list[DeliverableResponse]:
         phase = await self.phase_repository.accessible_phase(phase_id, self.actor.user.id)

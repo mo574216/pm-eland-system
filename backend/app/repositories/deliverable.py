@@ -17,7 +17,7 @@ from app.models.deliverable import (
     SubmissionRecipient,
     SubmissionWithdrawal,
 )
-from app.models.identity import AuditLog, Permission, Role, role_permissions
+from app.models.identity import AuditLog, Permission, Role, User, role_permissions
 from app.models.workspace import WorkspaceMembership
 
 
@@ -27,6 +27,25 @@ class DeliverableRepository:
 
     def add_all(self, values: list[object]) -> None:
         self.session.add_all(values)
+
+    async def assignment_options(
+        self, workspace_id: UUID, permission_code: str
+    ) -> tuple[tuple[UUID, str, str | None, str | None], ...]:
+        rows = await self.session.execute(
+            select(WorkspaceMembership.user_id, User.username, User.display_name, Role.code)
+            .join(User, User.id == WorkspaceMembership.user_id)
+            .join(Role, Role.id == WorkspaceMembership.role_id)
+            .join(role_permissions, role_permissions.c.role_id == Role.id)
+            .join(Permission, Permission.id == role_permissions.c.permission_id)
+            .where(
+                WorkspaceMembership.workspace_id == workspace_id,
+                WorkspaceMembership.status == "ACTIVE",
+                Permission.code == permission_code,
+            )
+            .order_by(User.display_name, User.username)
+            .distinct()
+        )
+        return tuple((row[0], row[1], row[2], row[3]) for row in rows.all())
 
     async def review_comments(self, submission_id: UUID) -> tuple[ReviewComment, ...]:
         return tuple(

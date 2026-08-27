@@ -22,6 +22,7 @@ import { ApiError } from '../../api/client'
 import { listWorkspaceMembers, type WorkspaceMember } from '../workspaces/workspaceApi'
 import {
   createDeliverable,
+  listDeliverableAssignmentOptions,
   createDeliverableVersion,
   addSubmissionReviewComment,
   listDeliverables,
@@ -196,10 +197,22 @@ export function DeliverablesPanel({ phaseId, workspaceId, locked }: { phaseId: s
   const members = useQuery({
     queryKey: ['workspace-members', workspaceId], queryFn: () => listWorkspaceMembers(workspaceId),
   })
+  const contributors = useQuery({
+    queryKey: ['deliverable-assignees', phaseId, 'CONTRIBUTOR'],
+    queryFn: () => listDeliverableAssignmentOptions(phaseId, 'CONTRIBUTOR'),
+  })
+  const reviewers = useQuery({
+    queryKey: ['deliverable-assignees', phaseId, 'INTERNAL_REVIEWER'],
+    queryFn: () => listDeliverableAssignmentOptions(phaseId, 'INTERNAL_REVIEWER'),
+  })
   const activeMembers = useMemo(
     () => members.data?.filter((member) => member.status === 'ACTIVE') ?? [],
     [members.data],
   )
+  const asPickerMembers = (values: typeof contributors.data): WorkspaceMember[] =>
+    values?.map((member) => ({ ...member, id: member.user_id, role_id: null, status: 'ACTIVE', created_at: '' })) ?? []
+  const eligibleContributors = useMemo(() => asPickerMembers(contributors.data), [contributors.data])
+  const eligibleReviewers = useMemo(() => asPickerMembers(reviewers.data), [reviewers.data])
   const create = useMutation({
     mutationFn: (payload: DeliverableCreate) => createDeliverable(phaseId, payload),
     onSuccess: async () => {
@@ -260,9 +273,9 @@ export function DeliverablesPanel({ phaseId, workspaceId, locked }: { phaseId: s
           {error ? <Alert severity="error">{error}</Alert> : null}
           <TextField label={t('deliverables.name')} onChange={(event) => setForm({ ...form, name: event.target.value })} required value={form.name} />
           <TextField label={t('deliverables.description')} multiline onChange={(event) => setForm({ ...form, description: event.target.value })} value={form.description} />
-          <Autocomplete getOptionLabel={memberLabel} loading={members.isPending} onChange={(_, value) => setForm({ ...form, owner: value })} options={activeMembers} renderInput={(params) => <TextField {...params} label={t('deliverables.owner')} required />} value={form.owner} />
-          <Autocomplete getOptionLabel={memberLabel} loading={members.isPending} multiple onChange={(_, value) => setForm({ ...form, contributors: value })} options={activeMembers} renderInput={(params) => <TextField {...params} label={t('deliverables.contributors')} />} value={form.contributors} />
-          <Autocomplete getOptionLabel={memberLabel} loading={members.isPending} onChange={(_, value) => setForm({ ...form, reviewer: value })} options={activeMembers} renderInput={(params) => <TextField {...params} label={t('deliverables.internalReviewer')} />} value={form.reviewer} />
+          <Autocomplete getOptionLabel={memberLabel} loading={contributors.isPending} onChange={(_, value) => setForm({ ...form, owner: value })} options={eligibleContributors} renderInput={(params) => <TextField {...params} label={t('deliverables.owner')} required />} value={form.owner} />
+          <Autocomplete getOptionLabel={memberLabel} loading={contributors.isPending} multiple onChange={(_, value) => setForm({ ...form, contributors: value })} options={eligibleContributors} renderInput={(params) => <TextField {...params} label={t('deliverables.contributors')} />} value={form.contributors} />
+          <Autocomplete getOptionLabel={memberLabel} loading={reviewers.isPending} onChange={(_, value) => setForm({ ...form, reviewer: value })} options={eligibleReviewers} renderInput={(params) => <TextField {...params} label={t('deliverables.internalReviewer')} />} value={form.reviewer} />
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
             <TextField fullWidth label={t('deliverables.internalDue')} onChange={(event) => setForm({ ...form, internalDue: event.target.value })} slotProps={{ inputLabel: { shrink: true } }} type="datetime-local" value={form.internalDue} />
             <TextField fullWidth label={t('deliverables.officialDue')} onChange={(event) => setForm({ ...form, officialDue: event.target.value })} slotProps={{ inputLabel: { shrink: true } }} type="datetime-local" value={form.officialDue} />
