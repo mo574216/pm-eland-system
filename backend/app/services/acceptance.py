@@ -43,6 +43,7 @@ from app.schemas.acceptance import (
     AcceptancePackageCreate,
     AcceptancePackageItemResponse,
     AcceptancePackageResponse,
+    AcceptanceRecipientOption,
     AcceptanceWorkspaceResponse,
 )
 from app.schemas.deliverable import PackageResourceOption
@@ -214,6 +215,20 @@ class AcceptanceService:
             packages=packages,
         )
 
+    async def recipient_options(self, phase_id: UUID) -> list[AcceptanceRecipientOption]:
+        phase = await self.phase_repository.accessible_phase(phase_id, self.actor.user.id)
+        if phase is None:
+            raise ResourceNotFoundError
+        await self._require(phase.workspace_id, PermissionCode.PROJECT_RECOMMEND)
+        return [
+            AcceptanceRecipientOption(
+                user_id=item[0], username=item[1], display_name=item[2], role_code=item[3]
+            )
+            for item in await self.repository.acceptance_recipient_options(
+                phase.workspace_id, PermissionCode.ACCEPTANCE_DECIDE.value
+            )
+        ]
+
     async def create_package(
         self, phase_id: UUID, payload: AcceptancePackageCreate, audit: AuditContext
     ) -> AcceptancePackageResponse:
@@ -231,6 +246,12 @@ class AcceptanceService:
                 return await self._response(replay)
             if await self.repository.active_member_ids(
                 phase.workspace_id, {payload.employer_recipient_id}
+            ) != {payload.employer_recipient_id}:
+                raise ResourceNotFoundError
+            if await self.repository.member_ids_with_permission(
+                phase.workspace_id,
+                {payload.employer_recipient_id},
+                PermissionCode.ACCEPTANCE_DECIDE.value,
             ) != {payload.employer_recipient_id}:
                 raise ResourceNotFoundError
             deliverables = await self.repository.phase_deliverables(phase.id)

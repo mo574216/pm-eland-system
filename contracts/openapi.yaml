@@ -1814,6 +1814,22 @@ paths:
         '403': {$ref: '#/components/responses/Forbidden'}
         '404': {$ref: '#/components/responses/NotFound'}
 
+  /phases/{phaseId}/acceptance-recipient-options:
+    get:
+      tags: [Acceptance]
+      operationId: listAcceptanceRecipientOptions
+      summary: List active workspace members eligible to decide phase acceptance
+      parameters:
+        - {name: phaseId, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '200':
+          description: Safe display options for acceptance-decision recipients
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SuccessEnvelope'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+
   /phases/{phaseId}/acceptance-packages:
     post:
       tags: [Acceptance]

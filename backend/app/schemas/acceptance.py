@@ -13,6 +13,13 @@ class AcceptancePackageCreate(BaseModel):
     idempotency_key: Annotated[str, Field(min_length=1, max_length=255)]
 
 
+class AcceptanceRecipientOption(BaseModel):
+    user_id: UUID
+    username: str
+    display_name: str | None
+    role_code: str | None
+
+
 class AcceptanceConditionCreate(BaseModel):
     description: Annotated[str, Field(min_length=1, max_length=5000)]
     responsible_id: UUID

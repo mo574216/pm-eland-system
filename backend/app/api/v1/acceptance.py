@@ -52,6 +52,16 @@ async def get_phase_acceptance_workspace(
     return success_envelope(value.model_dump(mode="json"))
 
 
+@router.get("/phases/{phase_id}/acceptance-recipient-options")
+async def list_acceptance_recipient_options(
+    phase_id: UUID,
+    actor: Annotated[AuthenticatedIdentity, Depends(get_current_identity)],
+    session: Annotated[AsyncSession, Depends(get_database_session)],
+) -> dict[str, object]:
+    values = await AcceptanceService(session, actor).recipient_options(phase_id)
+    return success_envelope([item.model_dump(mode="json") for item in values])
+
+
 @router.post("/phases/{phase_id}/acceptance-packages", status_code=status.HTTP_201_CREATED)
 async def create_phase_acceptance_package(
     phase_id: UUID,

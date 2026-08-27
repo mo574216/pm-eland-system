@@ -2483,6 +2483,7 @@ employer acceptance decision.
 
 ```text
 GET  /phases/{phase_id}/acceptance-workspace
+GET  /phases/{phase_id}/acceptance-recipient-options
 POST /phases/{phase_id}/acceptance-packages
 POST /acceptance-packages/{package_id}/decisions
 POST /acceptance-conditions/{condition_id}/evidence
@@ -2491,7 +2492,10 @@ POST /acceptance-decisions/{decision_id}/closure
 ```
 
 The backend assembles a package only from current submitted immutable versions with
-project recommendations. A package names its employer recipient. Only that active
+project recommendations. The recipient lookup requires `PROJECT_RECOMMEND` and
+returns only active same-workspace people whose membership role grants
+`ACCEPTANCE_DECIDE`; package creation independently revalidates that authority.
+A package names its employer recipient. Only that active
 recipient with `ACCEPTANCE_DECIDE` can accept, conditionally accept, or reject;
 technical sign-off and project recommendation cannot substitute for it. Conditional
 closure requires each mandatory condition's evidence to have been verified by its

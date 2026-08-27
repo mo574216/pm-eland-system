@@ -43,8 +43,19 @@ export interface AcceptancePackage {
 
 export interface AcceptanceWorkspace { can_prepare: boolean; packages: AcceptancePackage[] }
 
+export interface AcceptanceRecipientOption {
+  user_id: string
+  username: string
+  display_name: string | null
+  role_code: string | null
+}
+
 export function getAcceptanceWorkspace(phaseId: string): Promise<AcceptanceWorkspace> {
   return apiRequest<AcceptanceWorkspace>(`/phases/${phaseId}/acceptance-workspace`)
+}
+
+export function listAcceptanceRecipientOptions(phaseId: string): Promise<AcceptanceRecipientOption[]> {
+  return apiRequest<AcceptanceRecipientOption[]>(`/phases/${phaseId}/acceptance-recipient-options`)
 }
 
 export function createAcceptancePackage(

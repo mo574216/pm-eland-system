@@ -4865,6 +4865,29 @@ visible MVP demo blocker before starting broader backlog work.
 
 ---
 
+MVP permission-compatible acceptance-recipient checkpoint:
+
+```text
+DATE: 2026-08-27
+SUMMARY: The phase acceptance workspace now presents only active same-workspace
+people who can actually make an `ACCEPTANCE_DECIDE` decision. Package creation
+independently revalidates that permission, preventing a manager from creating an
+acceptance package that cannot be acted on by its named recipient.
+DATABASE_CHANGES: None.
+API_CHANGES: Added GET /phases/{phase_id}/acceptance-recipient-options.
+TEST_RESULTS: Affected backend Ruff/mypy and frontend ESLint/TypeScript pass. The
+focused acceptance-panel test passes (2 tests), and live manager verification
+returned only the employer demo persona for the staged acceptance phase.
+SECURITY_IMPACT: Lookup requires PROJECT_RECOMMEND, is workspace-scoped, exposes
+only safe display fields, and derives eligibility from role grants. Server-side
+package creation rechecks the grant; UI filtering is not authorization.
+ARCHITECTURE_DEVIATIONS: None.
+NEXT_TASK: Present the completed staged acceptance package in the frontend and
+address only an observed MVP demo blocker before wider backlog work.
+```
+
+---
+
 # 27. Related Specifications
 
 ```text

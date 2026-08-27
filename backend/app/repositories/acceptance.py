@@ -20,7 +20,7 @@ from app.models.deliverable import (
     Submission,
     SubmissionWithdrawal,
 )
-from app.models.identity import AuditLog
+from app.models.identity import AuditLog, Permission, Role, User, role_permissions
 from app.models.workspace import WorkspaceMembership
 
 
@@ -81,6 +81,48 @@ class AcceptanceRepository:
                 )
             ).all()
         )
+
+    async def member_ids_with_permission(
+        self, workspace_id: UUID, user_ids: set[UUID], permission_code: str
+    ) -> set[UUID]:
+        if not user_ids:
+            return set()
+        return set(
+            (
+                await self.session.scalars(
+                    select(WorkspaceMembership.user_id)
+                    .join(Role, Role.id == WorkspaceMembership.role_id)
+                    .join(role_permissions, role_permissions.c.role_id == Role.id)
+                    .join(Permission, Permission.id == role_permissions.c.permission_id)
+                    .where(
+                        WorkspaceMembership.workspace_id == workspace_id,
+                        WorkspaceMembership.user_id.in_(user_ids),
+                        WorkspaceMembership.status == "ACTIVE",
+                        Permission.code == permission_code,
+                    )
+                    .distinct()
+                )
+            ).all()
+        )
+
+    async def acceptance_recipient_options(
+        self, workspace_id: UUID, permission_code: str
+    ) -> tuple[tuple[UUID, str, str | None, str | None], ...]:
+        rows = await self.session.execute(
+            select(WorkspaceMembership.user_id, User.username, User.display_name, Role.code)
+            .join(User, User.id == WorkspaceMembership.user_id)
+            .join(Role, Role.id == WorkspaceMembership.role_id)
+            .join(role_permissions, role_permissions.c.role_id == Role.id)
+            .join(Permission, Permission.id == role_permissions.c.permission_id)
+            .where(
+                WorkspaceMembership.workspace_id == workspace_id,
+                WorkspaceMembership.status == "ACTIVE",
+                Permission.code == permission_code,
+            )
+            .order_by(User.display_name, User.username)
+            .distinct()
+        )
+        return tuple((row[0], row[1], row[2], row[3]) for row in rows.all())
 
     async def latest_active_submission(self, deliverable_id: UUID) -> Submission | None:
         return cast(

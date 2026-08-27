@@ -1,7 +1,7 @@
 import { FactCheckOutlined } from '@mui/icons-material'
 import { Alert, Autocomplete, Box, Button, Chip, Collapse, Divider, MenuItem, Stack, TextField, Typography } from '@mui/material'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { ApiError } from '../../api/client'
@@ -12,6 +12,7 @@ import {
   createAcceptancePackage,
   decideAcceptancePackage,
   getAcceptanceWorkspace,
+  listAcceptanceRecipientOptions,
   searchConditionEvidence,
   submitConditionEvidence,
   verifyCondition,
@@ -113,12 +114,19 @@ export function AcceptancePanel({ phaseId, workspaceId }: { phaseId: string; wor
   const [error, setError] = useState<string | null>(null)
   const packages = useQuery({ queryKey: ['acceptance-packages', phaseId], queryFn: () => getAcceptanceWorkspace(phaseId) })
   const members = useQuery({ queryKey: ['workspace-members', workspaceId], queryFn: () => listWorkspaceMembers(workspaceId) })
+  const recipients = useQuery({
+    queryKey: ['acceptance-recipients', phaseId], queryFn: () => listAcceptanceRecipientOptions(phaseId),
+  })
   const activeMembers = members.data?.filter((member) => member.status === 'ACTIVE') ?? []
+  const eligibleRecipients = useMemo<WorkspaceMember[]>(
+    () => recipients.data?.map((member) => ({ ...member, id: member.user_id, role_id: null, status: 'ACTIVE', created_at: '' })) ?? [],
+    [recipients.data],
+  )
   const refresh = async () => { await Promise.all([queryClient.invalidateQueries({ queryKey: ['acceptance-packages', phaseId] }), queryClient.invalidateQueries({ queryKey: ['phases', workspaceId] })]) }
   const create = useMutation({ mutationFn: () => createAcceptancePackage(phaseId, recipient?.user_id ?? '', statement.trim()), onSuccess: async () => { setCreating(false); setRecipient(null); setStatement(''); await refresh() } })
   const runCreate = async () => { setError(null); try { await create.mutateAsync() } catch (caught) { setError(caught instanceof ApiError && caught.code === 'VALIDATION_ERROR' ? t('acceptance.notReady') : t('acceptance.actionFailed')) } }
   return <Stack spacing={1.5} sx={{ mt: 2 }}><Divider /><Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }}><Box><Typography component="h3" variant="h6">{t('acceptance.title')}</Typography><Typography color="text.secondary" variant="body2">{t('acceptance.hint')}</Typography></Box>{packages.data?.can_prepare ? <Button onClick={() => setCreating((value) => !value)} variant="outlined">{t('acceptance.prepare')}</Button> : null}</Stack>
-    {error ? <Alert severity="error">{error}</Alert> : null}<Collapse in={creating}><Stack spacing={1.25} sx={{ bgcolor: 'action.hover', borderRadius: 2, p: 1.5 }}><Autocomplete getOptionLabel={memberLabel} onChange={(_, value) => setRecipient(value)} options={activeMembers} renderInput={(params) => <TextField {...params} label={t('acceptance.employerRecipient')} />} value={recipient} /><TextField label={t('acceptance.requestStatement')} multiline onChange={(event) => setStatement(event.target.value)} value={statement} /><Button disabled={!recipient || !statement.trim() || create.isPending} onClick={() => void runCreate()} variant="contained">{t('acceptance.createPackage')}</Button></Stack></Collapse>
+    {error ? <Alert severity="error">{error}</Alert> : null}<Collapse in={creating}><Stack spacing={1.25} sx={{ bgcolor: 'action.hover', borderRadius: 2, p: 1.5 }}><Autocomplete getOptionLabel={memberLabel} loading={recipients.isPending} onChange={(_, value) => setRecipient(value)} options={eligibleRecipients} renderInput={(params) => <TextField {...params} label={t('acceptance.employerRecipient')} />} value={recipient} /><TextField label={t('acceptance.requestStatement')} multiline onChange={(event) => setStatement(event.target.value)} value={statement} /><Button disabled={!recipient || !statement.trim() || create.isPending} onClick={() => void runCreate()} variant="contained">{t('acceptance.createPackage')}</Button></Stack></Collapse>
     {packages.data?.packages.map((item) => <PackageCard item={item} key={item.id} members={activeMembers} refresh={refresh} />)}
   </Stack>
 }

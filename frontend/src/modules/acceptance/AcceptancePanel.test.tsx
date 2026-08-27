@@ -4,12 +4,13 @@ import userEvent from '@testing-library/user-event'
 import { renderWithProviders } from '../../test/render'
 import { listWorkspaceMembers } from '../workspaces/workspaceApi'
 import { AcceptancePanel } from './AcceptancePanel'
-import { createAcceptancePackage, getAcceptanceWorkspace } from './acceptanceApi'
+import { createAcceptancePackage, getAcceptanceWorkspace, listAcceptanceRecipientOptions } from './acceptanceApi'
 
 vi.mock('../workspaces/workspaceApi', () => ({ listWorkspaceMembers: vi.fn() }))
 vi.mock('./acceptanceApi', () => ({
   closeConditionalAcceptance: vi.fn(), createAcceptancePackage: vi.fn(),
   decideAcceptancePackage: vi.fn(), getAcceptanceWorkspace: vi.fn(),
+  listAcceptanceRecipientOptions: vi.fn(),
   searchConditionEvidence: vi.fn(), submitConditionEvidence: vi.fn(), verifyCondition: vi.fn(),
 }))
 
@@ -22,6 +23,10 @@ const member = {
 describe('AcceptancePanel', () => {
   beforeEach(() => {
     vi.mocked(listWorkspaceMembers).mockResolvedValue([member])
+    vi.mocked(listAcceptanceRecipientOptions).mockResolvedValue([{
+      user_id: member.user_id, username: member.username, display_name: member.display_name,
+      role_code: member.role_code,
+    }])
     vi.mocked(createAcceptancePackage).mockResolvedValue({} as never)
   })
 
