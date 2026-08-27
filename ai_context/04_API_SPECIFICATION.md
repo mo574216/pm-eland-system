@@ -1130,12 +1130,14 @@ FORM_DESIGN
 
 ```json
 {
-  "key": "process_specification",
   "name": "Process Specification",
   "entity_type_id": "...",
   "description": "Specification form"
 }
 ```
+
+`key` is an optional advanced integration field. Normal creation omits it and the
+server generates an opaque, collision-safe stable key.
 
 Creates:
 

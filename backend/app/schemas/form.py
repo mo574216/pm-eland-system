@@ -51,7 +51,7 @@ class FormSchemaDefinition(BaseModel):
 class FormCreate(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
 
-    key: str = Field(min_length=1, max_length=120, pattern=STABLE_KEY_PATTERN)
+    key: str | None = Field(default=None, min_length=1, max_length=120, pattern=STABLE_KEY_PATTERN)
     name: str = Field(min_length=1, max_length=255)
     entity_type_id: UUID | None = None
     description: str | None = None

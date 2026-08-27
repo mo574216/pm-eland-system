@@ -75,6 +75,8 @@ describe('FormDesignerPage', () => {
       </MemoryRouter>,
     )
 
+    await screen.findByRole('heading', { name: /طراحی فرم/ })
+    expect(screen.queryByLabelText('کلید پایدار')).not.toBeInTheDocument()
     await user.click(await screen.findByRole('button', { name: 'طراحی' }))
     const sectionForm = screen.getByRole('form', { name: 'افزودن بخش' })
     await user.type(within(sectionForm).getByLabelText(/کلید پایدار/), 'general')

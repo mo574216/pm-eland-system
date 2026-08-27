@@ -21,7 +21,7 @@ export function listForms(workspaceId: string): Promise<FormList> {
 
 export function createForm(
   workspaceId: string,
-  values: { key: string; name: string; description: string | null; entity_type_id: string },
+  values: { key?: string; name: string; description: string | null; entity_type_id: string },
 ): Promise<FormDefinition> {
   return apiRequest<FormDefinition>(`/workspaces/${workspaceId}/forms`, {
     method: 'POST',

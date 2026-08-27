@@ -263,7 +263,6 @@ async def test_create_form_is_draft_version_one_and_audited() -> None:
     created = await service.create_form(
         workspace.id,
         values={
-            "key": "process_specification",
             "name": "Process Specification",
             "entity_type_id": entity_type.id,
             "description": None,
@@ -272,6 +271,7 @@ async def test_create_form_is_draft_version_one_and_audited() -> None:
     )
 
     assert created.form.version_number == 1
+    assert created.form.key.startswith("form_")
     assert created.form.lifecycle_status == "DRAFT"
     assert created.form.schema_json == {"sections": []}
     assert repository.audit_logs[0].action == "FORM_CREATED"

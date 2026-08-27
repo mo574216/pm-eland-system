@@ -73,9 +73,10 @@ class FormService:
     ) -> FormRecord:
         async with self.session.begin():
             await self._require_permission(workspace_id, PermissionCode.FORM_DESIGN)
-            key = str(values["key"])
+            key = str(values["key"]) if values.get("key") is not None else self._generated_key()
             if await self.repository.form_by_key(workspace_id, key) is not None:
                 raise ResourceConflictError
+            values["key"] = key
             await self._validate_entity_type(workspace_id, values.get("entity_type_id"))
             form = FormDefinition(
                 id=uuid4(),
@@ -738,6 +739,11 @@ class FormService:
             for section in sections
             if isinstance(section, dict) and isinstance(section.get("key"), str)
         }
+
+    @staticmethod
+    def _generated_key() -> str:
+        """Create an opaque server-owned key for normal form creation."""
+        return f"form_{uuid4().hex}"
 
     @staticmethod
     def _rule_mapping(value: object) -> dict[str, object]:
