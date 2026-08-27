@@ -4772,17 +4772,10 @@ API_CHANGES: None. The display consumes the existing server-filtered workflow
 projection and safe workspace roster.
 TESTS_ADDED: The deliverable workspace fixture now supplies permission-filtered
 assignee options and verifies the server-returned next action is shown.
-<<<<<<< HEAD
 TEST_RESULTS: Focused deliverable UI test passes (3 tests). A direct ESLint run on
-the affected files and the frontend application TypeScript check pass. The default
-Vitest invocation was slower than the local execution window, so the focused run
-uses an explicit short per-test timeout; broad test work remains deferred per MVP
-prototyping direction.
-=======
-TEST_RESULTS: Source diff has no whitespace errors. The focused Vitest process
-started but did not complete within the local 30-second execution window; broad
-test work is intentionally deferred per MVP prototyping direction.
->>>>>>> 7e4f3e890f3c5ac9ff26a7c5fcf3d32bcebe6ee2
+the affected files and the frontend application TypeScript check pass. The full
+frontend suite also passes (23 files, 43 tests); its elapsed process time can exceed
+the local command-output window, so it was collected through a bounded continuation.
 SECURITY_IMPACT: No new client authority. The displayed action is only the
 backend-filtered available action; transition authorization remains server-side.
 ARCHITECTURE_DEVIATIONS: None.
@@ -4884,6 +4877,54 @@ package creation rechecks the grant; UI filtering is not authorization.
 ARCHITECTURE_DEVIATIONS: None.
 NEXT_TASK: Present the completed staged acceptance package in the frontend and
 address only an observed MVP demo blocker before wider backlog work.
+```
+
+---
+
+MVP acceptance outcome presentation checkpoint:
+
+```text
+DATE: 2026-08-27
+SUMMARY: The existing generic phase acceptance workspace now presents a complete
+human-readable outcome for each immutable package: its named decision recipient,
+requester, time, included evidence labels, employer decision and actor, condition
+owners/verifiers/deadline, and conditional-acceptance closure. It removes the need
+to infer the completed governed result from internal IDs or raw API data while
+keeping contractor review, recommendation, and employer acceptance visibly distinct.
+
+FILES_CHANGED:
+Acceptance presentation, Persian localization, focused UI coverage, and status.
+
+DATABASE_CHANGES:
+None.
+
+API_CHANGES:
+None. The UI consumes the existing authorized acceptance workspace projection.
+
+TESTS_ADDED:
+Focused acceptance-panel coverage for a closed conditional acceptance, including
+human-readable recipient, authority, immutable evidence, and closure presentation.
+
+TEST_RESULTS:
+Focused acceptance-panel test passes (3 tests). Frontend lint and full TypeScript
+type checking pass.
+
+SECURITY_IMPACT:
+No authority, data, or API surface is broadened. The UI resolves only the existing
+safe workspace roster and never renders raw identifiers when a display name is
+unavailable.
+
+KNOWN_LIMITATIONS:
+The established local completed acceptance record has not been re-operated through
+the browser in this checkpoint; the presentation is covered with the same authorized
+response shape used by the live flow.
+
+ARCHITECTURE_DEVIATIONS:
+None.
+
+NEXT_TASK:
+Perform a short visual browser check of the staged governed-delivery flow, then
+select the next highest-impact demo capability from the dependency-ready backlog.
 ```
 
 ---

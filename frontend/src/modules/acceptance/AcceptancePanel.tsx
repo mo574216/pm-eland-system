@@ -22,6 +22,17 @@ import {
 
 function memberLabel(member: WorkspaceMember): string { return member.display_name ?? member.username }
 
+function memberName(members: WorkspaceMember[], userId: string | null): string | null {
+  if (userId === null) return null
+  return members.find((member) => member.user_id === userId)?.display_name
+    ?? members.find((member) => member.user_id === userId)?.username
+    ?? null
+}
+
+function formatDate(value: string): string {
+  return new Intl.DateTimeFormat('fa-IR', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value))
+}
+
 function ConditionActions({ condition, refresh }: { condition: AcceptanceCondition; refresh: () => Promise<void> }) {
   const { t } = useTranslation()
   const [kind, setKind] = useState<PackageResourceKind>('DOCUMENT_VERSION')
@@ -80,10 +91,22 @@ function PackageCard({ item, members, refresh }: { item: AcceptancePackage; memb
   })
   const closure = useMutation({ mutationFn: () => closeConditionalAcceptance(item.decision?.id ?? '', statement.trim()), onSuccess: refresh })
   const conditionalComplete = decisionKind !== 'CONDITIONAL_ACCEPT' || Boolean(responsible && verifier && dueAt && conditionDescription.trim() && requirement.trim())
+  const nameOrFallback = (userId: string | null) => memberName(members, userId) ?? t('acceptance.unknownMember')
   return <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, p: 1.5 }}><Stack spacing={1.25}>
     <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }}><Typography sx={{ fontWeight: 800 }}>{t('acceptance.packageNumber', { number: item.sequence_number.toLocaleString('fa-IR') })}</Typography><Chip icon={<FactCheckOutlined />} label={item.decision ? t(`acceptance.decision.${item.decision.decision_kind}`) : t('acceptance.awaitingDecision')} size="small" /></Stack>
     <Typography color="text.secondary" variant="body2">{item.statement}</Typography>
-    <Typography variant="caption">{t('acceptance.evidenceCount', { count: item.items.length.toLocaleString('fa-IR') })}</Typography>
+    <Stack spacing={0.5} sx={{ bgcolor: 'action.hover', borderRadius: 1.5, p: 1 }}>
+      <Typography variant="caption">{t('acceptance.requestedFor', { name: nameOrFallback(item.employer_recipient_id) })}</Typography>
+      {item.requested_by ? <Typography variant="caption">{t('acceptance.requestedBy', { name: nameOrFallback(item.requested_by) })}</Typography> : null}
+      <Typography variant="caption">{t('acceptance.requestedAt', { value: formatDate(item.created_at) })}</Typography>
+    </Stack>
+    <Box><Typography sx={{ fontWeight: 700 }} variant="body2">{t('acceptance.evidenceItems')}</Typography><Typography variant="caption">{t('acceptance.evidenceCount', { count: item.items.length.toLocaleString('fa-IR') })}</Typography><Stack component="ul" spacing={0.25} sx={{ m: 0, mt: 0.5, ps: 2.5 }}>{item.items.map((evidence) => <Typography component="li" key={evidence.id} variant="body2">{evidence.label_snapshot}</Typography>)}</Stack></Box>
+    {item.decision ? <Stack spacing={0.5} sx={{ borderInlineStart: '3px solid', borderColor: item.decision.closed_at ? 'success.main' : 'primary.main', ps: 1.25 }}>
+      <Typography variant="body2">{item.decision.statement}</Typography>
+      <Typography variant="caption">{t('acceptance.decidedBy', { name: nameOrFallback(item.decision.actor_id) })}</Typography>
+      <Typography variant="caption">{t('acceptance.decidedAt', { value: formatDate(item.decision.decided_at) })}</Typography>
+      {item.decision.closure_statement ? <Typography variant="caption">{item.decision.closure_statement}</Typography> : null}
+    </Stack> : null}
     {item.available_decisions.length ? <>
       <TextField label={t('acceptance.decisionLabel')} onChange={(event) => setDecisionKind(event.target.value)} select size="small" value={decisionKind}>{item.available_decisions.map((value) => <MenuItem key={value} value={value}>{t(`acceptance.decision.${value}`)}</MenuItem>)}</TextField>
       <TextField label={t('acceptance.decisionStatement')} multiline onChange={(event) => setStatement(event.target.value)} value={statement} />
@@ -98,7 +121,10 @@ function PackageCard({ item, members, refresh }: { item: AcceptancePackage; memb
     </> : null}
     {item.decision?.conditions.map((condition) => <Box key={condition.id} sx={{ bgcolor: 'action.hover', borderRadius: 2, p: 1.25 }}><Stack spacing={1}>
       <Stack direction="row" sx={{ justifyContent: 'space-between' }}><Typography sx={{ fontWeight: 700 }}>{condition.description}</Typography><Chip label={t(`acceptance.conditionStatus.${condition.status}`)} size="small" /></Stack>
-      <Typography color="text.secondary" variant="caption">{condition.evidence_requirement}</Typography><ConditionActions condition={condition} refresh={refresh} />
+      <Typography color="text.secondary" variant="caption">{condition.evidence_requirement}</Typography>
+      <Typography variant="caption">{t('acceptance.responsible')}: {nameOrFallback(condition.responsible_id)}</Typography>
+      <Typography variant="caption">{t('acceptance.verifier')}: {nameOrFallback(condition.verifier_id)}</Typography>
+      <Typography variant="caption">{t('acceptance.dueAt')}: {formatDate(condition.due_at)}</Typography><ConditionActions condition={condition} refresh={refresh} />
     </Stack></Box>)}
     {item.decision?.can_close ? <><TextField label={t('acceptance.closureStatement')} multiline onChange={(event) => setStatement(event.target.value)} value={statement} /><Button disabled={!statement.trim() || closure.isPending} onClick={() => closure.mutate()} variant="contained">{t('acceptance.close')}</Button></> : null}
     {item.decision?.closed_at ? <Alert severity="success">{t('acceptance.closed')}</Alert> : null}

@@ -53,4 +53,32 @@ describe('AcceptancePanel', () => {
       'phase-1', member.user_id, 'درخواست پذیرش مرحله',
     )
   })
+
+  it('presents a closed conditional acceptance with named, human-readable evidence and authority', async () => {
+    vi.mocked(getAcceptanceWorkspace).mockResolvedValue({
+      can_prepare: false,
+      packages: [{
+        id: 'package-1', workspace_id: 'workspace-1', phase_id: 'phase-1', sequence_number: 1,
+        statement: 'مدارک مرحله برای پذیرش ارائه شده است.', employer_recipient_id: member.user_id,
+        requested_by: member.user_id, created_at: '2026-08-27T09:00:00Z',
+        items: [{ id: 'item-1', submission_id: 'submission-1', deliverable_version_id: 'version-1', review_outcome_ids: [], label_snapshot: 'مشخصات فرایند نسخه ۱' }],
+        available_decisions: [],
+        decision: {
+          id: 'decision-1', decision_kind: 'CONDITIONAL_ACCEPT', actor_id: member.user_id,
+          authority_kind: 'EMPLOYER_ACCEPTANCE', statement: 'پذیرش مشروط ثبت شد.',
+          decided_at: '2026-08-27T10:00:00Z', closed_at: '2026-08-27T12:00:00Z',
+          closure_statement: 'تمام شروط راستی‌آزمایی شد.', can_close: false,
+          conditions: [{ id: 'condition-1', description: 'اصلاح نهایی', responsible_id: member.user_id,
+            verifier_id: member.user_id, due_at: '2026-08-28T10:00:00Z', evidence_requirement: 'نسخه اصلاح‌شده',
+            mandatory: true, status: 'SATISFIED', version: 2, available_actions: [] }],
+        },
+      }],
+    })
+    renderWithProviders(<AcceptancePanel phaseId="phase-1" workspaceId="workspace-1" />)
+
+    expect(await screen.findByText('مشخصات فرایند نسخه ۱')).toBeInTheDocument()
+    expect(screen.getByText('نماینده تصمیم‌گیرنده: نماینده کارفرما')).toBeInTheDocument()
+    expect(screen.getByText('تصمیم ثبت‌شده توسط: نماینده کارفرما')).toBeInTheDocument()
+    expect(screen.getByText('پذیرش مشروط پس از راستی‌آزمایی همه شرایط، به پذیرش کامل تبدیل شد.')).toBeInTheDocument()
+  })
 })
